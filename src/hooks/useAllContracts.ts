@@ -10,30 +10,31 @@ interface UseAllContractsReturn {
 
 export const useAllContracts = (): UseAllContractsReturn => {
   const [allContracts, setAllContracts] = useState<LegacyContract[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Começar como false
   const [error, setError] = useState<string | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const loadAllContracts = async () => {
+    // Evitar múltiplas chamadas se já carregou uma vez
+    if (hasLoaded) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('🔍 Carregando apenas contratos que foram analisados (existem em contratos_filtrados)...');
-      
-      // Buscar apenas contratos que existem tanto em contratos_vivo quanto em contratos_filtrados
+      // Buscar todos os contratos da tabela principal com um timeout
       const { data: contractsData, error: contractsError } = await supabase
         .from('contratos_vivo')
-        .select(`
-          *,
-          contratos_filtrados!inner(numero_contrato)
-        `);
+        .select('*')
+        .limit(200); // Reduzir para 200 para evitar sobrecarga
 
       if (contractsError) {
         throw new Error(`Erro ao buscar contratos: ${contractsError.message}`);
       }
 
       if (!contractsData || contractsData.length === 0) {
-        console.log('⚠️ Nenhum contrato encontrado na base de dados');
         setAllContracts([]);
         return;
       }
@@ -43,7 +44,7 @@ export const useAllContracts = (): UseAllContractsReturn => {
         id: contract.id,
         number: contract.numero_contrato,
         supplier: contract.fornecedor,
-        type: contract.tipo_contrato || contract.tipo_fluxo, // Usar tipo_contrato ou tipo_fluxo como fallback
+        type: contract.tipo_contrato || contract.tipo_fluxo,
         value: contract.valor_contrato,
         status: contract.status || '',
         dueDate: contract.data_vencimento,
@@ -57,11 +58,10 @@ export const useAllContracts = (): UseAllContractsReturn => {
         paymentStatus: contract.status_pagamento || ''
       }));
 
-      console.log(`✅ Carregados ${legacyContracts.length} contratos analisados (que existem em ambas as tabelas)`);
       setAllContracts(legacyContracts);
+      setHasLoaded(true);
 
     } catch (err) {
-      console.error('❌ Erro ao carregar todos os contratos:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setIsLoading(false);
@@ -69,8 +69,9 @@ export const useAllContracts = (): UseAllContractsReturn => {
   };
 
   useEffect(() => {
+    // Carregar dados apenas uma vez na inicialização
     loadAllContracts();
-  }, []);
+  }, []); // Array de dependências vazio para executar apenas uma vez
 
   return {
     allContracts,

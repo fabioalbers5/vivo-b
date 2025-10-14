@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { contractService } from '@/infra/di/container';
 import { Contract, ContractFilters, PaymentStatus, AlertType, RequestingArea, ContractRisk } from '@/core/entities/Contract';
@@ -54,7 +54,7 @@ export const useContractFilters = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const applyFilters = async (filterParams: FilterParams) => {
+  const applyFilters = useCallback(async (filterParams: FilterParams) => {
     setIsLoading(true);
     
     try {
@@ -238,13 +238,12 @@ export const useContractFilters = () => {
 
       setContracts(transformedContracts);
 
-      toast({
-        title: "Filtros aplicados",
-        description: `${transformedContracts.length} contratos encontrados.`
-      });
+      // Toast removido para evitar popup constante em filtros dinâmicos
+      // console.log(`Filtros aplicados: ${transformedContracts.length} contratos encontrados.`);
 
     } catch (error) {
-      // // // console.error('Error applying filters:', error);
+      console.error('Error applying filters:', error);
+      // Toast de erro mantido apenas para casos críticos
       toast({
         title: "Erro ao aplicar filtros",
         description: error instanceof Error ? error.message : "Ocorreu um erro ao buscar os contratos. Tente novamente.",
@@ -254,7 +253,7 @@ export const useContractFilters = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]); // Dependências mínimas do useCallback
 
   return {
     contracts,

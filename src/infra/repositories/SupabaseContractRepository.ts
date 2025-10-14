@@ -177,13 +177,7 @@ export class SupabaseContractRepository implements IContractRepository {
 
   // Implementação das buscas avançadas
   async findByFilters(filters: DomainContractFilters): Promise<Contract[]> {
-    // Primeiro: buscar contratos já processados para exclusão
-    const { data: contratosProcessados } = await supabase
-      .from('contratos_filtrados')
-      .select('numero_contrato');
-    
-    const numerosProcessados = new Set(contratosProcessados?.map(c => c.numero_contrato) || []);
-
+    // Consulta simplificada sem buscar contratos processados para evitar sobrecarga
     let query = supabase.from('contratos_vivo').select('*');
 
     // Aplicar filtros
@@ -257,19 +251,16 @@ export class SupabaseContractRepository implements IContractRepository {
       query = query.ilike('municipio', `%${filters.municipio.trim()}%`);
     }
 
-    query = query.order('data_vencimento_pagamento', { ascending: true });
+    query = query.order('data_vencimento_pagamento', { ascending: true }).limit(200);
 
     const { data, error } = await query;
 
     if (error) {
-      console.error('❌ [SUPABASE_QUERY] Erro na query:', error);
       throw new Error(`Erro ao buscar contratos com filtros: ${error.message}`);
     }
 
-    // Filtrar contratos já processados (exclusão em memória)
-    const contratosFiltrados = data.filter(row => !numerosProcessados.has(row.numero_contrato));
-
-    return contratosFiltrados.map(row => this.toDomain(row));
+    // Retornar todos os contratos sem filtrar processados para simplificar
+    return data.map(row => this.toDomain(row));
   }
 
   async findBySupplier(supplier: string): Promise<Contract[]> {
@@ -277,7 +268,8 @@ export class SupabaseContractRepository implements IContractRepository {
       .from('contratos_vivo')
       .select('*')
       .eq('fornecedor', supplier)
-      .order('data_vencimento_pagamento', { ascending: true });
+      .order('data_vencimento_pagamento', { ascending: true })
+      .limit(100);
 
     if (error) {
       throw new Error(`Erro ao buscar contratos por fornecedor: ${error.message}`);
@@ -291,7 +283,8 @@ export class SupabaseContractRepository implements IContractRepository {
       .from('contratos_vivo')
       .select('*')
       .eq('estado', state)
-      .order('data_vencimento_pagamento', { ascending: true });
+      .order('data_vencimento_pagamento', { ascending: true })
+      .limit(100);
 
     if (error) {
       throw new Error(`Erro ao buscar contratos por estado: ${error.message}`);

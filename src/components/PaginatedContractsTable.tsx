@@ -18,23 +18,35 @@ interface PaginatedContractsTableProps {
   onViewContract: (contractId: string) => void;
   onAnalyzeContract?: (contractId: string) => void;
   isLoading?: boolean;
+  filteredContracts?: LegacyContract[];
+  showFilteredResults?: boolean;
 }
 
-const PaginatedContractsTable = ({ contracts, onViewContract, onAnalyzeContract, isLoading = false }: PaginatedContractsTableProps) => {
+const PaginatedContractsTable = ({ 
+  contracts, 
+  onViewContract, 
+  onAnalyzeContract, 
+  isLoading = false, 
+  filteredContracts, 
+  showFilteredResults = false 
+}: PaginatedContractsTableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(4);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Use filtered contracts when filters are active, otherwise show all available contracts
+  const displayContracts = showFilteredResults ? (filteredContracts || []) : (contracts || []);
 
   // Reset page when contracts change
   useEffect(() => {
     setCurrentPage(1);
-  }, [contracts]);
+  }, [displayContracts]);
 
   // Calculate pagination
-  const totalItems = contracts.length;
+  const totalItems = displayContracts.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const currentContracts = contracts.slice(startIndex, endIndex);
+  const currentContracts = displayContracts.slice(startIndex, endIndex);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -97,13 +109,13 @@ const PaginatedContractsTable = ({ contracts, onViewContract, onAnalyzeContract,
     setCurrentPage(1); // Reset to first page
   };
 
-  if (contracts.length === 0) {
+  if (displayContracts.length === 0) {
     return (
       <div className="flex flex-col h-full">
         {/* Fixed Section Header */}
         <div className="flex items-center justify-between mb-4 bg-white z-30 sticky top-0 py-2">
           <h2 className="text-xl font-semibold">
-            Todos os Contratos (0)
+            {showFilteredResults ? "Contratos Filtrados (0)" : "Todos os Contratos (0)"}
           </h2>
           {isLoading && (
             <div className="text-sm text-muted-foreground">
@@ -114,8 +126,13 @@ const PaginatedContractsTable = ({ contracts, onViewContract, onAnalyzeContract,
 
         <div className="border rounded-lg p-8 text-center bg-white">
           <p className="text-muted-foreground">
-            Nenhum contrato encontrado.
+            {showFilteredResults ? "Nenhum contrato encontrado com os filtros aplicados." : "Nenhum contrato encontrado."}
           </p>
+          {showFilteredResults && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Tente ajustar os filtros ou limpar todos para ver todos os contratos.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -126,13 +143,23 @@ const PaginatedContractsTable = ({ contracts, onViewContract, onAnalyzeContract,
       {/* Fixed Section Header */}
       <div className="flex items-center justify-between mb-4 bg-white z-30 sticky top-0 py-2">
         <h2 className="text-xl font-semibold">
-          Todos os Contratos {isLoading ? "" : `(${totalItems})`}
+          {showFilteredResults ? 
+            `Contratos Filtrados ${isLoading ? "" : `(${totalItems})`}` : 
+            `Todos os Contratos ${isLoading ? "" : `(${totalItems})`}`
+          }
         </h2>
-        {isLoading && (
-          <div className="text-sm text-muted-foreground">
-            Carregando contratos...
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {showFilteredResults && (
+            <div className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">
+              Filtros ativos
+            </div>
+          )}
+          {isLoading && (
+            <div className="text-sm text-muted-foreground">
+              Carregando contratos...
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table Container */}
@@ -243,7 +270,7 @@ const PaginatedContractsTable = ({ contracts, onViewContract, onAnalyzeContract,
                           size="sm"
                           onClick={() => onViewContract(contract.id)}
                           className="h-4 w-4 p-0 hover:bg-blue-50 hover:text-blue-600"
-                          title="Visualizar contrato"
+                          title="Visualizar documento"
                         >
                           <Eye className="h-2 w-2" />
                         </Button>
@@ -263,7 +290,6 @@ const PaginatedContractsTable = ({ contracts, onViewContract, onAnalyzeContract,
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="4">4</SelectItem>
               <SelectItem value="10">10</SelectItem>
               <SelectItem value="50">50</SelectItem>
               <SelectItem value="100">100</SelectItem>

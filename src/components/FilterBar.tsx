@@ -117,6 +117,8 @@ const FilterBar = ({ filters, onClearAll, onAddFilter }: FilterBarProps) => {
           </Popover>
         ))}
         
+
+        
         {/* Botão para adicionar novos filtros */}
         {onAddFilter && (
           <Button

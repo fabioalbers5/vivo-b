@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import HomeWithLayout from "./pages/HomeWithLayout";
+import TestModal from "./pages/TestModal";
 import NotFound from "./pages/NotFound";
 
 // Importar teste de conexão Supabase (executará automaticamente)
@@ -24,6 +26,8 @@ const App = () => (
       >
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/home" element={<HomeWithLayout />} />
+          <Route path="/test-modal" element={<TestModal />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

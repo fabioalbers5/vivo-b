@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import PaginatedContractsTable from "./PaginatedContractsTable";
 import CreateFilterModal from "./CreateFilterModal";
+import ContractAnalysisModal from "./ContractAnalysisModal";
 import CustomFilterRenderer from "./CustomFilterRenderer";
 import { useCustomFilters } from "@/hooks/useCustomFilters";
 import { useContractFilters, LegacyContract } from "@/hooks/useContractFilters";
@@ -32,6 +33,10 @@ const PaymentVerificationApp = () => {
   const [showFilteredResults, setShowFilteredResults] = useState(false);
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  
+  // Estado para modals
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState<string>('');
 
   // Função memoizada para aplicar filtros - evita recriação constante e múltiplas chamadas
   const applyFilters = useCallback(async (filterParams: any) => {
@@ -155,6 +160,8 @@ const PaymentVerificationApp = () => {
   };
 
   const handleAnalyzeContract = (contractId: string) => {
+    setSelectedContractId(contractId);
+    setAnalysisModalOpen(true);
     toast({
       title: "Análise de IA",
       description: `Carregando análise inteligente do contrato ${contractId}...`
@@ -356,6 +363,13 @@ const PaymentVerificationApp = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={addFilter}
+      />
+      
+      {/* Contract Analysis Modal */}
+      <ContractAnalysisModal
+        isOpen={analysisModalOpen}
+        onClose={() => setAnalysisModalOpen(false)}
+        contractId={selectedContractId}
       />
     </div>
   );

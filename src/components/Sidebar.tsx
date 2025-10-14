@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft } from 'lucide-react';
+import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home } from 'lucide-react';
 
 interface SidebarProps {
   activePage: string;
@@ -13,6 +13,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const menuItems = [
+    {
+      id: 'home',
+      label: 'Home page',
+      icon: Home,
+      description: 'Página inicial do sistema'
+    },
     {
       id: 'sample-selection',
       label: 'Seleção de amostra',

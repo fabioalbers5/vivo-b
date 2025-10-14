@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import SampleSelectionPage from '@/pages/SampleSelectionPage';
@@ -1180,6 +1181,16 @@ const QualityDashboardPageInline: React.FC = () => {
 
 const MainLayout: React.FC = () => {
   const [activePage, setActivePage] = useState('sample-selection');
+  const navigate = useNavigate();
+
+  // Função para lidar com mudança de página
+  const handlePageChange = (page: string) => {
+    if (page === 'home') {
+      navigate('/home');
+    } else {
+      setActivePage(page);
+    }
+  };
 
   const renderContent = () => {
     switch (activePage) {
@@ -1215,7 +1226,7 @@ const MainLayout: React.FC = () => {
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
           <div className="flex-shrink-0">
-            <Sidebar activePage={activePage} onPageChange={setActivePage} />
+            <Sidebar activePage={activePage} onPageChange={handlePageChange} />
           </div>
           
           {/* Área de conteúdo principal */}

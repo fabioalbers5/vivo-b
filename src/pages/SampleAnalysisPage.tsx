@@ -15,6 +15,7 @@ import { calculateRepresentativityScore } from '@/utils/representativityCalculat
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, AlertTriangle, CheckCircle, Users, Target, Database, History, ChevronDown } from 'lucide-react';
 import ContractsTable from '@/components/ContractsTable';
+import ContractAnalysisModal from '@/components/ContractAnalysisModal';
 
 const COLORS = [
   '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', 
@@ -40,6 +41,10 @@ const SampleAnalysisPage: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isRepresentativityExpanded, setIsRepresentativityExpanded] = useState(false);
   const [isChartsExpanded, setIsChartsExpanded] = useState(false);
+  
+  // Estados para modal de análise
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState<string>('');
   
   // Definir "Todos os analistas" como padrão quando não há analista selecionado
   useEffect(() => {
@@ -688,14 +693,21 @@ const SampleAnalysisPage: React.FC = () => {
                 alert(`Funcionalidade de visualização do contrato ${contractId} será implementada em breve.`);
               }}
               onAnalyzeContract={(contractId) => {
+                setSelectedContractId(contractId);
+                setAnalysisModalOpen(true);
                 console.log('Analisar contrato:', contractId);
-                // TODO: Implementar análise de IA específica do contrato
-                alert(`Funcionalidade de análise de IA do contrato ${contractId} será implementada em breve.`);
               }}
             />
           </CardContent>
         </Card>
       </div>
+      
+      {/* Contract Analysis Modal */}
+      <ContractAnalysisModal
+        isOpen={analysisModalOpen}
+        onClose={() => setAnalysisModalOpen(false)}
+        contractId={selectedContractId}
+      />
     </div>
   );
 };

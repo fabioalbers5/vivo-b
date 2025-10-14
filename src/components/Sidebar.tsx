@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home } from 'lucide-react';
+import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home, PieChart } from 'lucide-react';
 
 interface SidebarProps {
   activePage: string;
@@ -34,7 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
     {
       id: 'quality-dashboard',
       label: 'Dashboards de qualidade',
-      icon: Settings,
+      icon: PieChart,
       description: 'Análise de qualidade e compliance'
     }
   ];
@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
                 <Button
                   key={item.id}
                   variant={isActive ? "default" : "ghost"}
-                  className={`w-full ${isExpanded ? 'justify-start h-auto p-3' : 'justify-center h-10 p-2'} ${
+                  className={`w-full ${isExpanded ? 'justify-start h-10 px-3' : 'justify-center h-10 p-2'} ${
                     isActive 
                       ? "bg-vivo-purple hover:bg-vivo-purple/90 text-white" 
                       : "hover:bg-muted/50"
@@ -85,21 +85,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
                   title={!isExpanded ? item.label : undefined}
                 >
                   {isExpanded ? (
-                    <div className="flex items-start gap-3 w-full">
-                      <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                    <div className="flex items-center gap-3 w-full">
+                      <Icon className={`h-4 w-4 flex-shrink-0 ${
                         isActive ? "text-white" : "text-muted-foreground"
                       }`} />
-                      <div className="text-left flex-1">
-                        <div className={`text-sm font-medium ${
-                          isActive ? "text-white" : "text-foreground"
-                        }`}>
-                          {item.label}
-                        </div>
-                        <div className={`text-xs ${
-                          isActive ? "text-white/80" : "text-muted-foreground"
-                        }`}>
-                          {item.description}
-                        </div>
+                      <div className={`text-sm font-medium ${
+                        isActive ? "text-white" : "text-foreground"
+                      }`}>
+                        {item.label}
                       </div>
                     </div>
                   ) : (
@@ -124,20 +117,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
             
             <Button
               variant="ghost"
-              className={`w-full ${isExpanded ? 'justify-start h-auto p-3' : 'justify-center h-10 p-2'} hover:bg-muted/50 transition-all duration-300`}
+              className={`w-full ${isExpanded ? 'justify-start h-10 px-3' : 'justify-center h-10 p-2'} hover:bg-muted/50 transition-all duration-300`}
               disabled
               title={!isExpanded ? "Configurações" : undefined}
             >
               {isExpanded ? (
-                <div className="flex items-start gap-3 w-full">
-                  <Settings className="h-5 w-5 mt-0.5 flex-shrink-0 text-muted-foreground" />
-                  <div className="text-left flex-1">
-                    <div className="text-sm font-medium text-muted-foreground">
-                      Configurações
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Em breve
-                    </div>
+                <div className="flex items-center gap-3 w-full">
+                  <Settings className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Configurações
                   </div>
                 </div>
               ) : (
@@ -147,20 +135,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
 
             <Button
               variant="ghost"
-              className={`w-full ${isExpanded ? 'justify-start h-auto p-3' : 'justify-center h-10 p-2'} hover:bg-muted/50 transition-all duration-300`}
+              className={`w-full ${isExpanded ? 'justify-start h-10 px-3' : 'justify-center h-10 p-2'} hover:bg-muted/50 transition-all duration-300`}
               disabled
               title={!isExpanded ? "Ajuda" : undefined}
             >
               {isExpanded ? (
-                <div className="flex items-start gap-3 w-full">
-                  <HelpCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-muted-foreground" />
-                  <div className="text-left flex-1">
-                    <div className="text-sm font-medium text-muted-foreground">
-                      Ajuda
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Em breve
-                    </div>
+                <div className="flex items-center gap-3 w-full">
+                  <HelpCircle className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Ajuda
                   </div>
                 </div>
               ) : (

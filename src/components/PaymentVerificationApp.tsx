@@ -342,11 +342,6 @@ const PaymentVerificationApp = () => {
         {/* Contracts Table */}
         <div className="p-6">
           {/* Debug temporário */}
-          {!showFilteredResults && (
-            <div className="mb-2 text-sm text-gray-600">
-              Debug: {allContracts.length} contratos carregados. Loading: {allContractsLoading.toString()}. ShowFiltered: {showFilteredResults.toString()}
-            </div>
-          )}
           <PaginatedContractsTable
             contracts={allContracts}
             filteredContracts={contracts}

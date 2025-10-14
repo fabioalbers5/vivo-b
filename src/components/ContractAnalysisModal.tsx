@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Eye, 
   X, 
@@ -15,7 +16,12 @@ import {
   CheckCircle, 
   XCircle, 
   AlertTriangle,
-  Info
+  Info,
+  Edit3,
+  Save,
+  RotateCcw,
+  Check,
+  Ban
 } from 'lucide-react';
 
 interface ContractAnalysisModalProps {
@@ -25,6 +31,7 @@ interface ContractAnalysisModalProps {
 }
 
 interface AnalysisField {
+  id: string;
   label: string;
   value: string;
   icon: React.ComponentType<any>;
@@ -38,10 +45,16 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
   contractId
 }) => {
   const [selectedEvidence, setSelectedEvidence] = useState<string | null>(null);
+  
+  // Estados para correções
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [corrections, setCorrections] = useState<Record<string, string>>({});
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Dados simulados da análise de IA
   const analysisData: AnalysisField[] = [
     {
+      id: 'fornecedor',
       label: 'Fornecedor',
       value: 'EMPRESA EXEMPLO LTDA',
       icon: Building,
@@ -49,6 +62,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'cnpj',
       label: 'CNPJ',
       value: '12.345.678/0001-90',
       icon: FileText,
@@ -56,6 +70,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'doc_sap',
       label: 'Nº Doc SAP',
       value: 'SAP-2024-001234',
       icon: FileText,
@@ -63,6 +78,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'tipo_doc',
       label: 'Tipo de Doc',
       value: 'Contrato de Prestação de Serviços',
       icon: FileText,
@@ -70,6 +86,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'enquadramento',
       label: 'Enquadramento da Normativa',
       value: 'NCCP03 - Categoria A',
       icon: CheckCircle,
@@ -77,6 +94,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'objeto_contratual',
       label: 'Objeto Contratual',
       value: 'Serviços de manutenção e suporte técnico em infraestrutura de telecomunicações',
       icon: FileText,
@@ -84,6 +102,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'vigencia',
       label: 'Vigência',
       value: '12 meses (01/01/2024 a 31/12/2024)',
       icon: Calendar,
@@ -91,6 +110,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'reajuste',
       label: 'Reajuste',
       value: 'Anual conforme IPCA',
       icon: DollarSign,
@@ -98,6 +118,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'indice_reajuste',
       label: 'Índice de reajuste',
       value: 'IPCA - Índice Nacional de Preços ao Consumidor Amplo',
       icon: DollarSign,
@@ -105,6 +126,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'valor',
       label: 'Valor',
       value: 'R$ 150.000,00',
       icon: DollarSign,
@@ -112,6 +134,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'condicao_pagamento',
       label: 'Condição de pagamento',
       value: '30 dias após apresentação da nota fiscal',
       icon: DollarSign,
@@ -119,6 +142,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'normativa_nccp03',
       label: 'Está de acordo com a normativa NCCP03?',
       value: 'Sim - Todos os requisitos atendidos',
       icon: CheckCircle,
@@ -126,6 +150,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'ciclo_tesouraria',
       label: 'Ciclo de Tesouraria',
       value: '30 dias - Dentro do padrão estabelecido',
       icon: Calendar,
@@ -133,6 +158,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'clausula_anticorrupcao',
       label: 'Cláusula anticorrupção',
       value: 'Presente - Cláusula 15.2 do contrato',
       icon: CheckCircle,
@@ -140,6 +166,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: true
     },
     {
+      id: 'redir',
       label: 'Redir',
       value: 'Não aplicável para este tipo de contrato',
       icon: Info,
@@ -147,6 +174,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: false
     },
     {
+      id: 'nota_adicional',
       label: 'Nota adicional',
       value: 'Contrato em conformidade com todas as normativas vigentes. Recomenda-se revisão anual dos termos de reajuste.',
       icon: Info,
@@ -154,6 +182,55 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
       hasEvidence: false
     }
   ];
+
+  // Funções para gerenciar correções
+  const handleEditField = (fieldId: string) => {
+    setEditingField(fieldId);
+    // Inicializar com o valor atual se não há correção
+    if (!corrections[fieldId]) {
+      const field = analysisData.find(f => f.id === fieldId);
+      if (field) {
+        setCorrections(prev => ({ ...prev, [fieldId]: field.value }));
+      }
+    }
+  };
+
+  const handleSaveCorrection = (fieldId: string) => {
+    setEditingField(null);
+    setHasChanges(true);
+  };
+
+  const handleCancelEdit = (fieldId: string) => {
+    setEditingField(null);
+    // Remover a correção se cancelar
+    setCorrections(prev => {
+      const newCorrections = { ...prev };
+      delete newCorrections[fieldId];
+      return newCorrections;
+    });
+  };
+
+  const handleCorrectionChange = (fieldId: string, value: string) => {
+    setCorrections(prev => ({ ...prev, [fieldId]: value }));
+  };
+
+  const resetAllCorrections = () => {
+    setCorrections({});
+    setEditingField(null);
+    setHasChanges(false);
+  };
+
+  const saveAllCorrections = () => {
+    // Aqui você pode enviar as correções para a API
+    console.log('Correções salvas:', corrections);
+    alert('Correções salvas com sucesso!');
+    setHasChanges(false);
+  };
+
+  // Função para obter o valor atual (correção ou valor original)
+  const getCurrentValue = (field: AnalysisField) => {
+    return corrections[field.id] || field.value;
+  };
 
   const getStatusIcon = (status?: string) => {
     switch (status) {
@@ -235,11 +312,55 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                                 {field.label}
                               </h3>
                               {getStatusIcon(field.status)}
+                              {corrections[field.id] && (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                                  Corrigido
+                                </Badge>
+                              )}
                             </div>
                             
-                            <p className="text-slate-600 text-sm leading-relaxed break-words">
-                              {field.value}
-                            </p>
+                            {/* Valor ou campo de edição */}
+                            {editingField === field.id ? (
+                              <div className="space-y-2">
+                                <Textarea
+                                  value={corrections[field.id] || field.value}
+                                  onChange={(e) => handleCorrectionChange(field.id, e.target.value)}
+                                  className="text-sm min-h-[60px] resize-none"
+                                  placeholder="Digite a correção..."
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleSaveCorrection(field.id)}
+                                    className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700"
+                                  >
+                                    <Save className="h-3 w-3 mr-1" />
+                                    Salvar
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleCancelEdit(field.id)}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <p className={`text-sm leading-relaxed break-words ${
+                                  corrections[field.id] ? 'text-slate-700 font-medium' : 'text-slate-600'
+                                }`}>
+                                  {getCurrentValue(field)}
+                                </p>
+                                {corrections[field.id] && (
+                                  <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded border-l-2 border-blue-200">
+                                    <strong>Original:</strong> {field.value}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             
                             {field.status && field.status !== 'neutral' && (
                               <div className="mt-2">
@@ -249,20 +370,35 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                           </div>
                         </div>
 
-                        {field.hasEvidence && (
-                          <div className="flex-shrink-0">
+                        <div className="flex gap-2 flex-shrink-0">
+                          {/* Botão de edição */}
+                          {editingField !== field.id && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditField(field.id)}
+                              className="flex items-center gap-2 text-xs h-8 px-3"
+                              title="Corrigir análise"
+                            >
+                              <Edit3 className="h-3 w-3" />
+                              <span className="hidden sm:inline">Corrigir</span>
+                            </Button>
+                          )}
+                          
+                          {/* Botão de evidência */}
+                          {field.hasEvidence && (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleEvidenceClick(field.label)}
                               className="flex items-center gap-2 text-xs h-8 px-3"
+                              title="Ver evidência"
                             >
                               <Eye className="h-3 w-3" />
-                              <span className="hidden sm:inline">Ver Evidência</span>
-                              <span className="sm:hidden">Evidência</span>
+                              <span className="hidden sm:inline">Evidência</span>
                             </Button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -279,7 +415,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
                       {analysisData.filter(f => f.status === 'compliant').length}
@@ -293,7 +429,15 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                     <div className="text-sm text-slate-600">Não Conformes</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">95%</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {Object.keys(corrections).length}
+                    </div>
+                    <div className="text-sm text-slate-600">Correções Feitas</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {Math.round((analysisData.filter(f => f.status === 'compliant').length / analysisData.length) * 100)}%
+                    </div>
                     <div className="text-sm text-slate-600">Score de Conformidade</div>
                   </div>
                 </div>
@@ -302,20 +446,94 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
             </ScrollArea>
 
             <div className="flex-shrink-0 p-6 pt-4 border-t bg-white">
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={onClose}>
-                  Fechar
-                </Button>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  Gerar Relatório PDF
-                </Button>
+              {/* Alerta de mudanças */}
+              {hasChanges && (
+                <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-orange-800 text-sm">
+                    <AlertTriangle className="h-4 w-4" />
+                    Você tem correções não salvas. Clique em "Salvar Correções" para aplicá-las.
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex flex-col gap-4">
+                {/* Botões de correção */}
+                {Object.keys(corrections).length > 0 && (
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={resetAllCorrections}
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Resetar Correções
+                    </Button>
+                    {hasChanges && (
+                      <Button
+                        onClick={saveAllCorrections}
+                        className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-xs"
+                      >
+                        <Save className="h-3 w-3" />
+                        Salvar Correções
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
+                {/* Botões principais de decisão */}
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      const confirmReject = confirm(
+                        `Tem certeza que deseja REJEITAR o pagamento do contrato ${contractId}?\n\nEsta ação não poderá ser desfeita.`
+                      );
+                      if (confirmReject) {
+                        console.log('Pagamento rejeitado para contrato:', contractId);
+                        console.log('Correções aplicadas antes da rejeição:', corrections);
+                        alert('Pagamento rejeitado com sucesso!\nO contrato foi marcado como não conforme para pagamento.');
+                        onClose();
+                      }
+                    }}
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
+                  >
+                    <Ban className="h-4 w-4" />
+                    Rejeitar pagamento
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      if (hasChanges) {
+                        const confirmWithChanges = confirm(
+                          `Você tem correções não salvas.\n\nDeseja LIBERAR o pagamento do contrato ${contractId} com as correções aplicadas?`
+                        );
+                        if (!confirmWithChanges) return;
+                      } else {
+                        const confirmApprove = confirm(
+                          `Confirma a LIBERAÇÃO do pagamento do contrato ${contractId}?\n\nO pagamento será processado após esta confirmação.`
+                        );
+                        if (!confirmApprove) return;
+                      }
+                      
+                      console.log('Pagamento liberado para contrato:', contractId);
+                      console.log('Correções aplicadas:', corrections);
+                      console.log('Total de correções:', Object.keys(corrections).length);
+                      
+                      alert(`Pagamento liberado com sucesso!\n\nContrato: ${contractId}\nCorreções aplicadas: ${Object.keys(corrections).length}\n\nO pagamento será processado em breve.`);
+                      onClose();
+                    }}
+                    className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                    disabled={editingField !== null} // Desabilita se estiver editando
+                  >
+                    <Check className="h-4 w-4" />
+                    Liberar pagamento
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Evidência */}
       {selectedEvidence && (
         <Dialog open={!!selectedEvidence} onOpenChange={closeEvidence}>
           <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden">

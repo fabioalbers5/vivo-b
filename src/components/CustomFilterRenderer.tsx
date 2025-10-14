@@ -213,10 +213,6 @@ const CustomFilterRenderer = ({ filter, value, onChange }: CustomFilterRendererP
 
   return (
     <div className="space-y-2">
-      {/* Adicionar título apenas para filtros que não sejam Range */}
-      {filter.type !== 'Range' && (
-        <Label className="text-sm font-medium">{filter.name}</Label>
-      )}
       {renderFilterInput()}
       <p className="text-xs text-muted-foreground">
         Campo: {filter.table}.{filter.field}

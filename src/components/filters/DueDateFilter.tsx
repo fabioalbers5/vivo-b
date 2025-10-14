@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
 const predefinedOptions = [
+  { value: "all", label: "Todos os períodos" },
   { value: "30", label: "Até 30 dias" },
   { value: "30-60", label: "30 a 60 dias" },
   { value: "60-90", label: "60 a 90 dias" },
@@ -29,7 +30,6 @@ const DueDateFilter = ({
 }: DueDateFilterProps) => {
   return (
     <div className="space-y-3">
-      <Label>Data de Vencimento</Label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
           <SelectValue placeholder="Selecione o período" />

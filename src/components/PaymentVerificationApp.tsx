@@ -3,19 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-import FilterContainer from "./FilterContainer";
+import FilterBar, { FilterItem } from "./FilterBar";
+import FilterWrapper from "./FilterWrapper";
 import FlowTypeFilter from "./filters/FlowTypeFilter";
 import ValueRangeFilter from "./filters/ValueRangeFilter";
 import LocationFilter from "./filters/LocationFilter";
 import DueDateFilter from "./filters/DueDateFilter";
-import SupplierFilter from "./filters/SupplierFilter";
+import SupplierNameFilter from "./filters/SupplierNameFilter";
+import ContractNumberFilter from "./filters/ContractNumberFilter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import ContractsTable from "./ContractsTable";
+import PaginatedContractsTable from "./PaginatedContractsTable";
 import CreateFilterModal from "./CreateFilterModal";
 import CustomFilterRenderer from "./CustomFilterRenderer";
 import { useCustomFilters } from "@/hooks/useCustomFilters";
 import { useContractFilters, LegacyContract } from "@/hooks/useContractFilters";
+import { useAllContracts } from "@/hooks/useAllContracts";
 import { useSample } from "@/contexts/SampleContext";
 import { useContratosFiltrados } from "@/services/contratosFiltradosClient";
 
@@ -311,6 +314,7 @@ const PaymentVerificationApp = () => {
   const { toast } = useToast();
   const { customFilters, addFilter, removeFilter, isLoading: filtersLoading } = useCustomFilters();
   const { contracts, isLoading, applyFilters } = useContractFilters();
+  const { allContracts, isLoading: allContractsLoading } = useAllContracts();
   const { sampleContracts, setSample, selectedAnalyst } = useSample();
   const { registrarContratosFiltrados } = useContratosFiltrados();
   
@@ -326,11 +330,11 @@ const PaymentVerificationApp = () => {
   const [paymentValue, setPaymentValue] = useState<[number, number]>([0, 10000000]);
   const [region, setRegion] = useState<string>("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
-  const [dueDate, setDueDate] = useState<string>("");
+  const [dueDate, setDueDate] = useState<string>("all");
   const [customStart, setCustomStart] = useState<string>("");
   const [customEnd, setCustomEnd] = useState<string>("");
-  const [supplierName, setSupplierName] = useState<string>("");
-  const [contractNumber, setContractNumber] = useState<string>("");
+  const [supplierName, setSupplierName] = useState<string[]>([]);
+  const [contractNumber, setContractNumber] = useState<string[]>([]);
   const [contractCount, setContractCount] = useState<number>(10);
   
   // Custom filter values
@@ -529,8 +533,8 @@ const PaymentVerificationApp = () => {
     setDueDate("");
     setCustomStart("");
     setCustomEnd("");
-    setSupplierName("");
-    setContractNumber("");
+    setSupplierName([]);
+    setContractNumber([]);
     setContractCount(10);
     setCustomFilterValues({});
     
@@ -540,128 +544,160 @@ const PaymentVerificationApp = () => {
     });
   };
 
+  // Preparar filtros para a FilterBar
+  const filterItems: FilterItem[] = [
+    {
+      id: 'supplier',
+      label: 'Fornecedor',
+      activeCount: supplierName.length,
+      isActive: supplierName.length > 0,
+      component: (
+        <FilterWrapper>
+          <SupplierNameFilter
+            value={supplierName}
+            onChange={setSupplierName}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'contract',
+      label: 'Número do Contrato',
+      activeCount: contractNumber.length,
+      isActive: contractNumber.length > 0,
+      component: (
+        <FilterWrapper>
+          <ContractNumberFilter
+            value={contractNumber}
+            onChange={setContractNumber}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'flowtype',
+      label: 'Tipo de Fluxo',
+      activeCount: flowType.length,
+      isActive: flowType.length > 0,
+      component: (
+        <FilterWrapper>
+          <FlowTypeFilter value={flowType} onChange={setFlowType} />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'contractvalue',
+      label: 'Valor do Contrato',
+      activeCount: (contractValue[0] > 0 || contractValue[1] < 10000000) ? 1 : 0,
+      isActive: contractValue[0] > 0 || contractValue[1] < 10000000,
+      component: (
+        <FilterWrapper>
+          <ValueRangeFilter
+            title="Valor do Contrato"
+            min={0}
+            max={10000000}
+            value={contractValue}
+            onChange={setContractValue}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'paymentvalue',
+      label: 'Valor do Pagamento',
+      activeCount: (paymentValue[0] > 0 || paymentValue[1] < 10000000) ? 1 : 0,
+      isActive: paymentValue[0] > 0 || paymentValue[1] < 10000000,
+      component: (
+        <FilterWrapper>
+          <ValueRangeFilter
+            title="Valor do Pagamento"
+            min={0}
+            max={10000000}
+            value={paymentValue}
+            onChange={setPaymentValue}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'states',
+      label: 'Estados',
+      activeCount: selectedStates.length,
+      isActive: selectedStates.length > 0,
+      component: (
+        <FilterWrapper>
+          <LocationFilter
+            region=""
+            selectedStates={selectedStates}
+            onRegionChange={() => {}}
+            onStatesChange={setSelectedStates}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'duedate',
+      label: 'Data de Vencimento',
+      activeCount: (dueDate && dueDate !== 'all') ? 1 : 0,
+      isActive: dueDate && dueDate !== 'all',
+      component: (
+        <FilterWrapper>
+          <DueDateFilter
+            value={dueDate}
+            customStart={customStart}
+            customEnd={customEnd}
+            onChange={setDueDate}
+            onCustomStartChange={setCustomStart}
+            onCustomEndChange={setCustomEnd}
+          />
+        </FilterWrapper>
+      )
+    },
+    // Custom Filters
+    ...customFilters.map((filter) => ({
+      id: `custom-${filter.id}`,
+      label: filter.name,
+      activeCount: customFilterValues[filter.id] ? 1 : 0,
+      isActive: !!customFilterValues[filter.id],
+      component: (
+        <FilterWrapper>
+          <CustomFilterRenderer
+            filter={filter}
+            value={customFilterValues[filter.id]}
+            onChange={(value) => handleCustomFilterChange(filter.id, value)}
+          />
+          <div className="pt-3 border-t border-gray-100 mt-3">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => removeFilter(filter.id)}
+              className="w-full"
+            >
+              Remover Filtro
+            </Button>
+          </div>
+        </FilterWrapper>
+      )
+    }))
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Filters Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Default Filters */}
-          <FilterContainer title="Fornecedor">
-            <SupplierFilter
-              supplierName={supplierName}
-              contractNumber={contractNumber}
-              onSupplierNameChange={setSupplierName}
-              onContractNumberChange={setContractNumber}
-            />
-          </FilterContainer>
-          
-          <FilterContainer title="Tipo de Fluxo">
-            <FlowTypeFilter value={flowType} onChange={setFlowType} />
-          </FilterContainer>
-          
-          <FilterContainer title="Valor do Contrato">
-            <ValueRangeFilter
-              title="Valor do Contrato"
-              min={0}
-              max={10000000}
-              value={contractValue}
-              onChange={setContractValue}
-            />
-          </FilterContainer>
-          
-          <FilterContainer title="Valor do Pagamento">
-            <ValueRangeFilter
-              title="Valor do Pagamento"
-              min={0}
-              max={10000000}
-              value={paymentValue}
-              onChange={setPaymentValue}
-            />
-          </FilterContainer>
-          
-          <FilterContainer title="Localização">
-            <LocationFilter
-              region={region}
-              selectedStates={selectedStates}
-              onRegionChange={setRegion}
-              onStatesChange={setSelectedStates}
-            />
-          </FilterContainer>
-          
-          <FilterContainer title="Data de Vencimento">
-            <DueDateFilter
-              value={dueDate}
-              customStart={customStart}
-              customEnd={customEnd}
-              onChange={setDueDate}
-              onCustomStartChange={setCustomStart}
-              onCustomEndChange={setCustomEnd}
-            />
-          </FilterContainer>
-          
-          {/* Custom Filters */}
-          {customFilters.map((filter) => (
-            <FilterContainer
-              key={filter.id}
-              title={filter.name}
-              canDelete={true}
-              onDelete={() => removeFilter(filter.id)}
-            >
-              <CustomFilterRenderer
-                filter={filter}
-                value={customFilterValues[filter.id]}
-                onChange={(value) => handleCustomFilterChange(filter.id, value)}
-              />
-            </FilterContainer>
-          ))}
-        </div>
+      <main className="max-w-7xl mx-auto">
+        {/* Nova Barra de Filtros */}
+        <FilterBar 
+          filters={filterItems}
+          onClearAll={resetFilters}
+          onAddFilter={() => setIsModalOpen(true)}
+        />
         
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <div className="flex justify-start">
-            <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Adicionar Novos Filtros
-            </Button>
-          </div>
-          
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="contract-count">Quantidade de Contratos</Label>
-              <Input
-                id="contract-count"
-                type="number"
-                min="1"
-                max="1000"
-                value={contractCount}
-                onChange={(e) => setContractCount(parseInt(e.target.value) || 1)}
-                placeholder="Quantidade"
-                className="w-40"
-              />
-            </div>
-            
-            <Button onClick={handleApplyFilters} variant="default" disabled={isLoading || filtersLoading || pendingSampleSelection !== null}>
-              {isLoading ? "Aplicando..." : pendingSampleSelection ? "Criando Amostra..." : "Aplicar Filtros"}
-            </Button>
-            
-            <Button onClick={resetFilters} variant="outline">
-              Limpar Filtros
-            </Button>
-          </div>
-        </div>
-        
-        {/* Results Table */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
-              Contratos Filtrados ({sampleContracts.length})
-            </h2>
-          </div>
-          
-          <ContractsTable
-            contracts={sampleContracts}
+        {/* All Contracts Table */}
+        <div className="p-6">
+          <PaginatedContractsTable
+            contracts={allContracts}
             onViewContract={handleViewContract}
             onAnalyzeContract={handleAnalyzeContract}
+            isLoading={allContractsLoading}
           />
         </div>
       </main>

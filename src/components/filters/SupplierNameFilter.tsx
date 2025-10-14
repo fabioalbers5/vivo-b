@@ -18,65 +18,63 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
-const flowTypes = [
-  { value: "RE", label: "RE - Receita" },
-  { value: "real-state", label: "Real State - Imobiliário" },
-  { value: "FI", label: "FI - Financeiro" },
-  { value: "proposta", label: "Proposta - Comercial" },
-  { value: "engenharia", label: "Engenharia - Técnico" },
-  { value: "RC", label: "RC - Recursos" },
-];
-
-interface FlowTypeFilterProps {
+interface SupplierNameFilterProps {
   value: string[];
   onChange: (value: string[]) => void;
 }
 
-const FlowTypeFilter = ({ value, onChange }: FlowTypeFilterProps) => {
+// Lista de fornecedores mockados - você pode integrar com seus dados reais
+const suppliers = [
+  { value: "empresa-a", label: "Empresa A Ltda" },
+  { value: "empresa-b", label: "Empresa B S.A." },
+  { value: "fornecedor-c", label: "Fornecedor C Indústria" },
+  { value: "distribuidor-d", label: "Distribuidor D Comércio" },
+  { value: "prestador-e", label: "Prestador E Serviços" },
+  { value: "corporacao-f", label: "Corporação F Internacional" },
+  { value: "grupo-g", label: "Grupo G Empresarial" },
+  { value: "holding-h", label: "Holding H Investimentos" },
+  { value: "industria-i", label: "Indústria I Manufatura" },
+  { value: "servicos-j", label: "Serviços J Consultoria" },
+];
+
+const SupplierNameFilter = ({ value, onChange }: SupplierNameFilterProps) => {
   const [open, setOpen] = useState(false);
 
-  const handleToggle = (selectedValue: string) => {
-    if (value.includes(selectedValue)) {
-      onChange(value.filter(v => v !== selectedValue));
+  const handleToggle = (supplierValue: string) => {
+    if (value.includes(supplierValue)) {
+      onChange(value.filter(v => v !== supplierValue));
     } else {
-      onChange([...value, selectedValue]);
+      onChange([...value, supplierValue]);
     }
   };
 
-  const handleRemove = (selectedValue: string) => {
-    onChange(value.filter(v => v !== selectedValue));
-  };
-
-  const getSelectedLabels = () => {
-    return value.map(v => {
-      const flowType = flowTypes.find(ft => ft.value === v);
-      return flowType ? flowType.label : v;
-    });
+  const handleRemove = (supplierValue: string) => {
+    onChange(value.filter(v => v !== supplierValue));
   };
 
   return (
     <div className="space-y-2">
-      {/* Selected items display */}
+      {/* Selected suppliers display */}
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto">
-          {value.map((selectedValue) => {
-            const flowType = flowTypes.find(ft => ft.value === selectedValue);
-            const displayName = flowType?.value || selectedValue;
+          {value.map((supplierValue) => {
+            const supplier = suppliers.find(s => s.value === supplierValue);
+            const displayName = supplier?.label ? supplier.label.split(' ')[0] : supplierValue;
             return (
-              <Badge key={selectedValue} variant="secondary" className="text-xs py-0 px-1">
+              <Badge key={supplierValue} variant="secondary" className="text-xs py-0 px-1">
                 {displayName}
                 <button
                   className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      handleRemove(selectedValue);
+                      handleRemove(supplierValue);
                     }
                   }}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                   }}
-                  onClick={() => handleRemove(selectedValue)}
+                  onClick={() => handleRemove(supplierValue)}
                 >
                   <X className="h-2 w-2 text-muted-foreground hover:text-foreground" />
                 </button>
@@ -95,30 +93,30 @@ const FlowTypeFilter = ({ value, onChange }: FlowTypeFilterProps) => {
             className="w-full justify-between"
           >
             {value.length === 0
-              ? "Selecione tipos de fluxo..."
-              : `${value.length} tipo(s) selecionado(s)`}
+              ? "Selecione fornecedores..."
+              : `${value.length} fornecedor(es) selecionado(s)`}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0">
           <Command>
-            <CommandInput placeholder="Buscar tipo de fluxo..." />
+            <CommandInput placeholder="Buscar fornecedor..." />
             <CommandList>
-              <CommandEmpty>Nenhum tipo de fluxo encontrado.</CommandEmpty>
+              <CommandEmpty>Nenhum fornecedor encontrado.</CommandEmpty>
               <CommandGroup>
-                {flowTypes.map((flowType) => (
+                {suppliers.map((supplier) => (
                   <CommandItem
-                    key={flowType.value}
-                    value={flowType.value}
-                    onSelect={() => handleToggle(flowType.value)}
+                    key={supplier.value}
+                    value={supplier.value}
+                    onSelect={() => handleToggle(supplier.value)}
                   >
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        value.includes(flowType.value) ? "opacity-100" : "opacity-0"
+                        value.includes(supplier.value) ? "opacity-100" : "opacity-0"
                       )}
                     />
-                    {flowType.label}
+                    {supplier.label}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -130,4 +128,4 @@ const FlowTypeFilter = ({ value, onChange }: FlowTypeFilterProps) => {
   );
 };
 
-export default FlowTypeFilter;
+export default SupplierNameFilter;

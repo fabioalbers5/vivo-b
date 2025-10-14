@@ -23,8 +23,8 @@ export interface FilterParams {
   dueDate: string;
   customStart: string;
   customEnd: string;
-  supplierName: string;
-  contractNumber: string;
+  supplierName: string[];
+  contractNumber: string[];
   contractCount: number;
   customFilterValues: Record<string, unknown>;
   customFilters: LegacyCustomFilter[];
@@ -171,11 +171,20 @@ export const useContractFilters = () => {
       let contractsResult: Contract[] = [];
 
       // Se tem filtro por nome de fornecedor ou número do contrato, usar busca específica
-      if (filterParams.supplierName) {
-        const supplierContracts = await contractService.getContractsBySupplier(filterParams.supplierName);
-        contractsResult = supplierContracts.filter(contract => {
+      if (filterParams.supplierName.length > 0) {
+        // Buscar contratos para cada fornecedor selecionado
+        const supplierContractsPromises = filterParams.supplierName.map(supplier =>
+          contractService.getContractsBySupplier(supplier)
+        );
+        const supplierContractsArrays = await Promise.all(supplierContractsPromises);
+        const allSupplierContracts = supplierContractsArrays.flat();
+        
+        contractsResult = allSupplierContracts.filter(contract => {
           // Aplicar outros filtros manualmente
-          if (filterParams.contractNumber && !contract.numeroContrato.toLowerCase().includes(filterParams.contractNumber.toLowerCase())) {
+          if (filterParams.contractNumber.length > 0 && 
+              !filterParams.contractNumber.some(contractNum => 
+                contract.numeroContrato.toLowerCase().includes(contractNum.toLowerCase())
+              )) {
             return false;
           }
           return true;
@@ -185,9 +194,11 @@ export const useContractFilters = () => {
         contractsResult = await contractService.getContractsByFilters(filters);
         
         // Aplicar filtro de número do contrato se especificado
-        if (filterParams.contractNumber) {
+        if (filterParams.contractNumber.length > 0) {
           contractsResult = contractsResult.filter(contract =>
-            contract.numeroContrato.toLowerCase().includes(filterParams.contractNumber.toLowerCase())
+            filterParams.contractNumber.some(contractNum =>
+              contract.numeroContrato.toLowerCase().includes(contractNum.toLowerCase())
+            )
           );
         }
       }

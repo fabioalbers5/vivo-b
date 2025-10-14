@@ -18,65 +18,62 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
-const flowTypes = [
-  { value: "RE", label: "RE - Receita" },
-  { value: "real-state", label: "Real State - Imobiliário" },
-  { value: "FI", label: "FI - Financeiro" },
-  { value: "proposta", label: "Proposta - Comercial" },
-  { value: "engenharia", label: "Engenharia - Técnico" },
-  { value: "RC", label: "RC - Recursos" },
-];
-
-interface FlowTypeFilterProps {
+interface ContractNumberFilterProps {
   value: string[];
   onChange: (value: string[]) => void;
 }
 
-const FlowTypeFilter = ({ value, onChange }: FlowTypeFilterProps) => {
+// Lista de números de contrato mockados - você pode integrar com seus dados reais
+const contractNumbers = [
+  { value: "CT-2024-001", label: "CT-2024-001 - Contrato de Serviços" },
+  { value: "CT-2024-002", label: "CT-2024-002 - Contrato de Fornecimento" },
+  { value: "CT-2024-003", label: "CT-2024-003 - Contrato de Manutenção" },
+  { value: "CT-2024-004", label: "CT-2024-004 - Contrato de Consultoria" },
+  { value: "CT-2024-005", label: "CT-2024-005 - Contrato de Licenciamento" },
+  { value: "CT-2023-150", label: "CT-2023-150 - Contrato Anual" },
+  { value: "CT-2023-151", label: "CT-2023-151 - Contrato Mensal" },
+  { value: "CT-2023-152", label: "CT-2023-152 - Contrato Emergencial" },
+  { value: "CT-2025-010", label: "CT-2025-010 - Contrato Futuro" },
+  { value: "CT-2025-011", label: "CT-2025-011 - Contrato Renovação" },
+];
+
+const ContractNumberFilter = ({ value, onChange }: ContractNumberFilterProps) => {
   const [open, setOpen] = useState(false);
 
-  const handleToggle = (selectedValue: string) => {
-    if (value.includes(selectedValue)) {
-      onChange(value.filter(v => v !== selectedValue));
+  const handleToggle = (contractValue: string) => {
+    if (value.includes(contractValue)) {
+      onChange(value.filter(v => v !== contractValue));
     } else {
-      onChange([...value, selectedValue]);
+      onChange([...value, contractValue]);
     }
   };
 
-  const handleRemove = (selectedValue: string) => {
-    onChange(value.filter(v => v !== selectedValue));
-  };
-
-  const getSelectedLabels = () => {
-    return value.map(v => {
-      const flowType = flowTypes.find(ft => ft.value === v);
-      return flowType ? flowType.label : v;
-    });
+  const handleRemove = (contractValue: string) => {
+    onChange(value.filter(v => v !== contractValue));
   };
 
   return (
     <div className="space-y-2">
-      {/* Selected items display */}
+      {/* Selected contracts display */}
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto">
-          {value.map((selectedValue) => {
-            const flowType = flowTypes.find(ft => ft.value === selectedValue);
-            const displayName = flowType?.value || selectedValue;
+          {value.map((contractValue) => {
+            const contract = contractNumbers.find(c => c.value === contractValue);
             return (
-              <Badge key={selectedValue} variant="secondary" className="text-xs py-0 px-1">
-                {displayName}
+              <Badge key={contractValue} variant="secondary" className="text-xs py-0 px-1">
+                {contract?.value || contractValue}
                 <button
                   className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      handleRemove(selectedValue);
+                      handleRemove(contractValue);
                     }
                   }}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                   }}
-                  onClick={() => handleRemove(selectedValue)}
+                  onClick={() => handleRemove(contractValue)}
                 >
                   <X className="h-2 w-2 text-muted-foreground hover:text-foreground" />
                 </button>
@@ -95,30 +92,30 @@ const FlowTypeFilter = ({ value, onChange }: FlowTypeFilterProps) => {
             className="w-full justify-between"
           >
             {value.length === 0
-              ? "Selecione tipos de fluxo..."
-              : `${value.length} tipo(s) selecionado(s)`}
+              ? "Selecione contratos..."
+              : `${value.length} contrato(s) selecionado(s)`}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0">
           <Command>
-            <CommandInput placeholder="Buscar tipo de fluxo..." />
+            <CommandInput placeholder="Buscar contrato..." />
             <CommandList>
-              <CommandEmpty>Nenhum tipo de fluxo encontrado.</CommandEmpty>
+              <CommandEmpty>Nenhum contrato encontrado.</CommandEmpty>
               <CommandGroup>
-                {flowTypes.map((flowType) => (
+                {contractNumbers.map((contract) => (
                   <CommandItem
-                    key={flowType.value}
-                    value={flowType.value}
-                    onSelect={() => handleToggle(flowType.value)}
+                    key={contract.value}
+                    value={contract.value}
+                    onSelect={() => handleToggle(contract.value)}
                   >
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        value.includes(flowType.value) ? "opacity-100" : "opacity-0"
+                        value.includes(contract.value) ? "opacity-100" : "opacity-0"
                       )}
                     />
-                    {flowType.label}
+                    {contract.label}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -130,4 +127,4 @@ const FlowTypeFilter = ({ value, onChange }: FlowTypeFilterProps) => {
   );
 };
 
-export default FlowTypeFilter;
+export default ContractNumberFilter;

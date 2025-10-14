@@ -1,6 +1,5 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 
 interface ValueRangeFilterProps {
   title: string;
@@ -18,45 +17,50 @@ const ValueRangeFilter = ({ title, min, max, value, onChange }: ValueRangeFilter
     }).format(amount);
   };
 
+  const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newMin = parseFloat(e.target.value) || 0;
+    onChange([newMin, value[1]]);
+  };
+
+  const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newMax = parseFloat(e.target.value) || max;
+    onChange([value[0], newMax]);
+  };
+
   return (
-    <div className="space-y-4">
-      <Label>{title}</Label>
-      <div className="px-2">
-        <Slider
-          value={value}
-          onValueChange={onChange}
-          max={max}
-          min={min}
-          step={1000}
-          className="w-full"
-        />
-      </div>
-      <div className="flex items-center space-x-2 text-sm">
-        <span className="text-muted-foreground">De:</span>
-        <span className="font-medium">{formatCurrency(value[0])}</span>
-        <span className="text-muted-foreground">Até:</span>
-        <span className="font-medium">{formatCurrency(value[1])}</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor={`${title}-min`} className="text-xs">Valor mínimo</Label>
+          <Label htmlFor={`${title}-min`} className="text-sm font-medium text-gray-700">
+            Valor mínimo
+          </Label>
           <Input
             id={`${title}-min`}
             type="number"
             value={value[0]}
-            onChange={(e) => onChange([parseInt(e.target.value) || 0, value[1]])}
-            className="h-8"
+            onChange={handleMinChange}
+            placeholder="0"
+            className="h-9 text-sm mt-1"
           />
+          <p className="text-xs text-muted-foreground mt-1">
+            {formatCurrency(value[0])}
+          </p>
         </div>
         <div>
-          <Label htmlFor={`${title}-max`} className="text-xs">Valor máximo</Label>
+          <Label htmlFor={`${title}-max`} className="text-sm font-medium text-gray-700">
+            Valor máximo
+          </Label>
           <Input
             id={`${title}-max`}
             type="number"
             value={value[1]}
-            onChange={(e) => onChange([value[0], parseInt(e.target.value) || max])}
-            className="h-8"
+            onChange={handleMaxChange}
+            placeholder={max.toString()}
+            className="h-9 text-sm mt-1"
           />
+          <p className="text-xs text-muted-foreground mt-1">
+            {formatCurrency(value[1])}
+          </p>
         </div>
       </div>
     </div>

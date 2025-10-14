@@ -5,6 +5,8 @@ import Header from '../components/Header';
 import { SampleProvider } from '@/contexts/SampleContext';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   AlertTriangle, 
   Shield, 
@@ -18,6 +20,34 @@ const HomeWithLayout = () => {
   const [activePage, setActivePage] = useState('home');
   const navigate = useNavigate();
   const { data: metrics, isLoading } = useQualityMetrics();
+  
+  // Estado para o gerador de amostra
+  const [selectedFlowType, setSelectedFlowType] = useState<string>('');
+
+  const handleGenerateSample = () => {
+    if (!selectedFlowType) {
+      alert('Por favor, selecione um tipo de fluxo antes de gerar a amostra.');
+      return;
+    }
+    
+    // Mapeamento dos tipos de fluxo (mesmo do FlowTypeFilter)
+    const flowTypeLabels: Record<string, string> = {
+      "RE": "RE - Receita",
+      "real-state": "Real State - Imobiliário", 
+      "FI": "FI - Financeiro",
+      "proposta": "Proposta - Comercial",
+      "engenharia": "Engenharia - Técnico",
+      "RC": "RC - Recursos"
+    };
+    
+    const flowLabel = flowTypeLabels[selectedFlowType] || selectedFlowType;
+    
+    console.log('Gerando amostra para fluxo:', selectedFlowType, '(', flowLabel, ')');
+    alert(`Amostra gerada com sucesso para o fluxo: ${flowLabel}!\n\nRedirecionando para a página de análise...`);
+    
+    // Redirecionar para a página de análise ou aplicar filtro
+    navigate('/');
+  };
 
   const handlePageChange = (page: string) => {
     setActivePage(page);
@@ -77,9 +107,29 @@ const HomeWithLayout = () => {
                     <p className="text-slate-600 text-lg mb-8">
                       Sistema de Gerenciamento de Contratos Vivo
                     </p>
-                    <p className="text-slate-500 text-sm">
+                    <p className="text-slate-500 text-sm mb-8">
                       Use o menu lateral para navegar pelas funcionalidades do sistema
                     </p>
+                    
+                    <div className="flex gap-4 items-center justify-center">
+                      <Select value={selectedFlowType} onValueChange={setSelectedFlowType}>
+                        <SelectTrigger className="w-64">
+                          <SelectValue placeholder="Selecionar tipo de fluxo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="RE">RE - Receita</SelectItem>
+                          <SelectItem value="real-state">Real State - Imobiliário</SelectItem>
+                          <SelectItem value="FI">FI - Financeiro</SelectItem>
+                          <SelectItem value="proposta">Proposta - Comercial</SelectItem>
+                          <SelectItem value="engenharia">Engenharia - Técnico</SelectItem>
+                          <SelectItem value="RC">RC - Recursos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <Button onClick={handleGenerateSample} disabled={!selectedFlowType}>
+                        Gerar Amostra
+                      </Button>
+                    </div>
                   </div>
                 </div>
 

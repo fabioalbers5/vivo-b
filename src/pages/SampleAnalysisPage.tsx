@@ -363,7 +363,7 @@ const SampleAnalysisPage: React.FC = () => {
 
   return (
     <div className="h-full">
-      <div className="p-6 border-b border-gray-100">
+      <div className="pl-8 pb-3 pt-3 border-b border-gray-100">
         <div>
           <div className="flex items-center gap-6">
             {/* Dropdown de seleção de amostras */}
@@ -376,7 +376,7 @@ const SampleAnalysisPage: React.FC = () => {
                 onValueChange={handleSampleChange}
                 disabled={historyLoading || loadingSample}
               >
-                <SelectTrigger className="w-64">
+                <SelectTrigger className="w-64 h-5">
                   <SelectValue placeholder="Selecionar amostra" />
                 </SelectTrigger>
                 <SelectContent>
@@ -402,7 +402,7 @@ const SampleAnalysisPage: React.FC = () => {
                 onValueChange={setSelectedAnalyst}
                 disabled={analystsLoading || analysts.length === 0}
               >
-                <SelectTrigger className="w-64">
+                <SelectTrigger className="w-64 h-5">
                   <SelectValue placeholder={
                     analystsLoading 
                       ? "Carregando analistas..." 

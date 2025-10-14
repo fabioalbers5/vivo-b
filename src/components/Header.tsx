@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { FileDown, Settings } from "lucide-react";
+import { FileDown, Settings, User } from "lucide-react";
 
 const Header = () => {
   const handleExportReport = () => {
@@ -13,38 +13,28 @@ const Header = () => {
   };
 
   return (
-    <header className="w-full bg-background border-b border-border px-6 py-4">
+    <header className="w-full bg-background border-b border-border px-2 py-1">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-1 ml-3">
           <img 
             src="/lovable-uploads/faf482cf-0e05-4306-ba2a-3839f9734cb2.png" 
             alt="Vivo Logo" 
-            className="h-8"
+            className="h-4"
           />
           <div>
-            <h1 className="text-xl font-bold text-vivo-purple">
+            <h1 className="text-base font-bold text-vivo-purple leading-tight ml-3">
               Verificação Inteligente de Pagamentos
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Sistema de análise e auditoria de contratos
-            </p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-vivo-purple border-vivo-purple hover:bg-vivo-purple hover:text-white"
-            onClick={handleExportReport}
-          >
-            <FileDown className="h-4 w-4 mr-2" />
-            Exportar Relatório
-          </Button>
-          <Button size="sm" onClick={handleOpenSettings}>
-            <Settings className="h-4 w-4 mr-2" />
-            Configurações
-          </Button>
+        <div className="flex items-center space-x-2 mr-3">
+          <div className="flex items-center space-x-2 ml-2">
+            <span className="text-xs text-muted-foreground">Olá, Fábio</span>
+            <div className="w-6 h-6 bg-vivo-purple rounded-full flex items-center justify-center">
+              <User className="h-3 w-3 text-white" />
+            </div>
+          </div>
         </div>
       </div>
     </header>

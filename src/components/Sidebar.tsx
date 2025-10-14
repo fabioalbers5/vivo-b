@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Database, BarChart3, Settings, HelpCircle } from 'lucide-react';
+import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft } from 'lucide-react';
 
 interface SidebarProps {
   activePage: string;
@@ -10,6 +10,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const menuItems = [
     {
       id: 'sample-selection',
@@ -32,109 +34,137 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
   ];
 
   return (
-    <Card className="w-64 h-full border-r bg-muted/10">
-      <div className="p-4">
-        {/* Logo/Header */}
-        {/* <div className="mb-6">
-          <h2 className="text-lg font-semibold text-vivo-purple">
-            Vivo Contract Insight
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Sistema de análise de contratos
-          </p>
+    <div className="relative h-full">
+      {/* Sidebar colapsada (barra estreita) */}
+      <Card className={`${isExpanded ? 'w-64' : 'w-12'} h-full border-r bg-muted/10 transition-all duration-300 ease-in-out rounded-tl-none rounded-bl-lg rounded-tr-lg rounded-br-lg`}>
+        {/* Botão toggle */}
+        <div className="p-2 border-b">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full h-8 p-0 hover:bg-muted/50"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? (
+              <ChevronLeft className="h-4 w-4" />
+            ) : (
+              <Menu className="h-4 w-4" />
+            )}
+          </Button>
         </div>
 
-        <Separator className="mb-4" /> */}
-
-        {/* Menu Principal */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">
-            ANÁLISE
-          </h3>
-          
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activePage === item.id;
+        <div className={`${isExpanded ? 'p-4' : 'p-2'} transition-all duration-300`}>
+          {/* Menu Principal */}
+          <div className="space-y-2">
+            {isExpanded && (
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                ANÁLISE
+              </h3>
+            )}
             
-            return (
-              <Button
-                key={item.id}
-                variant={isActive ? "default" : "ghost"}
-                className={`w-full justify-start h-auto p-3 ${
-                  isActive 
-                    ? "bg-vivo-purple hover:bg-vivo-purple/90 text-white" 
-                    : "hover:bg-muted/50"
-                }`}
-                onClick={() => onPageChange(item.id)}
-              >
-                <div className="flex items-start gap-3 w-full">
-                  <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                    isActive ? "text-white" : "text-muted-foreground"
-                  }`} />
-                  <div className="text-left flex-1">
-                    <div className={`text-sm font-medium ${
-                      isActive ? "text-white" : "text-foreground"
-                    }`}>
-                      {item.label}
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activePage === item.id;
+              
+              return (
+                <Button
+                  key={item.id}
+                  variant={isActive ? "default" : "ghost"}
+                  className={`w-full ${isExpanded ? 'justify-start h-auto p-3' : 'justify-center h-10 p-2'} ${
+                    isActive 
+                      ? "bg-vivo-purple hover:bg-vivo-purple/90 text-white" 
+                      : "hover:bg-muted/50"
+                  } transition-all duration-300`}
+                  onClick={() => onPageChange(item.id)}
+                  title={!isExpanded ? item.label : undefined}
+                >
+                  {isExpanded ? (
+                    <div className="flex items-start gap-3 w-full">
+                      <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                        isActive ? "text-white" : "text-muted-foreground"
+                      }`} />
+                      <div className="text-left flex-1">
+                        <div className={`text-sm font-medium ${
+                          isActive ? "text-white" : "text-foreground"
+                        }`}>
+                          {item.label}
+                        </div>
+                        <div className={`text-xs ${
+                          isActive ? "text-white/80" : "text-muted-foreground"
+                        }`}>
+                          {item.description}
+                        </div>
+                      </div>
                     </div>
-                    <div className={`text-xs ${
-                      isActive ? "text-white/80" : "text-muted-foreground"
-                    }`}>
-                      {item.description}
+                  ) : (
+                    <Icon className={`h-5 w-5 ${
+                      isActive ? "text-white" : "text-muted-foreground"
+                    }`} />
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+
+          {isExpanded && <Separator className="my-6" />}
+
+          {/* Menu Secundário */}
+          <div className="space-y-2">
+            {isExpanded && (
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                CONFIGURAÇÕES
+              </h3>
+            )}
+            
+            <Button
+              variant="ghost"
+              className={`w-full ${isExpanded ? 'justify-start h-auto p-3' : 'justify-center h-10 p-2'} hover:bg-muted/50 transition-all duration-300`}
+              disabled
+              title={!isExpanded ? "Configurações" : undefined}
+            >
+              {isExpanded ? (
+                <div className="flex items-start gap-3 w-full">
+                  <Settings className="h-5 w-5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                  <div className="text-left flex-1">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Configurações
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Em breve
                     </div>
                   </div>
                 </div>
-              </Button>
-            );
-          })}
+              ) : (
+                <Settings className="h-5 w-5 text-muted-foreground" />
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              className={`w-full ${isExpanded ? 'justify-start h-auto p-3' : 'justify-center h-10 p-2'} hover:bg-muted/50 transition-all duration-300`}
+              disabled
+              title={!isExpanded ? "Ajuda" : undefined}
+            >
+              {isExpanded ? (
+                <div className="flex items-start gap-3 w-full">
+                  <HelpCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                  <div className="text-left flex-1">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Ajuda
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Em breve
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <HelpCircle className="h-5 w-5 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </div>
-
-        <Separator className="my-6" />
-
-        {/* Menu Secundário (futuro) */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">
-            CONFIGURAÇÕES
-          </h3>
-          
-          <Button
-            variant="ghost"
-            className="w-full justify-start h-auto p-3 hover:bg-muted/50"
-            disabled
-          >
-            <div className="flex items-start gap-3 w-full">
-              <Settings className="h-5 w-5 mt-0.5 flex-shrink-0 text-muted-foreground" />
-              <div className="text-left flex-1">
-                <div className="text-sm font-medium text-muted-foreground">
-                  Configurações
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Em breve
-                </div>
-              </div>
-            </div>
-          </Button>
-
-          <Button
-            variant="ghost"
-            className="w-full justify-start h-auto p-3 hover:bg-muted/50"
-            disabled
-          >
-            <div className="flex items-start gap-3 w-full">
-              <HelpCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-muted-foreground" />
-              <div className="text-left flex-1">
-                <div className="text-sm font-medium text-muted-foreground">
-                  Ajuda
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Em breve
-                </div>
-              </div>
-            </div>
-          </Button>
-        </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 };
 

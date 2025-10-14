@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import SampleSelectionPage from '@/pages/SampleSelectionPage';
 import SampleAnalysisPage from '@/pages/SampleAnalysisPage';
+import CriteriaSelection from '@/pages/CriteriaSelection';
 import { SampleProvider } from '@/contexts/SampleContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1200,6 +1201,8 @@ const MainLayout: React.FC = () => {
         return <SampleAnalysisPage />;
       case 'quality-dashboard':
         return <QualityDashboardPageInline />;
+      case 'criteria-selection':
+        return <CriteriaSelection />;
       default:
         return (
           <div className="flex items-center justify-center h-full">

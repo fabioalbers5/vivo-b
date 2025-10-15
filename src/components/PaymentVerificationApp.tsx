@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Shuffle, Check } from "lucide-react";
+import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 import FilterBar, { FilterItem } from "./FilterBar";
 import FilterWrapper from "./FilterWrapper";
@@ -249,6 +250,44 @@ const PaymentVerificationApp = () => {
     // Aqui você pode adicionar a lógica para finalizar a amostra
   };
 
+  // Calcular estatísticas da amostra selecionada
+  const sampleStats = useMemo(() => {
+    const availableContracts = showFilteredResults ? contracts : allContracts;
+    
+    // Filtrar apenas os contratos selecionados
+    const selectedContractsList = availableContracts.filter(contract => {
+      const contractId = contract.id || `${contract.number}-${contract.supplier}`;
+      return selectedPayments.has(contractId);
+    });
+
+    // Calcular soma dos valores
+    const totalValue = selectedContractsList.reduce((sum, contract) => {
+      return sum + (contract.paymentValue || contract.value || 0);
+    }, 0);
+
+    // Calcular valor total disponível
+    const totalAvailableValue = availableContracts.reduce((sum, contract) => {
+      return sum + (contract.paymentValue || contract.value || 0);
+    }, 0);
+
+    // Calcular percentual
+    const percentage = totalAvailableValue > 0 ? (totalValue / totalAvailableValue) * 100 : 0;
+
+    return {
+      count: selectedPayments.size,
+      totalValue,
+      percentage,
+      totalAvailable: availableContracts.length
+    };
+  }, [selectedPayments, contracts, allContracts, showFilteredResults]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
   // Preparar filtros para a FilterBar na ordem solicitada:
   // Tipo de Fluxo, Data do Vencimento, Valor do Pagamento, Valor do Contrato, 
   // Nível de Risco, Tipo de Alerta, Status do Pagamento, Fornecedor, Nº do Pagamento
@@ -469,6 +508,69 @@ const PaymentVerificationApp = () => {
                     Finalizar
                   </Button>
                 </div>
+              </div>
+
+              {/* Cards de Estatísticas da Amostra */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                {/* Número de Pagamentos Selecionados */}
+                <Card className="hover:shadow-sm transition-shadow bg-white border-vivo-purple/20">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg p-1.5 bg-vivo-purple/10">
+                          <FileText className="h-3.5 w-3.5 text-vivo-purple" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">Pagamentos Selecionados</p>
+                          <p className="text-xl font-bold text-vivo-purple">
+                            {sampleStats.count}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        de {sampleStats.totalAvailable}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Soma dos Valores */}
+                <Card className="hover:shadow-sm transition-shadow bg-white border-blue-200/50">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg p-1.5 bg-blue-50">
+                          <DollarSign className="h-3.5 w-3.5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">Valor Total</p>
+                          <p className="text-lg font-bold text-blue-600">
+                            {formatCurrency(sampleStats.totalValue)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Percentual do Valor Total */}
+                <Card className="hover:shadow-sm transition-shadow bg-white border-green-200/50">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg p-1.5 bg-green-50">
+                          <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">% do Valor Total</p>
+                          <p className="text-xl font-bold text-green-600">
+                            {sampleStats.percentage.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
               
               <PaginatedContractsTable

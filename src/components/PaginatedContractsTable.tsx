@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Brain } from "lucide-react";
+import { Eye, Brain, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { LegacyContract } from "@/hooks/useContractFilters";
 
 interface PaginatedContractsTableProps {
@@ -32,6 +32,8 @@ const PaginatedContractsTable = ({
 }: PaginatedContractsTableProps) => {
   const [visibleCount, setVisibleCount] = useState(20);
   const [selectedContracts, setSelectedContracts] = useState<Set<string>>(new Set());
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Use filtered contracts when filters are active, otherwise show all available contracts
   const displayContracts = showFilteredResults ? (filteredContracts || []) : (contracts || []);
@@ -41,6 +43,47 @@ const PaginatedContractsTable = ({
     setVisibleCount(20);
     setSelectedContracts(new Set());
   }, [displayContracts]);
+
+  // Função para lidar com clique no cabeçalho da coluna
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      // Se já está ordenando por essa coluna, inverte a direção
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Nova coluna, começa com ascendente
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Função para obter o valor da coluna para ordenação
+  const getSortValue = (contract: LegacyContract, column: string): any => {
+    switch (column) {
+      case 'number':
+        return contract.number;
+      case 'supplier':
+        return contract.supplier?.toLowerCase() || '';
+      case 'flowType':
+        return (contract.flowType || contract.type || '')?.toLowerCase();
+      case 'dueDate':
+        return new Date(contract.dueDate).getTime();
+      case 'paymentValue':
+        return contract.paymentValue || 0;
+      case 'value':
+        return contract.value || 0;
+      case 'risk':
+        const riskOrder: Record<string, number> = { 'Alto': 3, 'Médio': 2, 'Baixo': 1 };
+        return riskOrder[contract.risk || ''] || 0;
+      case 'status':
+        return contract.status?.toLowerCase() || '';
+      case 'alertType':
+        return contract.alertType?.toLowerCase() || '';
+      case 'fine':
+        return contract.fine || 0;
+      default:
+        return '';
+    }
+  };
 
   // Ordenar contratos: selecionados primeiro, depois por valor de pagamento (maior primeiro)
   const sortedContracts = useMemo(() => {
@@ -56,12 +99,22 @@ const PaginatedContractsTable = ({
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
       
-      // Se ambos selecionados ou ambos não selecionados, ordenar por valor de pagamento (maior primeiro)
+      // Se houver uma coluna de ordenação ativa
+      if (sortColumn) {
+        const aValue = getSortValue(a, sortColumn);
+        const bValue = getSortValue(b, sortColumn);
+        
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      }
+      
+      // Ordenação padrão: por valor de pagamento (maior primeiro)
       const aValue = a.paymentValue || a.value || 0;
       const bValue = b.paymentValue || b.value || 0;
       return bValue - aValue;
     });
-  }, [displayContracts, selectedContracts]);
+  }, [displayContracts, selectedContracts, sortColumn, sortDirection]);
 
   // Load more items for infinite scroll
   const currentContracts = sortedContracts.slice(0, visibleCount);
@@ -83,6 +136,32 @@ const PaginatedContractsTable = ({
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('pt-BR');
+  };
+
+  // Componente para cabeçalho ordenável
+  const SortableHeader = ({ column, children, className = "" }: { column: string; children: React.ReactNode; className?: string }) => {
+    const isActive = sortColumn === column;
+    
+    return (
+      <TableHead 
+        className={`bg-gray-50 py-0 text-xs text-center z-30 cursor-pointer hover:bg-gray-100 transition-colors ${className}`}
+        style={{ height: '24px', lineHeight: '1.2' }}
+        onClick={() => handleSort(column)}
+      >
+        <div className="flex items-center justify-center gap-1">
+          <span>{children}</span>
+          {isActive ? (
+            sortDirection === 'asc' ? (
+              <ArrowUp className="h-3 w-3 text-blue-600" />
+            ) : (
+              <ArrowDown className="h-3 w-3 text-blue-600" />
+            )
+          ) : (
+            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+          )}
+        </div>
+      </TableHead>
+    );
   };
 
   const getRiskBadge = (risk: string) => {
@@ -211,16 +290,16 @@ const PaginatedContractsTable = ({
             <TableHeader className="sticky top-0 z-30 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
                 <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center sticky left-0 z-40 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
-                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Número do Pagamento</TableHead>
-                <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
-                <TableHead className="min-w-[150px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Tipo de Fluxo</TableHead>
-                <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Data de Vencimento</TableHead>
-                <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Pagamento</TableHead>
-                <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Contrato</TableHead>
-                <TableHead className="min-w-[80px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Risco</TableHead>
-                <TableHead className="min-w-[100px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Status do Pagamento</TableHead>
-                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Tipo de Alerta</TableHead>
-                <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor da Multa</TableHead>
+                <SortableHeader column="number" className="min-w-[140px]">Número do Pagamento</SortableHeader>
+                <SortableHeader column="supplier" className="min-w-[180px]">Fornecedor</SortableHeader>
+                <SortableHeader column="flowType" className="min-w-[150px]">Tipo de Fluxo</SortableHeader>
+                <SortableHeader column="dueDate" className="min-w-[130px]">Data de Vencimento</SortableHeader>
+                <SortableHeader column="paymentValue" className="min-w-[130px]">Valor do Pagamento</SortableHeader>
+                <SortableHeader column="value" className="min-w-[120px]">Valor do Contrato</SortableHeader>
+                <SortableHeader column="risk" className="min-w-[80px]">Risco</SortableHeader>
+                <SortableHeader column="status" className="min-w-[100px]">Status do Pagamento</SortableHeader>
+                <SortableHeader column="alertType" className="min-w-[140px]">Tipo de Alerta</SortableHeader>
+                <SortableHeader column="fine" className="min-w-[120px]">Valor da Multa</SortableHeader>
               </TableRow>
             </TableHeader>
 

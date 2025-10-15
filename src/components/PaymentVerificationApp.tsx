@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import FilterBar, { FilterItem } from "./FilterBar";
 import FilterWrapper from "./FilterWrapper";
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import PaginatedContractsTable from "./PaginatedContractsTable";
 import ContractAnalysisModal from "./ContractAnalysisModal";
+import SampleManagementTab from "./SampleManagementTab";
 
 import { useContractFilters, LegacyContract } from "@/hooks/useContractFilters";
 import { useAllContracts } from "@/hooks/useAllContracts";
@@ -332,24 +334,50 @@ const PaymentVerificationApp = () => {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto">
-        {/* Nova Barra de Filtros */}
-        <FilterBar 
-          filters={filterItems}
-          onClearAll={resetFilters}
-        />
-        
-        {/* Contracts Table */}
-        <div className="p-6">
-          {/* Debug temporário */}
-          <PaginatedContractsTable
-            contracts={allContracts}
-            filteredContracts={contracts}
-            showFilteredResults={showFilteredResults}
-            onViewContract={handleViewContract}
-            onAnalyzeContract={handleAnalyzeContract}
-            isLoading={showFilteredResults ? isLoading : allContractsLoading}
-          />
-        </div>
+        <Tabs defaultValue="selection" className="w-full">
+          <div className="bg-white border-b">
+            <TabsList className="w-full justify-start rounded-none border-b-0 bg-transparent p-0 h-auto">
+              <TabsTrigger 
+                value="selection" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+              >
+                Seleção da Amostra
+              </TabsTrigger>
+              <TabsTrigger 
+                value="management" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+              >
+                Gestão de Amostra
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="selection" className="mt-0">
+            {/* Nova Barra de Filtros */}
+            <FilterBar 
+              filters={filterItems}
+              onClearAll={resetFilters}
+            />
+            
+            {/* Contracts Table */}
+            <div className="p-6">
+              <PaginatedContractsTable
+                contracts={allContracts}
+                filteredContracts={contracts}
+                showFilteredResults={showFilteredResults}
+                onViewContract={handleViewContract}
+                onAnalyzeContract={handleAnalyzeContract}
+                isLoading={showFilteredResults ? isLoading : allContractsLoading}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="management" className="mt-0">
+            <div className="p-6">
+              <SampleManagementTab />
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
       
       {/* Contract Analysis Modal */}

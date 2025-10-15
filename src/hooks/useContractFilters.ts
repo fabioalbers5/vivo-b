@@ -47,6 +47,7 @@ export interface LegacyContract {
   region?: string; // Campo regiao da tabela contratos_vivo
   state?: string; // Campo estado da tabela contratos_vivo
   paymentStatus?: string; // Campo status_pagamento da tabela contratos_vivo
+  flowType?: string; // Campo tipo_fluxo da tabela contratos_vivo
 }
 
 export const useContractFilters = () => {
@@ -235,6 +236,7 @@ export const useContractFilters = () => {
         region: contract.regiao || undefined,
         state: contract.estado || undefined,
         paymentStatus: contract.statusPagamento || undefined,
+        flowType: contract.tipoFluxo || undefined,
       }));
 
       setContracts(transformedContracts);

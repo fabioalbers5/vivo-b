@@ -207,12 +207,13 @@ const PaginatedContractsTable = ({
             }
           }}
         >
-          <Table className="w-full relative min-w-[1440px]" style={{ tableLayout: 'fixed', height: 'auto' }}>
+          <Table className="w-full relative min-w-[1590px]" style={{ tableLayout: 'fixed', height: 'auto' }}>
             <TableHeader className="sticky top-0 z-30 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
                 <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center sticky left-0 z-40 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
                 <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Número do Pagamento</TableHead>
                 <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
+                <TableHead className="min-w-[150px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Tipo de Fluxo</TableHead>
                 <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Data de Vencimento</TableHead>
                 <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Pagamento</TableHead>
                 <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Contrato</TableHead>
@@ -305,6 +306,9 @@ const PaginatedContractsTable = ({
                     <TableCell className="font-medium max-w-[180px] truncate py-0 text-xs" title={contract.supplier} style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                       {contract.supplier}
                     </TableCell>
+                    <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                      {contract.flowType || contract.type || '-'}
+                    </TableCell>
                     <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{formatDate(contract.dueDate)}</TableCell>
                     <TableCell className="font-medium text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                       {contract.paymentValue ? (
@@ -347,7 +351,7 @@ const PaginatedContractsTable = ({
               {/* Loading indicator para scroll infinito */}
               {hasMore && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-2 text-xs text-muted-foreground">
                     Role para carregar mais...
                   </TableCell>
                 </TableRow>
@@ -355,7 +359,7 @@ const PaginatedContractsTable = ({
               
               {!hasMore && currentContracts.length > 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-2 text-xs text-muted-foreground">
                     Mostrando todos os {displayContracts.length} contratos
                   </TableCell>
                 </TableRow>

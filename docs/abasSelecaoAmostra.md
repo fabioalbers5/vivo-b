@@ -1,0 +1,1 @@
+Na tela de seleção da amostra, na aba de seleção. Logo abaixo das abas de seleção, deve conter uma opção

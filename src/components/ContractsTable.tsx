@@ -85,95 +85,116 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
   }
 
   return (
-    <div className="border rounded-lg overflow-x-scroll overflow-y-auto max-h-[500px] relative bg-white">
-      <Table className="min-w-[1400px]">
-          <TableHeader className="sticky top-0 z-20 bg-background">
-            <TableRow>
-              <TableHead className="min-w-[140px] sticky left-0 z-30 bg-background border-r shadow-sm">Número do Contrato</TableHead>
-              <TableHead className="min-w-[180px]">Fornecedor</TableHead>
-              <TableHead className="min-w-[120px]">Tipo</TableHead>
-              <TableHead className="min-w-[120px]">Valor</TableHead>
-              <TableHead className="min-w-[100px]">Status</TableHead>
-              <TableHead className="min-w-[140px]">Tipo de Alerta</TableHead>
-              <TableHead className="min-w-[140px]">Área Solicitante</TableHead>
-              <TableHead className="min-w-[80px]">Risco</TableHead>
-              <TableHead className="min-w-[120px]">Valor da Multa</TableHead>
-              <TableHead className="min-w-[130px]">Valor do Pagamento</TableHead>
-              <TableHead className="min-w-[130px]">Data de Vencimento</TableHead>
-              <TableHead className="min-w-[100px] text-center">Ações</TableHead>
+    <div 
+      className="border rounded-lg bg-white flex flex-col" 
+      style={{ 
+        height: '225px', 
+        minHeight: '225px', 
+        maxHeight: '225px', 
+        overflow: 'hidden'
+      }}
+    >
+      <div 
+        className="flex-1 overflow-auto" 
+        style={{ 
+          height: '225px',
+          maxHeight: '225px',
+          flex: '1 1 auto',
+          overflowY: 'auto',
+          overflowX: 'auto'
+        }}
+      >
+        <Table className="min-w-[1400px] !h-auto" style={{ tableLayout: 'fixed', height: 'auto' }}>
+          {/* Fixed Table Header */}
+          <TableHeader className="sticky top-0 z-10 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
+            <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
+              <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Número do Contrato</TableHead>
+              <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
+              <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Tipo</TableHead>
+              <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor</TableHead>
+              <TableHead className="min-w-[100px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Status</TableHead>
+              <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Tipo de Alerta</TableHead>
+              <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Área Solicitante</TableHead>
+              <TableHead className="min-w-[80px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Risco</TableHead>
+              <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor da Multa</TableHead>
+              <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Pagamento</TableHead>
+              <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Data de Vencimento</TableHead>
+              <TableHead className="min-w-[100px] text-center bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
             </TableRow>
           </TableHeader>
+
+          {/* Scrollable Table Body */}
           <TableBody>
             {contracts.map((contract, index) => (
-              <TableRow key={contract.id || `contract-${index}`} className="hover:bg-muted/50">
-                <TableCell className="font-mono text-sm whitespace-nowrap sticky left-0 z-10 bg-background border-r shadow-sm">{contract.number}</TableCell>
-                <TableCell className="font-medium max-w-[180px] truncate" title={contract.supplier}>
+              <TableRow key={contract.id || `contract-${index}`} className="hover:bg-muted/50 !h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
+                <TableCell className="font-mono text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{contract.number}</TableCell>
+                <TableCell className="font-medium max-w-[180px] truncate py-0 text-xs" title={contract.supplier} style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                   {contract.supplier}
                 </TableCell>
-                <TableCell className="text-sm whitespace-nowrap">{contract.type}</TableCell>
-                <TableCell className="font-medium text-sm whitespace-nowrap">
+                <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{contract.type}</TableCell>
+                <TableCell className="font-medium text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                   {formatCurrency(contract.value)}
                 </TableCell>
-                <TableCell className="whitespace-nowrap">{getStatusBadge(contract.status)}</TableCell>
-                <TableCell className="whitespace-nowrap">
+                <TableCell className="whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{getStatusBadge(contract.status)}</TableCell>
+                <TableCell className="whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                   {contract.alertType ? (
                     <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200 text-xs whitespace-nowrap">
                       {contract.alertType}
                     </Badge>
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground text-xs">-</span>
                   )}
                 </TableCell>
-                <TableCell className="whitespace-nowrap">
+                <TableCell className="whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                   {contract.requestingArea ? (
                     <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 text-xs whitespace-nowrap">
                       {contract.requestingArea}
                     </Badge>
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground text-xs">-</span>
                   )}
                 </TableCell>
-                <TableCell className="whitespace-nowrap">
+                <TableCell className="whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                   {contract.risk ? (
                     getRiskBadge(contract.risk)
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground text-xs">-</span>
                   )}
                 </TableCell>
-                <TableCell className="font-medium text-sm whitespace-nowrap">
+                <TableCell className="font-medium text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                   {contract.fine ? (
                     formatCurrency(contract.fine)
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
-                <TableCell className="font-medium text-sm whitespace-nowrap">
+                <TableCell className="font-medium text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                   {contract.paymentValue ? (
                     formatCurrency(contract.paymentValue)
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground text-xs">-</span>
                   )}
                 </TableCell>
-                <TableCell className="text-sm whitespace-nowrap">{formatDate(contract.dueDate)}</TableCell>
-                <TableCell className="text-center whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-1">
+                <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{formatDate(contract.dueDate)}</TableCell>
+                <TableCell className="text-center whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                  <div className="flex items-center justify-center gap-0.5">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onAnalyzeContract?.(contract.id)}
-                      className="h-8 w-8 p-0 hover:bg-purple-50 hover:text-purple-600"
+                      className="h-4 w-4 p-0 hover:bg-purple-50 hover:text-purple-600"
                       title="Ver análise de IA"
                     >
-                      <Brain className="h-4 w-4" />
+                      <Brain className="h-2 w-2" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onViewContract(contract.id)}
-                      className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-                      title="Visualizar contrato"
+                      className="h-4 w-4 p-0 hover:bg-blue-50 hover:text-blue-600"
+                      title="Visualizar documento"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-2 w-2" />
                     </Button>
                   </div>
                 </TableCell>
@@ -181,6 +202,7 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
             ))}
           </TableBody>
         </Table>
+      </div>
     </div>
   );
 };

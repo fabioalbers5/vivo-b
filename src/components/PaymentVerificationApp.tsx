@@ -113,7 +113,8 @@ const PaymentVerificationApp = () => {
       supplierName,
       contractNumber,
       contractCount,
-      customFilterValues
+      customFilterValues,
+      customFilters: []
     };
 
     // Verificar se há filtros ativos

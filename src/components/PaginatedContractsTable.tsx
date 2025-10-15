@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Brain } from "lucide-react";
 import { LegacyContract } from "@/hooks/useContractFilters";
 
@@ -30,22 +31,48 @@ const PaginatedContractsTable = ({
   showFilteredResults = false 
 }: PaginatedContractsTableProps) => {
   const [visibleCount, setVisibleCount] = useState(20);
+  const [selectedContracts, setSelectedContracts] = useState<Set<string>>(new Set());
 
   // Use filtered contracts when filters are active, otherwise show all available contracts
   const displayContracts = showFilteredResults ? (filteredContracts || []) : (contracts || []);
 
-  // Reset visible count when contracts change
+  // Reset visible count and selection when contracts change
   useEffect(() => {
     setVisibleCount(20);
+    setSelectedContracts(new Set());
   }, [displayContracts]);
 
+  // Ordenar contratos: selecionados primeiro, depois por valor de pagamento (maior primeiro)
+  const sortedContracts = useMemo(() => {
+    return [...displayContracts].sort((a, b) => {
+      // Usar o ID real do contrato ou criar um ID baseado em propriedades únicas
+      const aId = a.id || `${a.number}-${a.supplier}`;
+      const bId = b.id || `${b.number}-${b.supplier}`;
+      
+      const aSelected = selectedContracts.has(aId);
+      const bSelected = selectedContracts.has(bId);
+      
+      // Contratos selecionados sempre no topo
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      
+      // Se ambos selecionados ou ambos não selecionados, ordenar por valor de pagamento (maior primeiro)
+      const aValue = a.paymentValue || a.value || 0;
+      const bValue = b.paymentValue || b.value || 0;
+      return bValue - aValue;
+    });
+  }, [displayContracts, selectedContracts]);
+
   // Load more items for infinite scroll
-  const currentContracts = displayContracts.slice(0, visibleCount);
-  const hasMore = visibleCount < displayContracts.length;
+  const currentContracts = sortedContracts.slice(0, visibleCount);
+  const hasMore = visibleCount < sortedContracts.length;
 
   const loadMore = () => {
-    setVisibleCount(prev => Math.min(prev + 20, displayContracts.length));
+    setVisibleCount(prev => Math.min(prev + 20, sortedContracts.length));
   };
+
+
+  const isPartialSelected = selectedContracts.size > 0 && selectedContracts.size < currentContracts.length;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -180,10 +207,11 @@ const PaginatedContractsTable = ({
             }
           }}
         >
-          <Table className="min-w-[1400px] !h-auto" style={{ tableLayout: 'fixed', height: 'auto' }}>
+          <Table className="min-w-[1440px] !h-auto" style={{ tableLayout: 'fixed', height: 'auto' }}>
             {/* Fixed Table Header */}
             <TableHeader className="sticky top-0 z-10 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
+                <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
                 <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Número do Pagamento</TableHead>
                 <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
                 <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Tipo</TableHead>
@@ -201,8 +229,56 @@ const PaginatedContractsTable = ({
 
             {/* Scrollable Table Body */}
             <TableBody>
-              {currentContracts.map((contract, index) => (
-                  <TableRow key={contract.id || `contract-${index}`} className="hover:bg-muted/50 !h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
+              {currentContracts.map((contract, index) => {
+                const contractId = contract.id || `${contract.number}-${contract.supplier}`;
+                const isSelected = selectedContracts.has(contractId);
+                return (
+                  <TableRow 
+                    key={contractId} 
+                    className={`hover:bg-muted/50 !h-6 transition-colors duration-200 ${
+                      isSelected 
+                        ? 'bg-purple-100/70 hover:bg-purple-200/70 border-l-4 border-purple-500' 
+                        : ''
+                    }`} 
+                    style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}
+                  >
+                    <TableCell className="py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                      <div className="flex items-center gap-1">
+                        <Checkbox
+                          checked={selectedContracts.has(contractId)}
+                          onCheckedChange={(checked) => {
+                            setSelectedContracts(prevSelected => {
+                              const newSelected = new Set(prevSelected);
+                              if (checked) {
+                                newSelected.add(contractId);
+                              } else {
+                                newSelected.delete(contractId);
+                              }
+                              return newSelected;
+                            });
+                          }}
+                          className="h-3 w-3"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onAnalyzeContract?.(contractId)}
+                          className="h-4 w-4 p-0 hover:bg-green-50 hover:text-green-600"
+                          title="Ver análise de IA"
+                        >
+                          <Brain className="h-2 w-2" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onViewContract(contractId)}
+                          className="h-4 w-4 p-0 hover:bg-blue-50 hover:text-blue-600"
+                          title="Visualizar documento"
+                        >
+                          <Eye className="h-2 w-2" />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-mono text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{contract.number}</TableCell>
                     <TableCell className="font-medium max-w-[180px] truncate py-0 text-xs" title={contract.supplier} style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                       {contract.supplier}
@@ -252,35 +328,14 @@ const PaginatedContractsTable = ({
                       )}
                     </TableCell>
                     <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{formatDate(contract.dueDate)}</TableCell>
-                    <TableCell className="text-center whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
-                      <div className="flex items-center justify-center gap-0.5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onAnalyzeContract?.(contract.id)}
-                          className="h-4 w-4 p-0 hover:bg-purple-50 hover:text-purple-600"
-                          title="Ver análise de IA"
-                        >
-                          <Brain className="h-2 w-2" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onViewContract(contract.id)}
-                          className="h-4 w-4 p-0 hover:bg-blue-50 hover:text-blue-600"
-                          title="Visualizar documento"
-                        >
-                          <Eye className="h-2 w-2" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                </TableRow>
-              ))}
+                  </TableRow>
+                );
+              })}
               
               {/* Loading indicator para scroll infinito */}
               {hasMore && (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-2 text-xs text-muted-foreground">
                     Role para carregar mais...
                   </TableCell>
                 </TableRow>
@@ -288,7 +343,7 @@ const PaginatedContractsTable = ({
               
               {!hasMore && currentContracts.length > 0 && (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-2 text-xs text-muted-foreground">
                     Mostrando todos os {displayContracts.length} contratos
                   </TableCell>
                 </TableRow>
@@ -299,10 +354,15 @@ const PaginatedContractsTable = ({
       </div>
 
       {/* Status do scroll infinito */}
-      <div className="flex items-center justify-center px-2 mt-2">
+      <div className="flex items-center justify-between px-2 mt-2">
         <span className="text-xs text-muted-foreground">
           Exibindo {currentContracts.length} de {displayContracts.length} contratos
         </span>
+        {selectedContracts.size > 0 && (
+          <span className="text-xs text-blue-600 font-medium">
+            {selectedContracts.size} selecionado(s)
+          </span>
+        )}
       </div>
     </div>
   );

@@ -120,7 +120,8 @@ export const useContractFilters = () => {
       }
 
       // Processar filtros personalizados
-      for (const customFilter of filterParams.customFilters) {
+      const customFilters = Array.isArray(filterParams.customFilters) ? filterParams.customFilters : [];
+      for (const customFilter of customFilters) {
         const filterValue = filterParams.customFilterValues[customFilter.id];
         
         // Usar as propriedades corretas do LegacyCustomFilter

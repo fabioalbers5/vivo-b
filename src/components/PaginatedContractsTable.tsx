@@ -192,7 +192,7 @@ const PaginatedContractsTable = ({
         }}
       >
         <div 
-          className="flex-1 overflow-auto" 
+          className="flex-1 overflow-auto relative" 
           style={{ 
             height: '225px',
             maxHeight: '225px',
@@ -207,22 +207,21 @@ const PaginatedContractsTable = ({
             }
           }}
         >
-          <Table className="min-w-[1440px] !h-auto" style={{ tableLayout: 'fixed', height: 'auto' }}>
-            {/* Fixed Table Header */}
-            <TableHeader className="sticky top-0 z-10 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
+          <Table className="w-full relative min-w-[1440px]" style={{ tableLayout: 'fixed', height: 'auto' }}>
+            <TableHeader className="sticky top-0 z-30 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
-                <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
-                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Número do Pagamento</TableHead>
-                <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
-                <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Tipo</TableHead>
-                <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor</TableHead>
-                <TableHead className="min-w-[100px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Status</TableHead>
-                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Tipo de Alerta</TableHead>
-                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Área Solicitante</TableHead>
-                <TableHead className="min-w-[80px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Risco</TableHead>
-                <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor da Multa</TableHead>
-                <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Pagamento</TableHead>
-                <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Data de Vencimento</TableHead>
+                <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center sticky left-0 z-40 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
+                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Número do Pagamento</TableHead>
+                <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
+                <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Tipo</TableHead>
+                <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor</TableHead>
+                <TableHead className="min-w-[100px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Status</TableHead>
+                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Tipo de Alerta</TableHead>
+                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Área Solicitante</TableHead>
+                <TableHead className="min-w-[80px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Risco</TableHead>
+                <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor da Multa</TableHead>
+                <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Pagamento</TableHead>
+                <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Data de Vencimento</TableHead>
                 <TableHead className="min-w-[100px] text-center bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -232,17 +231,36 @@ const PaginatedContractsTable = ({
               {currentContracts.map((contract, index) => {
                 const contractId = contract.id || `${contract.number}-${contract.supplier}`;
                 const isSelected = selectedContracts.has(contractId);
+                
+                const handleRowClick = (e: React.MouseEvent) => {
+                  // Evitar seleção se clicou nos botões
+                  if ((e.target as HTMLElement).closest('button')) {
+                    return;
+                  }
+                  
+                  setSelectedContracts(prevSelected => {
+                    const newSelected = new Set(prevSelected);
+                    if (isSelected) {
+                      newSelected.delete(contractId);
+                    } else {
+                      newSelected.add(contractId);
+                    }
+                    return newSelected;
+                  });
+                };
+                
                 return (
                   <TableRow 
                     key={contractId} 
-                    className={`hover:bg-muted/50 !h-6 transition-colors duration-200 ${
+                    className={`hover:bg-muted/50 !h-6 transition-colors duration-200 cursor-pointer ${
                       isSelected 
                         ? 'bg-purple-100/70 hover:bg-purple-200/70 border-l-4 border-purple-500' 
                         : ''
                     }`} 
                     style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}
+                    onClick={handleRowClick}
                   >
-                    <TableCell className="py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                    <TableCell className={`py-0 sticky left-0 z-20 border-r border-gray-200 ${isSelected ? 'bg-purple-100/70' : 'bg-white'}`} style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                       <div className="flex items-center gap-1">
                         <Checkbox
                           checked={selectedContracts.has(contractId)}
@@ -258,11 +276,15 @@ const PaginatedContractsTable = ({
                             });
                           }}
                           className="h-3 w-3"
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onAnalyzeContract?.(contractId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAnalyzeContract?.(contractId);
+                          }}
                           className="h-4 w-4 p-0 hover:bg-green-50 hover:text-green-600"
                           title="Ver análise de IA"
                         >
@@ -271,7 +293,10 @@ const PaginatedContractsTable = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onViewContract(contractId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewContract(contractId);
+                          }}
                           className="h-4 w-4 p-0 hover:bg-blue-50 hover:text-blue-600"
                           title="Visualizar documento"
                         >

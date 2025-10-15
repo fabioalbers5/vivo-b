@@ -1102,7 +1102,7 @@ const QualityDashboardPageInline: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Número do Contrato</TableHead>
+                    <TableHead>Número do Pagamento</TableHead>
                     <TableHead>Fornecedor</TableHead>
                     <TableHead>Área Solicitante</TableHead>
                     <TableHead>Tipo de Alerta</TableHead>

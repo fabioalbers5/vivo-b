@@ -108,7 +108,7 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
           {/* Fixed Table Header */}
           <TableHeader className="sticky top-0 z-10 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
             <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
-              <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Número do Contrato</TableHead>
+              <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Número do Pagamento</TableHead>
               <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
               <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Tipo</TableHead>
               <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor</TableHead>

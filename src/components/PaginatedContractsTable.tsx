@@ -9,8 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, Brain, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Eye, Brain } from "lucide-react";
 import { LegacyContract } from "@/hooks/useContractFilters";
 
 interface PaginatedContractsTableProps {
@@ -30,23 +29,23 @@ const PaginatedContractsTable = ({
   filteredContracts, 
   showFilteredResults = false 
 }: PaginatedContractsTableProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   // Use filtered contracts when filters are active, otherwise show all available contracts
   const displayContracts = showFilteredResults ? (filteredContracts || []) : (contracts || []);
 
-  // Reset page when contracts change
+  // Reset visible count when contracts change
   useEffect(() => {
-    setCurrentPage(1);
+    setVisibleCount(20);
   }, [displayContracts]);
 
-  // Calculate pagination
-  const totalItems = displayContracts.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const currentContracts = displayContracts.slice(startIndex, endIndex);
+  // Load more items for infinite scroll
+  const currentContracts = displayContracts.slice(0, visibleCount);
+  const hasMore = visibleCount < displayContracts.length;
+
+  const loadMore = () => {
+    setVisibleCount(prev => Math.min(prev + 20, displayContracts.length));
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -100,14 +99,7 @@ const PaginatedContractsTable = ({
     );
   };
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-  };
 
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(parseInt(value));
-    setCurrentPage(1); // Reset to first page
-  };
 
   if (displayContracts.length === 0) {
     return (
@@ -144,8 +136,8 @@ const PaginatedContractsTable = ({
       <div className="flex items-center justify-between mb-2 bg-white z-30 sticky top-0 py-1">
         <h2 className="text-lg font-semibold">
           {showFilteredResults ? 
-            `Contratos Filtrados ${isLoading ? "" : `(${totalItems})`}` : 
-            `Todos os Contratos ${isLoading ? "" : `(${totalItems})`}`
+            `Contratos Filtrados ${isLoading ? "" : `(${displayContracts.length})`}` : 
+            `Todos os Contratos ${isLoading ? "" : `(${displayContracts.length})`}`
           }
         </h2>
         <div className="flex items-center gap-2">
@@ -181,12 +173,18 @@ const PaginatedContractsTable = ({
             overflowY: 'auto',
             overflowX: 'auto'
           }}
+          onScroll={(e) => {
+            const target = e.currentTarget;
+            if (target.scrollTop + target.clientHeight >= target.scrollHeight - 5 && hasMore) {
+              loadMore();
+            }
+          }}
         >
           <Table className="min-w-[1400px] !h-auto" style={{ tableLayout: 'fixed', height: 'auto' }}>
             {/* Fixed Table Header */}
             <TableHeader className="sticky top-0 z-10 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
-                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Número do Contrato</TableHead>
+                <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Número do Pagamento</TableHead>
                 <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
                 <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Tipo</TableHead>
                 <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor</TableHead>
@@ -204,7 +202,7 @@ const PaginatedContractsTable = ({
             {/* Scrollable Table Body */}
             <TableBody>
               {currentContracts.map((contract, index) => (
-                  <TableRow key={contract.id || `contract-${startIndex + index}`} className="hover:bg-muted/50 !h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
+                  <TableRow key={contract.id || `contract-${index}`} className="hover:bg-muted/50 !h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
                     <TableCell className="font-mono text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{contract.number}</TableCell>
                     <TableCell className="font-medium max-w-[180px] truncate py-0 text-xs" title={contract.supplier} style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                       {contract.supplier}
@@ -278,97 +276,33 @@ const PaginatedContractsTable = ({
                     </TableCell>
                 </TableRow>
               ))}
+              
+              {/* Loading indicator para scroll infinito */}
+              {hasMore && (
+                <TableRow>
+                  <TableCell colSpan={12} className="text-center py-2 text-xs text-muted-foreground">
+                    Role para carregar mais...
+                  </TableCell>
+                </TableRow>
+              )}
+              
+              {!hasMore && currentContracts.length > 0 && (
+                <TableRow>
+                  <TableCell colSpan={12} className="text-center py-2 text-xs text-muted-foreground">
+                    Mostrando todos os {displayContracts.length} contratos
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
-      </div>      {/* Pagination Controls */}
-      <div className="flex items-center justify-between px-2 mt-2">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs text-muted-foreground">Itens por página:</span>
-          <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
-            <SelectTrigger className="w-16 h-6 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      </div>
 
-        <div className="flex items-center space-x-2">
-          <span className="text-xs text-muted-foreground">
-            {startIndex + 1}-{endIndex} de {totalItems}
-          </span>
-        </div>
-
-        <div className="flex items-center space-x-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(1)}
-            disabled={currentPage === 1}
-            className="h-6 w-6 p-0"
-          >
-            <ChevronsLeft className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="h-6 w-6 p-0"
-          >
-            <ChevronLeft className="h-3 w-3" />
-          </Button>
-          
-          <div className="flex items-center space-x-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNumber;
-              if (totalPages <= 5) {
-                pageNumber = i + 1;
-              } else if (currentPage <= 3) {
-                pageNumber = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNumber = totalPages - 4 + i;
-              } else {
-                pageNumber = currentPage - 2 + i;
-              }
-
-              return (
-                <Button
-                  key={pageNumber}
-                  variant={currentPage === pageNumber ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePageChange(pageNumber)}
-                  className="h-6 w-6 p-0 text-xs"
-                >
-                  {pageNumber}
-                </Button>
-              );
-            })}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="h-6 w-6 p-0"
-          >
-            <ChevronRight className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(totalPages)}
-            disabled={currentPage === totalPages}
-            className="h-6 w-6 p-0"
-          >
-            <ChevronsRight className="h-3 w-3" />
-          </Button>
-        </div>
+      {/* Status do scroll infinito */}
+      <div className="flex items-center justify-center px-2 mt-2">
+        <span className="text-xs text-muted-foreground">
+          Exibindo {currentContracts.length} de {displayContracts.length} contratos
+        </span>
       </div>
     </div>
   );

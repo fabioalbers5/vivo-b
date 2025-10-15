@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Filter, X, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, X, Plus } from 'lucide-react';
 
 export interface FilterItem {
   id: string;
@@ -20,6 +20,7 @@ interface FilterBarProps {
 
 const FilterBar = ({ filters, onClearAll, onAddFilter }: FilterBarProps) => {
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const activeFiltersCount = filters.reduce((acc, filter) => acc + filter.activeCount, 0);
   
@@ -29,9 +30,19 @@ const FilterBar = ({ filters, onClearAll, onAddFilter }: FilterBarProps) => {
 
   return (
     <div className="w-full bg-white border-b border-gray-200 p-3">
-      {/* Header da barra de filtros */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
+      {/* Header da barra de filtros - sempre visível */}
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center space-x-2 hover:bg-gray-50"
+        >
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4 text-gray-500" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-gray-500" />
+          )}
           <Filter className="h-4 w-4 text-gray-500" />
           <span className="text-sm font-medium text-gray-700">Filtros</span>
           {activeFiltersCount > 0 && (
@@ -39,7 +50,7 @@ const FilterBar = ({ filters, onClearAll, onAddFilter }: FilterBarProps) => {
               {activeFiltersCount} ativo{activeFiltersCount !== 1 ? 's' : ''}
             </Badge>
           )}
-        </div>
+        </Button>
         
         {activeFiltersCount > 0 && (
           <Button
@@ -54,9 +65,10 @@ const FilterBar = ({ filters, onClearAll, onAddFilter }: FilterBarProps) => {
         )}
       </div>
       
-      {/* Botões dos filtros */}
-      <div className="flex gap-2 items-center overflow-x-auto pb-2 scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300"
-           style={{ scrollbarWidth: 'thin' }}>
+      {/* Botões dos filtros - colapsável */}
+      {isExpanded && (
+        <div className="flex gap-2 items-center overflow-x-auto pb-2 pt-3 scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300"
+             style={{ scrollbarWidth: 'thin' }}>
         {filters.map((filter) => (
           <Popover
             key={filter.id}
@@ -132,6 +144,7 @@ const FilterBar = ({ filters, onClearAll, onAddFilter }: FilterBarProps) => {
           </Button>
         )}
       </div>
+      )}
     </div>
   );
 };

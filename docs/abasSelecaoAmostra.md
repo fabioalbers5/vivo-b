@@ -1,1 +1,3 @@
-Na tela de seleção da amostra, na aba de seleção. Logo abaixo das abas de seleção, deve conter uma opção
+Na tela de seleção da amostra, na aba de seleção da amostra.
+Logo acima da tabela, pode adicionar alguns cards dinâmicos que alteram de acordo com os contratos selecionados para a amostra. Esses cards podem mostrar o número de pagamentos selecionados, a soma do valor dos pagamentos selecionados, % do valor total de pagamentos.
+Lembre-se sempre de seguir o padrão de design UX/UI já existente na aplicação

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Shuffle, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 import FilterBar, { FilterItem } from "./FilterBar";
 import FilterWrapper from "./FilterWrapper";
@@ -13,8 +15,6 @@ import DueDateFilter from "./filters/DueDateFilter";
 import SupplierNameFilter from "./filters/SupplierNameFilter";
 import ContractNumberFilter from "./filters/ContractNumberFilter";
 import { PaymentStatusFilter, AlertTypeFilter, RiskFilter } from "./filters/vivo/VivoSelectFilters";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import PaginatedContractsTable from "./PaginatedContractsTable";
 import ContractAnalysisModal from "./ContractAnalysisModal";
 import SampleManagementTab from "./SampleManagementTab";
@@ -38,6 +38,10 @@ const PaymentVerificationApp = () => {
   // Estado para modals
   const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string>('');
+  
+  // Estado para seleção da amostra
+  const [sampleSize, setSampleSize] = useState<number>(10);
+  const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set());
 
   // Função memoizada para aplicar filtros - evita recriação constante e múltiplas chamadas
   const applyFilters = useCallback(async (filterParams: any) => {
@@ -190,6 +194,59 @@ const PaymentVerificationApp = () => {
       title: "Filtros limpos",
       description: "Todos os filtros foram resetados. Mostrando todos os contratos."
     });
+  };
+
+  const handleGenerateSample = () => {
+    const availableContracts = showFilteredResults ? contracts : allContracts;
+    
+    if (availableContracts.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Não há pagamentos disponíveis para gerar amostra.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const size = Math.min(sampleSize, availableContracts.length);
+    
+    // Gerar índices aleatórios únicos
+    const randomIndices = new Set<number>();
+    while (randomIndices.size < size) {
+      randomIndices.add(Math.floor(Math.random() * availableContracts.length));
+    }
+    
+    // Selecionar os contratos com base nos índices
+    const newSelection = new Set<string>();
+    Array.from(randomIndices).forEach(index => {
+      const contract = availableContracts[index];
+      const contractId = contract.id || `${contract.number}-${contract.supplier}`;
+      newSelection.add(contractId);
+    });
+    
+    setSelectedPayments(newSelection);
+    
+    toast({
+      title: "Amostra gerada",
+      description: `${size} pagamento(s) selecionado(s) aleatoriamente.`
+    });
+  };
+
+  const handleFinalize = () => {
+    if (selectedPayments.size === 0) {
+      toast({
+        title: "Atenção",
+        description: "Nenhum pagamento selecionado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Amostra finalizada",
+      description: `${selectedPayments.size} pagamento(s) pronto(s) para análise.`
+    });
+    // Aqui você pode adicionar a lógica para finalizar a amostra
   };
 
   // Preparar filtros para a FilterBar na ordem solicitada:
@@ -361,6 +418,59 @@ const PaymentVerificationApp = () => {
             
             {/* Contracts Table */}
             <div className="p-6">
+              {/* Cabeçalho com controles da amostra */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold">
+                    {showFilteredResults ? 
+                      `Pagamentos Filtrados ${isLoading ? "" : `(${contracts.length})`}` : 
+                      `Todos os Pagamentos ${allContractsLoading ? "" : `(${allContracts.length})`}`
+                    }
+                  </h2>
+                  {showFilteredResults && (
+                    <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Filtros ativos
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="sampleSize" className="text-sm whitespace-nowrap text-gray-600">
+                      Tamanho da amostra:
+                    </Label>
+                    <Input
+                      id="sampleSize"
+                      type="number"
+                      min="1"
+                      value={sampleSize}
+                      onChange={(e) => setSampleSize(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-20 h-8 text-sm"
+                    />
+                  </div>
+                  
+                  <Button
+                    onClick={handleGenerateSample}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs hover:bg-vivo-purple hover:text-white hover:border-vivo-purple"
+                  >
+                    <Shuffle className="h-3 w-3 mr-1.5" />
+                    Gerar amostra
+                  </Button>
+                  
+                  <Button
+                    onClick={handleFinalize}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs hover:bg-vivo-purple hover:text-white hover:border-vivo-purple"
+                  >
+                    <Check className="h-3 w-3 mr-1.5" />
+                    Finalizar
+                  </Button>
+                </div>
+              </div>
+              
               <PaginatedContractsTable
                 contracts={allContracts}
                 filteredContracts={contracts}
@@ -368,6 +478,8 @@ const PaymentVerificationApp = () => {
                 onViewContract={handleViewContract}
                 onAnalyzeContract={handleAnalyzeContract}
                 isLoading={showFilteredResults ? isLoading : allContractsLoading}
+                selectedContracts={selectedPayments}
+                onSelectionChange={setSelectedPayments}
               />
             </div>
           </TabsContent>

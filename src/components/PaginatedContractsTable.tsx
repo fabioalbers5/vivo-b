@@ -20,6 +20,8 @@ interface PaginatedContractsTableProps {
   isLoading?: boolean;
   filteredContracts?: LegacyContract[];
   showFilteredResults?: boolean;
+  selectedContracts?: Set<string>;
+  onSelectionChange?: (selected: Set<string>) => void;
 }
 
 const PaginatedContractsTable = ({ 
@@ -28,12 +30,26 @@ const PaginatedContractsTable = ({
   onAnalyzeContract, 
   isLoading = false, 
   filteredContracts, 
-  showFilteredResults = false 
+  showFilteredResults = false,
+  selectedContracts: externalSelectedContracts,
+  onSelectionChange
 }: PaginatedContractsTableProps) => {
   const [visibleCount, setVisibleCount] = useState(20);
-  const [selectedContracts, setSelectedContracts] = useState<Set<string>>(new Set());
+  const [internalSelectedContracts, setInternalSelectedContracts] = useState<Set<string>>(new Set());
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Use external or internal selection state
+  const selectedContracts = externalSelectedContracts ?? internalSelectedContracts;
+  
+  const updateSelectedContracts = (updater: (prev: Set<string>) => Set<string>) => {
+    if (onSelectionChange) {
+      const newSet = updater(selectedContracts);
+      onSelectionChange(newSet);
+    } else {
+      setInternalSelectedContracts(updater);
+    }
+  };
 
   // Use filtered contracts when filters are active, otherwise show all available contracts
   const displayContracts = showFilteredResults ? (filteredContracts || []) : (contracts || []);
@@ -41,8 +57,10 @@ const PaginatedContractsTable = ({
   // Reset visible count and selection when contracts change
   useEffect(() => {
     setVisibleCount(20);
-    setSelectedContracts(new Set());
-  }, [displayContracts]);
+    if (!externalSelectedContracts) {
+      setInternalSelectedContracts(new Set());
+    }
+  }, [displayContracts, externalSelectedContracts]);
 
   // Função para lidar com clique no cabeçalho da coluna
   const handleSort = (column: string) => {
@@ -213,7 +231,7 @@ const PaginatedContractsTable = ({
         {/* Fixed Section Header */}
         <div className="flex items-center justify-between mb-2 bg-white z-30 sticky top-0 py-1">
           <h2 className="text-lg font-semibold">
-            {showFilteredResults ? "Contratos Filtrados (0)" : "Todos os Contratos (0)"}
+            {showFilteredResults ? "Pagamentos Filtrados (0)" : "Todos os Pagamentos (0)"}
           </h2>
           {isLoading && (
             <div className="text-xs text-muted-foreground">
@@ -224,11 +242,11 @@ const PaginatedContractsTable = ({
 
         <div className="border rounded-lg p-4 text-center bg-white">
           <p className="text-muted-foreground">
-            {showFilteredResults ? "Nenhum contrato encontrado com os filtros aplicados." : "Nenhum contrato encontrado."}
+            {showFilteredResults ? "Nenhum pagamento encontrado com os filtros aplicados." : "Nenhum pagamento encontrado."}
           </p>
           {showFilteredResults && (
             <p className="text-sm text-muted-foreground mt-2">
-              Tente ajustar os filtros ou limpar todos para ver todos os contratos.
+              Tente ajustar os filtros ou limpar todos para ver todos os pagamentos.
             </p>
           )}
         </div>
@@ -238,43 +256,21 @@ const PaginatedContractsTable = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Fixed Section Header */}
-      <div className="flex items-center justify-between mb-2 bg-white z-30 sticky top-0 py-1">
-        <h2 className="text-lg font-semibold">
-          {showFilteredResults ? 
-            `Contratos Filtrados ${isLoading ? "" : `(${displayContracts.length})`}` : 
-            `Todos os Contratos ${isLoading ? "" : `(${displayContracts.length})`}`
-          }
-        </h2>
-        <div className="flex items-center gap-2">
-          {showFilteredResults && (
-            <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
-              Filtros ativos
-            </div>
-          )}
-          {isLoading && (
-            <div className="text-xs text-muted-foreground">
-              Carregando...
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Table Container */}
       <div 
         className="border rounded-lg bg-white flex flex-col" 
         style={{ 
-          height: '293px', 
-          minHeight: '293px', 
-          maxHeight: '293px', 
+          height: '264px', 
+          minHeight: '264px', 
+          maxHeight: '264px', 
           overflow: 'hidden'
         }}
       >
         <div 
           className="flex-1 overflow-auto relative" 
           style={{ 
-            height: '293px',
-            maxHeight: '293px',
+            height: '264px',
+            maxHeight: '264px',
             flex: '1 1 auto',
             overflowY: 'auto',
             overflowX: 'auto'
@@ -315,7 +311,7 @@ const PaginatedContractsTable = ({
                     return;
                   }
                   
-                  setSelectedContracts(prevSelected => {
+                  updateSelectedContracts(prevSelected => {
                     const newSelected = new Set(prevSelected);
                     if (isSelected) {
                       newSelected.delete(contractId);
@@ -342,7 +338,7 @@ const PaginatedContractsTable = ({
                         <Checkbox
                           checked={selectedContracts.has(contractId)}
                           onCheckedChange={(checked) => {
-                            setSelectedContracts(prevSelected => {
+                            updateSelectedContracts(prevSelected => {
                               const newSelected = new Set(prevSelected);
                               if (checked) {
                                 newSelected.add(contractId);

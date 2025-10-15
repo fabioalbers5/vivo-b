@@ -222,7 +222,6 @@ const PaginatedContractsTable = ({
                 <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor da Multa</TableHead>
                 <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Pagamento</TableHead>
                 <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs text-center z-30" style={{ height: '24px', lineHeight: '1.2' }}>Data de Vencimento</TableHead>
-                <TableHead className="min-w-[100px] text-center bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -360,7 +359,7 @@ const PaginatedContractsTable = ({
               {/* Loading indicator para scroll infinito */}
               {hasMore && (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-2 text-xs text-muted-foreground">
                     Role para carregar mais...
                   </TableCell>
                 </TableRow>
@@ -368,7 +367,7 @@ const PaginatedContractsTable = ({
               
               {!hasMore && currentContracts.length > 0 && (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-2 text-xs text-muted-foreground">
                     Mostrando todos os {displayContracts.length} contratos
                   </TableCell>
                 </TableRow>

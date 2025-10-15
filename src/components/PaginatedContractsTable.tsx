@@ -113,18 +113,18 @@ const PaginatedContractsTable = ({
     return (
       <div className="flex flex-col h-full">
         {/* Fixed Section Header */}
-        <div className="flex items-center justify-between mb-4 bg-white z-30 sticky top-0 py-2">
-          <h2 className="text-xl font-semibold">
+        <div className="flex items-center justify-between mb-2 bg-white z-30 sticky top-0 py-1">
+          <h2 className="text-lg font-semibold">
             {showFilteredResults ? "Contratos Filtrados (0)" : "Todos os Contratos (0)"}
           </h2>
           {isLoading && (
-            <div className="text-sm text-muted-foreground">
-              Carregando contratos...
+            <div className="text-xs text-muted-foreground">
+              Carregando...
             </div>
           )}
         </div>
 
-        <div className="border rounded-lg p-8 text-center bg-white">
+        <div className="border rounded-lg p-4 text-center bg-white">
           <p className="text-muted-foreground">
             {showFilteredResults ? "Nenhum contrato encontrado com os filtros aplicados." : "Nenhum contrato encontrado."}
           </p>
@@ -141,22 +141,22 @@ const PaginatedContractsTable = ({
   return (
     <div className="flex flex-col h-full">
       {/* Fixed Section Header */}
-      <div className="flex items-center justify-between mb-4 bg-white z-30 sticky top-0 py-2">
-        <h2 className="text-xl font-semibold">
+      <div className="flex items-center justify-between mb-2 bg-white z-30 sticky top-0 py-1">
+        <h2 className="text-lg font-semibold">
           {showFilteredResults ? 
             `Contratos Filtrados ${isLoading ? "" : `(${totalItems})`}` : 
             `Todos os Contratos ${isLoading ? "" : `(${totalItems})`}`
           }
         </h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {showFilteredResults && (
-            <div className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">
+            <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
               Filtros ativos
             </div>
           )}
           {isLoading && (
-            <div className="text-sm text-muted-foreground">
-              Carregando contratos...
+            <div className="text-xs text-muted-foreground">
+              Carregando...
             </div>
           )}
         </div>
@@ -282,11 +282,11 @@ const PaginatedContractsTable = ({
           </Table>
         </div>
       </div>      {/* Pagination Controls */}
-      <div className="flex items-center justify-between px-2 mt-4">
+      <div className="flex items-center justify-between px-2 mt-2">
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">Itens por página:</span>
+          <span className="text-xs text-muted-foreground">Itens por página:</span>
           <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
-            <SelectTrigger className="w-20">
+            <SelectTrigger className="w-16 h-6 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -298,8 +298,8 @@ const PaginatedContractsTable = ({
         </div>
 
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">
-            Mostrando {startIndex + 1} a {endIndex} de {totalItems} contratos
+          <span className="text-xs text-muted-foreground">
+            {startIndex + 1}-{endIndex} de {totalItems}
           </span>
         </div>
 
@@ -309,18 +309,18 @@ const PaginatedContractsTable = ({
             size="sm"
             onClick={() => handlePageChange(1)}
             disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 p-0"
           >
-            <ChevronsLeft className="h-4 w-4" />
+            <ChevronsLeft className="h-3 w-3" />
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 p-0"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3" />
           </Button>
           
           <div className="flex items-center space-x-1">
@@ -342,7 +342,7 @@ const PaginatedContractsTable = ({
                   variant={currentPage === pageNumber ? "default" : "outline"}
                   size="sm"
                   onClick={() => handlePageChange(pageNumber)}
-                  className="h-8 w-8 p-0"
+                  className="h-6 w-6 p-0 text-xs"
                 >
                   {pageNumber}
                 </Button>
@@ -355,18 +355,18 @@ const PaginatedContractsTable = ({
             size="sm"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 p-0"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3 w-3" />
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(totalPages)}
             disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 p-0"
           >
-            <ChevronsRight className="h-4 w-4" />
+            <ChevronsRight className="h-3 w-3" />
           </Button>
         </div>
       </div>

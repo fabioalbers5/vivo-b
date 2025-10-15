@@ -13,7 +13,7 @@ import { useAnalysts } from '@/hooks/useAnalysts';
 import { useContractsByAnalyst } from '@/hooks/useContractsByAnalyst';
 import { calculateRepresentativityScore } from '@/utils/representativityCalculator';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, AlertTriangle, CheckCircle, Users, Target, Database, History, ChevronDown } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle, Users, Target, Database, History, ChevronDown, BarChart3 } from 'lucide-react';
 import ContractsTable from '@/components/ContractsTable';
 import ContractAnalysisModal from '@/components/ContractAnalysisModal';
 
@@ -313,13 +313,10 @@ const SampleAnalysisPage: React.FC = () => {
     
     if (!data || data.length === 0) {
       return (
-        <div className="h-80">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">{title}</h3>
-          </div>
-          <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+        <div className="w-full h-full">
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
             <p className="text-muted-foreground">
-              Nenhum dado disponível para {title.toLowerCase()}
+              Nenhum dado disponível
             </p>
           </div>
         </div>
@@ -327,24 +324,21 @@ const SampleAnalysisPage: React.FC = () => {
     }
     
     return (
-      <div className="h-80">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold">{title}</h3>
-        </div>
-        <div className="bg-white rounded-lg border p-4">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+      <div className="w-full h-full">
+        <div className="bg-white rounded-lg border p-2 w-full h-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 10, right: 15, left: 15, bottom: 45 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis 
                 dataKey="name" 
                 angle={-45}
                 textAnchor="end"
-                height={80}
-                fontSize={11}
+                height={60}
+                fontSize={10}
                 tick={{ fill: '#6B7280' }}
               />
               <YAxis 
-                fontSize={11}
+                fontSize={10}
                 tick={{ fill: '#6B7280' }}
               />
               <Tooltip content={<CustomTooltip />} />
@@ -443,263 +437,259 @@ const SampleAnalysisPage: React.FC = () => {
         </div>
       </div>
       
-      <div className="p-6 space-y-6">
+      <div className="p-2 space-y-2 h-full flex flex-col">
         {/* Container de Métricas Superiores */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Contratos</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-2">
+              <CardTitle className="text-xs font-medium">Total de Contratos</CardTitle>
+              <Users className="h-3 w-3 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-vivo-purple">{metrics.total}</div>
-              <p className="text-xs text-muted-foreground">
-                Contratos na amostra selecionada
+            <CardContent className="pt-0 pb-1 px-2">
+              <div className="text-sm font-bold text-vivo-purple">{metrics.total}</div>
+              <p className="text-xs text-muted-foreground leading-tight">
+                Contratos na amostra
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contratos com Alerta</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-2">
+              <CardTitle className="text-xs font-medium">Contratos com Alerta</CardTitle>
+              <AlertTriangle className="h-3 w-3 text-orange-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-500">{metrics.withAlert}</div>
-              <p className="text-xs text-muted-foreground">
-                Contratos que requerem atenção
+            <CardContent className="pt-0 pb-1 px-2">
+              <div className="text-sm font-bold text-orange-500">{metrics.withAlert}</div>
+              <p className="text-xs text-muted-foreground leading-tight">
+                Requerem atenção
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Porcentagem de Alerta</CardTitle>
-              <TrendingUp className="h-4 w-4 text-red-500" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-2">
+              <CardTitle className="text-xs font-medium">Porcentagem de Alerta</CardTitle>
+              <TrendingUp className="h-3 w-3 text-red-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-500">{metrics.alertPercentage}%</div>
-              <p className="text-xs text-muted-foreground">
-                Percentual de contratos com alerta
+            <CardContent className="pt-0 pb-1 px-2">
+              <div className="text-sm font-bold text-red-500">{metrics.alertPercentage}%</div>
+              <p className="text-xs text-muted-foreground leading-tight">
+                Percentual com alerta
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Card de Análise de Representatividade Detalhada */}
-        <Collapsible 
-          open={isRepresentativityExpanded} 
-          onOpenChange={setIsRepresentativityExpanded}
-        >
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-green-600" />
-                    Análise de Representatividade da Amostra
-                  </div>
-                  <ChevronDown 
-                    className={`h-4 w-4 transition-transform duration-200 ${
-                      isRepresentativityExpanded ? 'rotate-180' : ''
-                    }`}
-                  />
-                </CardTitle>
-                <CardDescription>
-                  Métricas que indicam o quão bem esta amostra representa o conjunto total de dados
-                </CardDescription>
+        {/* Container Principal com Abas */}
+        <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
+          <Card className="h-full flex flex-col">
+            <Tabs defaultValue="representativity" className="h-full flex flex-col">
+              <CardHeader className="pb-2 pt-3">
+                <TabsList className="grid w-full grid-cols-3 h-8">
+                  <TabsTrigger value="representativity" className="flex items-center gap-2 text-xs">
+                    <Target className="h-3 w-3" />
+                    Representatividade
+                  </TabsTrigger>
+                  <TabsTrigger value="charts" className="flex items-center gap-2 text-xs">
+                    <BarChart3 className="h-3 w-3" />
+                    Análise Detalhada
+                  </TabsTrigger>
+                  <TabsTrigger value="contracts" className="flex items-center gap-2 text-xs">
+                    <Database className="h-3 w-3" />
+                    Contratos Detalhados
+                  </TabsTrigger>
+                </TabsList>
               </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Score Geral */}
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-3xl font-bold text-green-600 mb-2">
-                  {contractsLoading ? (
-                    <div className="text-blue-500 animate-pulse">...</div>
-                  ) : (
-                    representativityScore !== null && representativityScore !== undefined && !isNaN(representativityScore) && representativityScore > 0 ? 
-                      `${(representativityScore * 100).toFixed(1)}%` : 
-                      'N/A'
-                  )}
-                </div>
-                <div className="text-sm font-medium text-gray-700">Score Geral</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Representatividade global
-                  {contractsLoading && (
-                    <span className="block text-blue-500 text-xs mt-1">
-                      Carregando dados...
-                    </span>
-                  )}
-                </div>
-              </div>
 
-              {/* Tamanho da Amostra */}
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {contracts.length}
-                </div>
-                <div className="text-sm font-medium text-gray-700">Tamanho</div>
-                <div className="text-xs text-gray-500 mt-1">Contratos na amostra</div>
-              </div>
+              <CardContent className="flex-1 overflow-hidden p-3">
+                {/* Aba Representatividade */}
+                <TabsContent value="representativity" className="h-full overflow-auto">
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                      {/* Score Geral */}
+                      <div className="text-center p-2 bg-gray-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600 mb-1">
+                          {contractsLoading ? (
+                            <div className="text-blue-500 animate-pulse">...</div>
+                          ) : (
+                            representativityScore !== null && representativityScore !== undefined && !isNaN(representativityScore) && representativityScore > 0 ? 
+                              `${(representativityScore * 100).toFixed(1)}%` : 
+                              'N/A'
+                          )}
+                        </div>
+                        <div className="text-xs font-medium text-gray-700">Score Geral</div>
+                        <div className="text-xs text-gray-500">
+                          Representatividade global
+                          {contractsLoading && (
+                            <span className="block text-blue-500 text-xs">
+                              Carregando dados...
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-              {/* Diversidade */}
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-3xl font-bold text-purple-600 mb-2">
-                  {new Set(contracts.map(c => c.type)).size}
-                </div>
-                <div className="text-sm font-medium text-gray-700">Tipos</div>
-                <div className="text-xs text-gray-500 mt-1">Diferentes tipos de fluxo</div>
-              </div>
+                      {/* Tamanho da Amostra */}
+                      <div className="text-center p-2 bg-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600 mb-1">
+                          {contracts.length}
+                        </div>
+                        <div className="text-xs font-medium text-gray-700">Tamanho</div>
+                        <div className="text-xs text-gray-500">Contratos na amostra</div>
+                      </div>
 
-              {/* Cobertura Regional */}
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-3xl font-bold text-orange-600 mb-2">
-                  {new Set(contracts.map(c => c.region).filter(Boolean)).size}
-                </div>
-                <div className="text-sm font-medium text-gray-700">Regiões</div>
-                <div className="text-xs text-gray-500 mt-1">Cobertura geográfica</div>
-              </div>
-            </div>
+                      {/* Diversidade */}
+                      <div className="text-center p-2 bg-purple-50 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600 mb-1">
+                          {new Set(contracts.map(c => c.type)).size}
+                        </div>
+                        <div className="text-xs font-medium text-gray-700">Tipos</div>
+                        <div className="text-xs text-gray-500">Diferentes tipos de fluxo</div>
+                      </div>
+
+                      {/* Cobertura Regional */}
+                      <div className="text-center p-2 bg-orange-50 rounded-lg">
+                        <div className="text-2xl font-bold text-orange-600 mb-1">
+                          {new Set(contracts.map(c => c.region).filter(Boolean)).size}
+                        </div>
+                        <div className="text-xs font-medium text-gray-700">Regiões</div>
+                        <div className="text-xs text-gray-500">Cobertura geográfica</div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Aba Gráficos */}
+                <TabsContent value="charts" className="h-full overflow-hidden">
+                  <div className="h-full">
+                    <Tabs defaultValue="flow-type" className="h-full flex flex-col" orientation="vertical">
+                      <div className="flex gap-4 flex-1 overflow-hidden">
+                        {/* Tabs verticais à esquerda */}
+                        <div className="w-40 flex-shrink-0">
+                          <TabsList className="flex flex-col h-auto w-full space-y-1 p-1">
+                            <TabsTrigger value="flow-type" className="w-full justify-start text-xs py-2">
+                              Tipo Fluxo
+                            </TabsTrigger>
+                            <TabsTrigger value="contract-value" className="w-full justify-start text-xs py-2">
+                              Valor Contrato
+                            </TabsTrigger>
+                            <TabsTrigger value="payment-value" className="w-full justify-start text-xs py-2">
+                              Valor Pagamento
+                            </TabsTrigger>
+                            <TabsTrigger value="alert-type" className="w-full justify-start text-xs py-2">
+                              Tipo Alerta
+                            </TabsTrigger>
+                            <TabsTrigger value="requesting-area" className="w-full justify-start text-xs py-2">
+                              Área Solicitante
+                            </TabsTrigger>
+                            <TabsTrigger value="risk" className="w-full justify-start text-xs py-2">
+                              Risco
+                            </TabsTrigger>
+                            <TabsTrigger value="fine" className="w-full justify-start text-xs py-2">
+                              Multa
+                            </TabsTrigger>
+                            <TabsTrigger value="region" className="w-full justify-start text-xs py-2">
+                              Região
+                            </TabsTrigger>
+                            <TabsTrigger value="state" className="w-full justify-start text-xs py-2">
+                              Estado
+                            </TabsTrigger>
+                            <TabsTrigger value="payment-status" className="w-full justify-start text-xs py-2">
+                              Status Pagamento
+                            </TabsTrigger>
+                          </TabsList>
+                        </div>
+
+                        {/* Área dos gráficos à direita */}
+                        <div className="flex-1 h-full overflow-hidden">
+                          <TabsContent value="flow-type" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(flowTypeData, 'Distribuição por Tipo de Fluxo')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="contract-value" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(contractValueData, 'Distribuição por Valor do Contrato')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="payment-value" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(paymentValueData, 'Distribuição por Valor do Pagamento')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="alert-type" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(alertTypeData, 'Distribuição por Tipo de Alerta')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="requesting-area" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(requestingAreaData, 'Distribuição por Área Solicitante')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="risk" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(riskData, 'Distribuição por Nível de Risco')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="fine" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(fineData, 'Distribuição por Valor da Multa')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="region" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(regionData, 'Distribuição por Região')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="state" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(stateData, 'Distribuição por Estado')}
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="payment-status" className="h-full">
+                            <div className="w-full h-full">
+                              {renderBarChart(paymentStatusData, 'Distribuição por Status do Pagamento')}
+                            </div>
+                          </TabsContent>
+                        </div>
+                      </div>
+                    </Tabs>
+                  </div>
+                </TabsContent>
+
+                {/* Aba Contratos */}
+                <TabsContent value="contracts" className="h-full overflow-hidden">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 overflow-hidden">
+                      <ContractsTable 
+                        contracts={contracts}
+                        onViewContract={(contractId) => {
+                          console.log('Visualizar contrato:', contractId);
+                          // TODO: Implementar modal de visualização do contrato
+                          alert(`Funcionalidade de visualização do contrato ${contractId} será implementada em breve.`);
+                        }}
+                        onAnalyzeContract={(contractId) => {
+                          setSelectedContractId(contractId);
+                          setAnalysisModalOpen(true);
+                          console.log('Analisar contrato:', contractId);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
               </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Container de Gráficos com Tabs */}
-        <Card>
-          <Collapsible open={isChartsExpanded} onOpenChange={setIsChartsExpanded}>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Análise Detalhada</CardTitle>
-                    <CardDescription>
-                      Visualizações gráficas dos dados da amostra selecionada
-                    </CardDescription>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform ${isChartsExpanded ? 'rotate-180' : ''}`} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-            <Tabs defaultValue="flow-type" className="w-full" orientation="vertical">
-              <div className="flex gap-6">
-                {/* Tabs verticais à esquerda */}
-                <div className="w-48 flex-shrink-0">
-                  <TabsList className="flex flex-col h-auto w-full space-y-1 p-1">
-                    <TabsTrigger value="flow-type" className="w-full justify-start text-sm py-3">
-                      Tipo Fluxo
-                    </TabsTrigger>
-                    <TabsTrigger value="contract-value" className="w-full justify-start text-sm py-3">
-                      Valor Contrato
-                    </TabsTrigger>
-                    <TabsTrigger value="payment-value" className="w-full justify-start text-sm py-3">
-                      Valor Pagamento
-                    </TabsTrigger>
-                    <TabsTrigger value="alert-type" className="w-full justify-start text-sm py-3">
-                      Tipo Alerta
-                    </TabsTrigger>
-                    <TabsTrigger value="requesting-area" className="w-full justify-start text-sm py-3">
-                      Área Solicitante
-                    </TabsTrigger>
-                    <TabsTrigger value="risk" className="w-full justify-start text-sm py-3">
-                      Risco
-                    </TabsTrigger>
-                    <TabsTrigger value="fine" className="w-full justify-start text-sm py-3">
-                      Multa
-                    </TabsTrigger>
-                    <TabsTrigger value="region" className="w-full justify-start text-sm py-3">
-                      Região
-                    </TabsTrigger>
-                    <TabsTrigger value="state" className="w-full justify-start text-sm py-3">
-                      Estado
-                    </TabsTrigger>
-                    <TabsTrigger value="payment-status" className="w-full justify-start text-sm py-3">
-                      Status Pagamento
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-
-                {/* Área dos gráficos à direita */}
-                <div className="flex-1 min-h-96">
-
-                  <TabsContent value="flow-type">
-                    {renderBarChart(flowTypeData, 'Distribuição por Tipo de Fluxo')}
-                  </TabsContent>
-
-                  <TabsContent value="contract-value">
-                    {renderBarChart(contractValueData, 'Distribuição por Valor do Contrato')}
-                  </TabsContent>
-
-                  <TabsContent value="payment-value">
-                    {renderBarChart(paymentValueData, 'Distribuição por Valor do Pagamento')}
-                  </TabsContent>
-
-                  <TabsContent value="alert-type">
-                    {renderBarChart(alertTypeData, 'Distribuição por Tipo de Alerta')}
-                  </TabsContent>
-
-                  <TabsContent value="requesting-area">
-                    {renderBarChart(requestingAreaData, 'Distribuição por Área Solicitante')}
-                  </TabsContent>
-
-                  <TabsContent value="risk">
-                    {renderBarChart(riskData, 'Distribuição por Nível de Risco')}
-                  </TabsContent>
-
-                  <TabsContent value="fine">
-                    {renderBarChart(fineData, 'Distribuição por Valor da Multa')}
-                  </TabsContent>
-
-                  <TabsContent value="region">
-                    {renderBarChart(regionData, 'Distribuição por Região')}
-                  </TabsContent>
-
-                  <TabsContent value="state">
-                    {renderBarChart(stateData, 'Distribuição por Estado')}
-                  </TabsContent>
-
-                  <TabsContent value="payment-status">
-                    {renderBarChart(paymentStatusData, 'Distribuição por Status do Pagamento')}
-                  </TabsContent>
-                </div>
-              </div>
             </Tabs>
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
-
-        {/* Tabela de Contratos Detalhada */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Contratos Detalhados
-            </CardTitle>
-            <CardDescription>
-              Lista completa dos contratos incluídos na análise atual
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 overflow-hidden">
-            <ContractsTable 
-              contracts={contracts}
-              onViewContract={(contractId) => {
-                console.log('Visualizar contrato:', contractId);
-                // TODO: Implementar modal de visualização do contrato
-                alert(`Funcionalidade de visualização do contrato ${contractId} será implementada em breve.`);
-              }}
-              onAnalyzeContract={(contractId) => {
-                setSelectedContractId(contractId);
-                setAnalysisModalOpen(true);
-                console.log('Analisar contrato:', contractId);
-              }}
-            />
-          </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
       
       {/* Contract Analysis Modal */}

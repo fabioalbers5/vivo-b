@@ -92,7 +92,7 @@ const ContractNumberFilter = ({ value, onChange }: ContractNumberFilterProps) =>
             className="w-full justify-between"
           >
             {value.length === 0
-              ? "Selecione contratos..."
+              ? "Selecione pagamentos..."
               : `${value.length} contrato(s) selecionado(s)`}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>

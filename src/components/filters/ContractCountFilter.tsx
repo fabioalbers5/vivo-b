@@ -9,7 +9,6 @@ interface ContractCountFilterProps {
 const ContractCountFilter = ({ value, onChange }: ContractCountFilterProps) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="contract-count">Quantidade de Contratos</Label>
       <Input
         id="contract-count"
         type="number"

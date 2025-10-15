@@ -1,8 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Check, ChevronsUpDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
 import { PaymentStatus, AlertType, RequestingArea, ContractRisk } from '@/core/entities/Contract';
 
 interface VivoMultiSelectProps {
@@ -22,8 +36,12 @@ export const VivoMultiSelect: React.FC<VivoMultiSelectProps> = ({
   onValueChange,
   placeholder = "Selecione uma ou mais opções..."
 }) => {
-  const handleSelect = (value: string) => {
-    if (!selectedValues.includes(value)) {
+  const [open, setOpen] = useState(false);
+
+  const handleToggle = (value: string) => {
+    if (selectedValues.includes(value)) {
+      onValueChange(selectedValues.filter(v => v !== value));
+    } else {
       onValueChange([...selectedValues, value]);
     }
   };
@@ -32,66 +50,83 @@ export const VivoMultiSelect: React.FC<VivoMultiSelectProps> = ({
     onValueChange(selectedValues.filter(v => v !== value));
   };
 
-  const handleClear = () => {
-    onValueChange([]);
-  };
-
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
+      {label && <Label className="text-sm font-medium">{label}</Label>}
       {description && (
         <p className="text-xs text-muted-foreground">{description}</p>
       )}
       
-      <Select onValueChange={handleSelect}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {options
-            .filter(option => !selectedValues.includes(option.value))
-            .map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-        </SelectContent>
-      </Select>
-
+      {/* Selected items display */}
       {selectedValues.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              {selectedValues.length} selecionado(s)
-            </span>
-            <button
-              type="button"
-              onClick={handleClear}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Limpar todos
-            </button>
-          </div>
-          
-          <div className="flex flex-wrap gap-1">
-            {selectedValues.map((value) => {
-              const option = options.find(opt => opt.value === value);
-              return (
-                <Badge key={value} variant="secondary" className="text-xs">
-                  {option?.label || value}
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(value)}
-                    className="ml-1 hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              );
-            })}
-          </div>
+        <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto">
+          {selectedValues.map((value) => {
+            const option = options.find(opt => opt.value === value);
+            const displayName = option?.value || value;
+            return (
+              <Badge key={value} variant="secondary" className="text-xs py-0 px-1">
+                {displayName}
+                <button
+                  className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleRemove(value);
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onClick={() => handleRemove(value)}
+                >
+                  <X className="h-2 w-2 text-muted-foreground hover:text-foreground" />
+                </button>
+              </Badge>
+            );
+          })}
         </div>
       )}
+
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            {selectedValues.length === 0
+              ? placeholder
+              : `${selectedValues.length} selecionado(s)`}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput placeholder="Buscar..." />
+            <CommandList>
+              <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+              <CommandGroup>
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={() => handleToggle(option.value)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedValues.includes(option.value) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
@@ -116,8 +151,7 @@ export const PaymentStatusFilter: React.FC<PaymentStatusFilterProps> = ({
 
   return (
     <VivoMultiSelect
-      label="Status do Pagamento"
-      description="Status de aprovação do pagamento do contrato"
+      label=""
       options={options}
       selectedValues={selectedValues}
       onValueChange={onValueChange as (values: string[]) => void}
@@ -147,8 +181,7 @@ export const AlertTypeFilter: React.FC<AlertTypeFilterProps> = ({
 
   return (
     <VivoMultiSelect
-      label="Tipo de Alerta"
-      description="Categoria do alerta gerado para o contrato"
+      label=""
       options={options}
       selectedValues={selectedValues}
       onValueChange={onValueChange as (values: string[]) => void}
@@ -178,8 +211,7 @@ export const RequestingAreaFilter: React.FC<RequestingAreaFilterProps> = ({
 
   return (
     <VivoMultiSelect
-      label="Área Solicitante"
-      description="Área organizacional que solicitou o contrato"
+      label=""
       options={options}
       selectedValues={selectedValues}
       onValueChange={onValueChange as (values: string[]) => void}
@@ -205,8 +237,7 @@ export const RiskFilter: React.FC<RiskFilterProps> = ({
 
   return (
     <VivoMultiSelect
-      label="Nível de Risco"
-      description="Classificação de risco do contrato"
+      label=""
       options={options}
       selectedValues={selectedValues}
       onValueChange={onValueChange as (values: string[]) => void}

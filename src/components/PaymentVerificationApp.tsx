@@ -11,21 +11,20 @@ import LocationFilter from "./filters/LocationFilter";
 import DueDateFilter from "./filters/DueDateFilter";
 import SupplierNameFilter from "./filters/SupplierNameFilter";
 import ContractNumberFilter from "./filters/ContractNumberFilter";
+import { PaymentStatusFilter, AlertTypeFilter, RiskFilter } from "./filters/vivo/VivoSelectFilters";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import PaginatedContractsTable from "./PaginatedContractsTable";
-import CreateFilterModal from "./CreateFilterModal";
 import ContractAnalysisModal from "./ContractAnalysisModal";
-import CustomFilterRenderer from "./CustomFilterRenderer";
-import { useCustomFilters } from "@/hooks/useCustomFilters";
+
 import { useContractFilters, LegacyContract } from "@/hooks/useContractFilters";
 import { useAllContracts } from "@/hooks/useAllContracts";
+import { PaymentStatus, AlertType, ContractRisk } from "@/core/entities/Contract";
 
 
 
 const PaymentVerificationApp = () => {
   const { toast } = useToast();
-  const { customFilters, addFilter, removeFilter, isLoading: filtersLoading } = useCustomFilters();
   const { contracts, isLoading, applyFilters: originalApplyFilters } = useContractFilters();
   const { allContracts, isLoading: allContractsLoading } = useAllContracts();
   
@@ -65,11 +64,13 @@ const PaymentVerificationApp = () => {
   const [contractNumber, setContractNumber] = useState<string[]>([]);
   const [contractCount, setContractCount] = useState<number>(10);
   
+  // Vivo specific filter states
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus[]>([]);
+  const [alertType, setAlertType] = useState<AlertType[]>([]);
+  const [riskLevel, setRiskLevel] = useState<ContractRisk[]>([]);
+  
   // Custom filter values
   const [customFilterValues, setCustomFilterValues] = useState<Record<string, unknown>>({});
-  
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Referência para manter o último conjunto de filtros aplicado
   const lastAppliedFiltersRef = useRef<string>("");
@@ -88,11 +89,10 @@ const PaymentVerificationApp = () => {
       supplierName: supplierName.sort(),
       contractNumber: contractNumber.sort(),
       contractCount,
-      customFilterValues,
-      customFilters: customFilters.map(f => f.id).sort()
+      customFilterValues
     };
     return JSON.stringify(params);
-  }, [flowType, contractValue, paymentValue, region, selectedStates, dueDate, customStart, customEnd, supplierName, contractNumber, contractCount, customFilterValues, customFilters]);
+  }, [flowType, contractValue, paymentValue, region, selectedStates, dueDate, customStart, customEnd, supplierName, contractNumber, contractCount, customFilterValues]);
 
   // useEffect com debouncing para aplicar filtros automaticamente
   useEffect(() => {
@@ -113,8 +113,7 @@ const PaymentVerificationApp = () => {
       supplierName,
       contractNumber,
       contractCount,
-      customFilterValues,
-      customFilters
+      customFilterValues
     };
 
     // Verificar se há filtros ativos
@@ -143,12 +142,7 @@ const PaymentVerificationApp = () => {
     return () => clearTimeout(timeoutId);
   }, [filterParamsHash, applyFilters]); // Dependência apenas do hash memoizado
 
-  const handleCustomFilterChange = (filterId: string, value: unknown) => {
-    setCustomFilterValues(prev => ({
-      ...prev,
-      [filterId]: value
-    }));
-  };
+
 
 
 
@@ -180,6 +174,9 @@ const PaymentVerificationApp = () => {
     setSupplierName([]);
     setContractNumber([]);
     setContractCount(10);
+    setPaymentStatus([]);
+    setAlertType([]);
+    setRiskLevel([]);
     setCustomFilterValues({});
     
     // Resetar estados da tabela
@@ -192,36 +189,10 @@ const PaymentVerificationApp = () => {
     });
   };
 
-  // Preparar filtros para a FilterBar
+  // Preparar filtros para a FilterBar na ordem solicitada:
+  // Tipo de Fluxo, Data do Vencimento, Valor do Pagamento, Valor do Contrato, 
+  // Nível de Risco, Tipo de Alerta, Status do Pagamento, Fornecedor, Nº do Pagamento
   const filterItems: FilterItem[] = [
-    {
-      id: 'supplier',
-      label: 'Fornecedor',
-      activeCount: supplierName.length,
-      isActive: supplierName.length > 0,
-      component: (
-        <FilterWrapper>
-          <SupplierNameFilter
-            value={supplierName}
-            onChange={setSupplierName}
-          />
-        </FilterWrapper>
-      )
-    },
-    {
-      id: 'contract',
-      label: 'Número do Contrato',
-      activeCount: contractNumber.length,
-      isActive: contractNumber.length > 0,
-      component: (
-        <FilterWrapper>
-          <ContractNumberFilter
-            value={contractNumber}
-            onChange={setContractNumber}
-          />
-        </FilterWrapper>
-      )
-    },
     {
       id: 'flowtype',
       label: 'Tipo de Fluxo',
@@ -234,18 +205,19 @@ const PaymentVerificationApp = () => {
       )
     },
     {
-      id: 'contractvalue',
-      label: 'Valor do Contrato',
-      activeCount: (contractValue[0] > 0 || contractValue[1] < 10000000) ? 1 : 0,
-      isActive: contractValue[0] > 0 || contractValue[1] < 10000000,
+      id: 'duedate',
+      label: 'Data de Vencimento',
+      activeCount: (dueDate && dueDate !== 'all') ? 1 : 0,
+      isActive: dueDate && dueDate !== 'all',
       component: (
         <FilterWrapper>
-          <ValueRangeFilter
-            title="Valor do Contrato"
-            min={0}
-            max={10000000}
-            value={contractValue}
-            onChange={setContractValue}
+          <DueDateFilter
+            value={dueDate}
+            customStart={customStart}
+            customEnd={customEnd}
+            onChange={setDueDate}
+            onCustomStartChange={setCustomStart}
+            onCustomEndChange={setCustomEnd}
           />
         </FilterWrapper>
       )
@@ -268,65 +240,92 @@ const PaymentVerificationApp = () => {
       )
     },
     {
-      id: 'states',
-      label: 'Estados',
-      activeCount: selectedStates.length,
-      isActive: selectedStates.length > 0,
+      id: 'contractvalue',
+      label: 'Valor do Contrato',
+      activeCount: (contractValue[0] > 0 || contractValue[1] < 10000000) ? 1 : 0,
+      isActive: contractValue[0] > 0 || contractValue[1] < 10000000,
       component: (
         <FilterWrapper>
-          <LocationFilter
-            region=""
-            selectedStates={selectedStates}
-            onRegionChange={() => {}}
-            onStatesChange={setSelectedStates}
+          <ValueRangeFilter
+            title="Valor do Contrato"
+            min={0}
+            max={10000000}
+            value={contractValue}
+            onChange={setContractValue}
           />
         </FilterWrapper>
       )
     },
     {
-      id: 'duedate',
-      label: 'Data de Vencimento',
-      activeCount: (dueDate && dueDate !== 'all') ? 1 : 0,
-      isActive: dueDate && dueDate !== 'all',
+      id: 'risk',
+      label: 'Nível de Risco',
+      activeCount: riskLevel.length,
+      isActive: riskLevel.length > 0,
       component: (
         <FilterWrapper>
-          <DueDateFilter
-            value={dueDate}
-            customStart={customStart}
-            customEnd={customEnd}
-            onChange={setDueDate}
-            onCustomStartChange={setCustomStart}
-            onCustomEndChange={setCustomEnd}
+          <RiskFilter
+            selectedValues={riskLevel}
+            onValueChange={setRiskLevel}
           />
         </FilterWrapper>
       )
     },
-    // Custom Filters
-    ...customFilters.map((filter) => ({
-      id: `custom-${filter.id}`,
-      label: filter.name,
-      activeCount: customFilterValues[filter.id] ? 1 : 0,
-      isActive: !!customFilterValues[filter.id],
+    {
+      id: 'alert',
+      label: 'Tipo de Alerta',
+      activeCount: alertType.length,
+      isActive: alertType.length > 0,
       component: (
         <FilterWrapper>
-          <CustomFilterRenderer
-            filter={filter}
-            value={customFilterValues[filter.id]}
-            onChange={(value) => handleCustomFilterChange(filter.id, value)}
+          <AlertTypeFilter
+            selectedValues={alertType}
+            onValueChange={setAlertType}
           />
-          <div className="pt-3 border-t border-gray-100 mt-3">
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => removeFilter(filter.id)}
-              className="w-full"
-            >
-              Remover Filtro
-            </Button>
-          </div>
         </FilterWrapper>
       )
-    }))
+    },
+    {
+      id: 'paymentstatus',
+      label: 'Status do Pagamento',
+      activeCount: paymentStatus.length,
+      isActive: paymentStatus.length > 0,
+      component: (
+        <FilterWrapper>
+          <PaymentStatusFilter
+            selectedValues={paymentStatus}
+            onValueChange={setPaymentStatus}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'supplier',
+      label: 'Fornecedor',
+      activeCount: supplierName.length,
+      isActive: supplierName.length > 0,
+      component: (
+        <FilterWrapper>
+          <SupplierNameFilter
+            value={supplierName}
+            onChange={setSupplierName}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'contract',
+      label: 'Nº do Pagamento',
+      activeCount: contractNumber.length,
+      isActive: contractNumber.length > 0,
+      component: (
+        <FilterWrapper>
+          <ContractNumberFilter
+            value={contractNumber}
+            onChange={setContractNumber}
+          />
+        </FilterWrapper>
+      )
+    }
   ];
 
   return (
@@ -336,7 +335,6 @@ const PaymentVerificationApp = () => {
         <FilterBar 
           filters={filterItems}
           onClearAll={resetFilters}
-          onAddFilter={() => setIsModalOpen(true)}
         />
         
         {/* Contracts Table */}
@@ -352,13 +350,6 @@ const PaymentVerificationApp = () => {
           />
         </div>
       </main>
-      
-      {/* Create Filter Modal */}
-      <CreateFilterModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={addFilter}
-      />
       
       {/* Contract Analysis Modal */}
       <ContractAnalysisModal

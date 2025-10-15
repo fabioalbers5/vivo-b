@@ -147,7 +147,6 @@ const CustomFilterRenderer = ({ filter, value, onChange }: CustomFilterRendererP
               checked={!!value}
               onCheckedChange={onChange}
             />
-            <Label htmlFor={filter.id}>Ativo</Label>
           </div>
         );
 
@@ -165,7 +164,6 @@ const CustomFilterRenderer = ({ filter, value, onChange }: CustomFilterRendererP
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs">Data inicial</Label>
                 <Input
                   type="date"
                   value={value?.start || ''}
@@ -173,7 +171,6 @@ const CustomFilterRenderer = ({ filter, value, onChange }: CustomFilterRendererP
                 />
               </div>
               <div>
-                <Label className="text-xs">Data final</Label>
                 <Input
                   type="date"
                   value={value?.end || ''}

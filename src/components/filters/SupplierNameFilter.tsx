@@ -59,7 +59,7 @@ const SupplierNameFilter = ({ value, onChange }: SupplierNameFilterProps) => {
         <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto">
           {value.map((supplierValue) => {
             const supplier = suppliers.find(s => s.value === supplierValue);
-            const displayName = supplier?.label ? supplier.label.split(' ')[0] : supplierValue;
+            const displayName = supplier?.value || supplierValue;
             return (
               <Badge key={supplierValue} variant="secondary" className="text-xs py-0 px-1">
                 {displayName}

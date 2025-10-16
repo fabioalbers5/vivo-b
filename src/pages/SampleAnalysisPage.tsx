@@ -483,9 +483,13 @@ const SampleAnalysisPage: React.FC = () => {
         {/* Container Principal com Abas */}
         <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
           <Card className="h-full flex flex-col">
-            <Tabs defaultValue="representativity" className="h-full flex flex-col">
+            <Tabs defaultValue="contracts" className="h-full flex flex-col">
               <CardHeader className="pb-2 pt-3">
                 <TabsList className="grid w-full grid-cols-3 h-8">
+                  <TabsTrigger value="contracts" className="flex items-center gap-2 text-xs">
+                    <Database className="h-3 w-3" />
+                    Contratos Detalhados
+                  </TabsTrigger>
                   <TabsTrigger value="representativity" className="flex items-center gap-2 text-xs">
                     <Target className="h-3 w-3" />
                     Representatividade
@@ -493,10 +497,6 @@ const SampleAnalysisPage: React.FC = () => {
                   <TabsTrigger value="charts" className="flex items-center gap-2 text-xs">
                     <BarChart3 className="h-3 w-3" />
                     Análise Detalhada
-                  </TabsTrigger>
-                  <TabsTrigger value="contracts" className="flex items-center gap-2 text-xs">
-                    <Database className="h-3 w-3" />
-                    Contratos Detalhados
                   </TabsTrigger>
                 </TabsList>
               </CardHeader>

@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp } from "lucide-react";
+import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import FilterBar, { FilterItem } from "./FilterBar";
 import FilterWrapper from "./FilterWrapper";
@@ -20,9 +21,16 @@ import { PaymentStatusFilter, AlertTypeFilter, RiskFilter } from "./filters/vivo
 import PaginatedContractsTable from "./PaginatedContractsTable";
 import ContractAnalysisModal from "./ContractAnalysisModal";
 import SampleManagementTab from "./SampleManagementTab";
-
 import { useContractFilters, LegacyContract } from "@/hooks/useContractFilters";
 import { useAllContracts } from "@/hooks/useAllContracts";
+import { executeSamplingMotor, SamplingMotorType } from "@/utils/samplingEngines";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PaymentStatus, AlertType, ContractRisk } from "@/core/entities/Contract";
 
 
@@ -44,6 +52,9 @@ const PaymentVerificationApp = () => {
   // Estado para seleção da amostra
   const [sampleSize, setSampleSize] = useState<number>(10);
   const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set());
+  
+  // Motor de amostragem
+  const [samplingMotor, setSamplingMotor] = useState<SamplingMotorType>('highest-value');
 
   // Função memoizada para aplicar filtros - evita recriação constante e múltiplas chamadas
   const applyFilters = useCallback(async (filterParams: any) => {
@@ -132,6 +143,7 @@ const PaymentVerificationApp = () => {
                       currentFilterParams.paymentValue[0] > 0 || currentFilterParams.paymentValue[1] < 10000000 ||
                       currentFilterParams.selectedStates.length > 0 ||
                       (currentFilterParams.dueDate && currentFilterParams.dueDate !== 'all' && currentFilterParams.dueDate !== '') ||
+                      (treasuryCycle && treasuryCycle !== 'all') ||
                       currentFilterParams.supplierName.length > 0 ||
                       currentFilterParams.contractNumber.length > 0 ||
                       Object.keys(currentFilterParams.customFilterValues).some(key => currentFilterParams.customFilterValues[key]);
@@ -212,27 +224,24 @@ const PaymentVerificationApp = () => {
       return;
     }
 
-    const size = Math.min(sampleSize, availableContracts.length);
-    
-    // Gerar índices aleatórios únicos
-    const randomIndices = new Set<number>();
-    while (randomIndices.size < size) {
-      randomIndices.add(Math.floor(Math.random() * availableContracts.length));
-    }
-    
-    // Selecionar os contratos com base nos índices
-    const newSelection = new Set<string>();
-    Array.from(randomIndices).forEach(index => {
-      const contract = availableContracts[index];
-      const contractId = contract.id || `${contract.number}-${contract.supplier}`;
-      newSelection.add(contractId);
-    });
+    // Executar o motor selecionado
+    const newSelection = executeSamplingMotor(
+      samplingMotor,
+      availableContracts,
+      sampleSize
+    );
     
     setSelectedPayments(newSelection);
     
+    const motorLabels: Record<SamplingMotorType, string> = {
+      'highest-value': 'Maior Valor',
+      'top-suppliers': 'Top Fornecedores',
+      'random': 'Aleatório'
+    };
+    
     toast({
       title: "Amostra gerada",
-      description: `${size} pagamento(s) selecionado(s) aleatoriamente.`
+      description: `${newSelection.size} pagamento(s) selecionado(s) usando o motor "${motorLabels[samplingMotor]}".`
     });
   };
 
@@ -290,6 +299,23 @@ const PaymentVerificationApp = () => {
       currency: 'BRL',
     }).format(value);
   };
+
+  // Calcular contagem de filtros ativos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (flowType.length > 0) count++;
+    if (contractValue[0] > 0 || contractValue[1] < 10000000) count++;
+    if (paymentValue[0] > 0 || paymentValue[1] < 10000000) count++;
+    if (selectedStates.length > 0) count++;
+    if (dueDate && dueDate !== 'all') count++;
+    if (treasuryCycle && treasuryCycle !== 'all') count++;
+    if (supplierName.length > 0) count++;
+    if (contractNumber.length > 0) count++;
+    if (paymentStatus.length > 0) count++;
+    if (alertType.length > 0) count++;
+    if (riskLevel.length > 0) count++;
+    return count;
+  }, [flowType, contractValue, paymentValue, selectedStates, dueDate, treasuryCycle, supplierName, contractNumber, paymentStatus, alertType, riskLevel]);
 
   // Preparar filtros para a FilterBar na ordem solicitada:
   // Tipo de Fluxo, Data do Vencimento, Ciclo de Tesouraria, Valor do Pagamento, Valor do Contrato, 
@@ -466,7 +492,7 @@ const PaymentVerificationApp = () => {
           </div>
 
           <TabsContent value="selection" className="mt-0">
-            {/* Nova Barra de Filtros */}
+            {/* Barra de Filtros - sempre visível */}
             <FilterBar 
               filters={filterItems}
               onClearAll={resetFilters}
@@ -491,9 +517,27 @@ const PaymentVerificationApp = () => {
                 </div>
                 
                 <div className="flex items-center gap-3">
+                  {/* Motor de Amostragem */}
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="samplingMotor" className="text-sm whitespace-nowrap text-gray-600">
+                      Motor:
+                    </Label>
+                    <Select value={samplingMotor} onValueChange={(value) => setSamplingMotor(value as SamplingMotorType)}>
+                      <SelectTrigger id="samplingMotor" className="w-[140px] h-8 text-xs">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="highest-value">Maior valor</SelectItem>
+                        <SelectItem value="top-suppliers">Top fornecedores</SelectItem>
+                        <SelectItem value="random">Aleatório</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Tamanho da Amostra */}
                   <div className="flex items-center gap-2">
                     <Label htmlFor="sampleSize" className="text-sm whitespace-nowrap text-gray-600">
-                      Tamanho da amostra:
+                      Tamanho:
                     </Label>
                     <Input
                       id="sampleSize"

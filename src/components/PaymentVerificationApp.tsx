@@ -7,6 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import FilterBar, { FilterItem } from "./FilterBar";
 import FlowTypeFilter from "./filters/FlowTypeFilter";
@@ -22,14 +37,8 @@ import ContractAnalysisModal from "./ContractAnalysisModal";
 import SampleManagementTab from "./SampleManagementTab";
 import { useContractFilters, LegacyContract } from "@/hooks/useContractFilters";
 import { useAllContracts } from "@/hooks/useAllContracts";
+import { useAnalysts } from "@/hooks/useAnalysts";
 import { executeSamplingMotor, SamplingMotorType } from "@/utils/samplingEngines";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { PaymentStatus, AlertType, ContractRisk } from "@/core/entities/Contract";
 
 
@@ -38,6 +47,7 @@ const PaymentVerificationApp = () => {
   const { toast } = useToast();
   const { contracts, isLoading, applyFilters: originalApplyFilters } = useContractFilters();
   const { allContracts, isLoading: allContractsLoading } = useAllContracts();
+  const { analysts, isLoading: analystsLoading } = useAnalysts();
   
   // Estado para mostrar resultados filtrados na tabela
   const [showFilteredResults, setShowFilteredResults] = useState(false);
@@ -47,6 +57,8 @@ const PaymentVerificationApp = () => {
   // Estado para modals
   const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string>('');
+  const [analystModalOpen, setAnalystModalOpen] = useState(false);
+  const [selectedAnalyst, setSelectedAnalyst] = useState<string>('');
   
   // Estado para seleção da amostra
   const [sampleSize, setSampleSize] = useState<number>(10);
@@ -255,11 +267,29 @@ const PaymentVerificationApp = () => {
       return;
     }
 
+    // Abrir modal de seleção de analista
+    setAnalystModalOpen(true);
+  };
+
+  const handleDefineSample = () => {
+    if (!selectedAnalyst) {
+      toast({
+        title: "Atenção",
+        description: "Por favor, selecione um analista responsável.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
-      title: "Amostra finalizada",
-      description: `${selectedPayments.size} pagamento(s) pronto(s) para análise.`
+      title: "Amostra definida",
+      description: `${selectedPayments.size} pagamento(s) atribuído(s) ao analista ${selectedAnalyst}.`
     });
-    // Aqui você pode adicionar a lógica para finalizar a amostra
+    
+    // Fechar modal e resetar seleção
+    setAnalystModalOpen(false);
+    setSelectedAnalyst('');
+    // Aqui você pode adicionar a lógica para salvar a amostra no backend
   };
 
   // Calcular estatísticas da amostra selecionada
@@ -610,6 +640,65 @@ const PaymentVerificationApp = () => {
         onClose={() => setAnalysisModalOpen(false)}
         contractId={selectedContractId}
       />
+
+      {/* Analyst Selection Modal */}
+      <Dialog open={analystModalOpen} onOpenChange={setAnalystModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Definir Analista Responsável</DialogTitle>
+            <DialogDescription>
+              Selecione o analista que ficará responsável pela análise desta amostra de {selectedPayments.size} pagamento(s).
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="analyst">Analista</Label>
+              <Select value={selectedAnalyst} onValueChange={setSelectedAnalyst}>
+                <SelectTrigger id="analyst">
+                  <SelectValue placeholder="Selecione um analista..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {analystsLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Carregando analistas...
+                    </SelectItem>
+                  ) : analysts.length === 0 ? (
+                    <SelectItem value="empty" disabled>
+                      Nenhum analista encontrado
+                    </SelectItem>
+                  ) : (
+                    analysts.map((analyst) => (
+                      <SelectItem key={analyst} value={analyst}>
+                        {analyst}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAnalystModalOpen(false);
+                setSelectedAnalyst('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleDefineSample}
+              disabled={!selectedAnalyst || analystsLoading}
+              className="bg-vivo-purple hover:bg-vivo-purple/90"
+            >
+              Definir Amostra
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

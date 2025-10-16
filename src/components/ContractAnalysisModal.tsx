@@ -25,7 +25,8 @@ import {
   Receipt,
   FileSpreadsheet,
   Calculator,
-  Upload
+  Upload,
+  FileDown
 } from 'lucide-react';
 
 interface ContractAnalysisModalProps {
@@ -273,6 +274,186 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
     setSelectedEvidence(null);
   };
 
+  const handleGenerateWP = () => {
+    // Criar uma nova janela para o PDF
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Popup bloqueado! Por favor, permita popups para gerar o WP.');
+      return;
+    }
+
+    // Preparar dados para o PDF
+    const currentDate = new Date().toLocaleString('pt-BR');
+    
+    // HTML do documento
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>WP - Análise de Pagamento ${contractId}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            line-height: 1.6;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #660099;
+            padding-bottom: 20px;
+          }
+          .header h1 {
+            color: #660099;
+            margin: 0;
+            font-size: 24px;
+          }
+          .header p {
+            color: #666;
+            margin: 5px 0;
+          }
+          .info-section {
+            margin-bottom: 20px;
+          }
+          .info-label {
+            font-weight: bold;
+            color: #660099;
+            display: inline-block;
+            width: 200px;
+          }
+          .info-value {
+            color: #333;
+          }
+          .fields-section {
+            margin-top: 30px;
+          }
+          .field-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-left: 3px solid #660099;
+            background: #f9f9f9;
+          }
+          .field-label {
+            font-weight: bold;
+            color: #660099;
+            margin-bottom: 5px;
+          }
+          .field-value {
+            color: #333;
+          }
+          .field-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+          }
+          .status-compliant {
+            background: #d1f4e0;
+            color: #1e7e34;
+          }
+          .status-non-compliant {
+            background: #f8d7da;
+            color: #721c24;
+          }
+          .status-warning {
+            background: #fff3cd;
+            color: #856404;
+          }
+          .status-neutral {
+            background: #e9ecef;
+            color: #495057;
+          }
+          .corrections-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff9e6;
+            border: 2px solid #ffc107;
+            border-radius: 5px;
+          }
+          .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+          }
+          @media print {
+            body { padding: 20px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Work Package - Análise de Pagamento</h1>
+          <p>Contrato: ${contractId}</p>
+          <p>Data de Geração: ${currentDate}</p>
+        </div>
+
+        <div class="info-section">
+          <div><span class="info-label">Contrato ID:</span> <span class="info-value">${contractId}</span></div>
+          <div><span class="info-label">Total de Campos Analisados:</span> <span class="info-value">${analysisData.length}</span></div>
+          <div><span class="info-label">Correções Aplicadas:</span> <span class="info-value">${Object.keys(corrections).length}</span></div>
+        </div>
+
+        <div class="fields-section">
+          <h2 style="color: #660099; border-bottom: 2px solid #660099; padding-bottom: 10px;">Campos Analisados</h2>
+          ${analysisData.map(field => {
+            const currentValue = getCurrentValue(field);
+            const isCorrected = corrections[field.id];
+            const statusClass = field.status === 'compliant' ? 'status-compliant' : 
+                               field.status === 'non-compliant' ? 'status-non-compliant' :
+                               field.status === 'warning' ? 'status-warning' : 'status-neutral';
+            const statusLabel = field.status === 'compliant' ? 'Conforme' : 
+                               field.status === 'non-compliant' ? 'Não Conforme' :
+                               field.status === 'warning' ? 'Atenção' : 'Neutro';
+            
+            return `
+              <div class="field-item">
+                <div class="field-label">
+                  ${field.label}
+                  <span class="field-status ${statusClass}">${statusLabel}</span>
+                  ${isCorrected ? '<span style="color: #ffc107; font-weight: bold;"> [CORRIGIDO]</span>' : ''}
+                </div>
+                <div class="field-value">${currentValue}</div>
+                ${isCorrected ? `<div style="color: #999; font-size: 12px; margin-top: 5px;">Valor original: ${field.value}</div>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        ${Object.keys(corrections).length > 0 ? `
+          <div class="corrections-section">
+            <h3 style="color: #856404; margin-top: 0;">Resumo de Correções</h3>
+            <p>Total de ${Object.keys(corrections).length} campo(s) foi(foram) corrigido(s) durante a análise.</p>
+            ${Object.entries(corrections).map(([fieldId, value]) => {
+              const field = analysisData.find(f => f.id === fieldId);
+              return field ? `<div>• <strong>${field.label}</strong>: ${value}</div>` : '';
+            }).join('')}
+          </div>
+        ` : ''}
+
+        <div class="footer">
+          <p>Documento gerado automaticamente pelo sistema de análise de pagamentos</p>
+          <p>© ${new Date().getFullYear()} - Todos os direitos reservados</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Escrever o conteúdo na nova janela
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+
+    // Aguardar carregamento e imprimir
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
+
   const handleUpdateEvidence = () => {
     // Criar input file invisível
     const input = document.createElement('input');
@@ -364,119 +545,54 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
 
           <div className="flex-1 overflow-hidden flex flex-col">
             <ScrollArea className="flex-1 px-6">
-              <div className="space-y-4 py-4">
+              <div className="space-y-2 py-4">
               {analysisData.map((field, index) => {
                 const IconComponent = field.icon;
                 return (
-                  <Card key={index} className="transition-shadow hover:shadow-sm border-l-4" style={{
+                  <Card key={index} className="transition-all hover:shadow-md border-l-2" style={{
                     borderLeftColor: field.status === 'compliant' ? '#10B981' : 
                                    field.status === 'non-compliant' ? '#EF4444' : 
                                    field.status === 'warning' ? '#F59E0B' : '#6B7280'
                   }}>
-                    <CardContent className="p-3">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div className="rounded-lg p-1.5 bg-slate-50 flex-shrink-0">
-                            <IconComponent className="h-4 w-4 text-slate-600" />
+                    <CardContent className="p-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className="rounded p-1 bg-slate-50 flex-shrink-0">
+                            <IconComponent className="h-3.5 w-3.5 text-slate-600" />
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-slate-700 text-sm truncate">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <h3 className="font-medium text-slate-700 text-xs truncate">
                                 {field.label}
                               </h3>
                               {getStatusIcon(field.status)}
                               {corrections[field.id] && (
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] px-1 py-0">
                                   Corrigido
-                                </Badge>
-                              )}
-                              {updatedEvidences[field.label] && (
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs">
-                                  Evidência Atualizada
                                 </Badge>
                               )}
                             </div>
                             
-                            {/* Valor ou campo de edição */}
-                            {editingField === field.id ? (
-                              <div className="space-y-2">
-                                <Textarea
-                                  value={corrections[field.id] || field.value}
-                                  onChange={(e) => handleCorrectionChange(field.id, e.target.value)}
-                                  className="text-sm min-h-[60px] resize-none"
-                                  placeholder="Digite a correção..."
-                                />
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleSaveCorrection(field.id)}
-                                    className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700"
-                                  >
-                                    <Save className="h-3 w-3 mr-1" />
-                                    Salvar
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleCancelEdit(field.id)}
-                                    className="h-7 px-2 text-xs"
-                                  >
-                                    Cancelar
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
-                                <p className={`text-sm leading-relaxed break-words ${
-                                  corrections[field.id] ? 'text-slate-700 font-medium' : 'text-slate-600'
-                                }`}>
-                                  {getCurrentValue(field)}
-                                </p>
-                                {corrections[field.id] && (
-                                  <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded border-l-2 border-blue-200">
-                                    <strong>Original:</strong> {field.value}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            
-                            {field.status && field.status !== 'neutral' && (
-                              <div className="mt-2">
-                                {getStatusBadge(field.status)}
-                              </div>
-                            )}
+                            <p className={`text-xs truncate ${
+                              corrections[field.id] ? 'text-slate-700 font-medium' : 'text-slate-500'
+                            }`}>
+                              {getCurrentValue(field)}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="flex gap-2 flex-shrink-0">
+                        <div className="flex gap-1 flex-shrink-0">
                           {/* Botão de edição */}
-                          {editingField !== field.id && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditField(field.id)}
-                              className="flex items-center gap-2 text-xs h-8 px-3"
-                              title="Corrigir análise"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                              <span className="hidden sm:inline">Corrigir</span>
-                            </Button>
-                          )}
-                          
-                          {/* Botão de evidência */}
-                          {field.hasEvidence && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEvidenceClick(field.label)}
-                              className="flex items-center gap-2 text-xs h-8 px-3"
-                              title="Ver evidência"
-                            >
-                              <Eye className="h-3 w-3" />
-                              <span className="hidden sm:inline">Evidência</span>
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditField(field.id)}
+                            className="h-7 w-7 p-0 hover:bg-vivo-purple hover:text-white"
+                            title="Editar campo"
+                          >
+                            <Edit3 className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -561,6 +677,14 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                 
                 {/* Botões principais de decisão */}
                 <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleGenerateWP}
+                    className="border-vivo-purple text-vivo-purple hover:bg-vivo-purple hover:text-white flex items-center gap-2"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Gerar WP
+                  </Button>
                   <Button 
                     variant="outline" 
                     onClick={() => {
@@ -670,6 +794,133 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                   </Button>
                 </div>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal de Edição */}
+      {editingField !== null && (
+        <Dialog open={editingField !== null} onOpenChange={() => handleCancelEdit(editingField)}>
+          <DialogContent className="max-w-4xl w-[95vw] h-[80vh] flex flex-col p-0 overflow-hidden">
+            <DialogHeader className="flex-shrink-0 px-4 pt-4 pb-3">
+              <DialogTitle className="flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-vivo-purple" />
+                Editar Campo
+              </DialogTitle>
+            </DialogHeader>
+            
+            <ScrollArea className="flex-1 overflow-x-hidden">
+              <div className="space-y-4 pb-4 px-4 w-full">
+              {analysisData.find(f => f.id === editingField) && (() => {
+                const field = analysisData.find(f => f.id === editingField)!;
+                const IconComponent = field.icon;
+                return (
+                  <>
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg w-full">
+                      <div className="rounded-lg p-2 bg-white">
+                        <IconComponent className="h-5 w-5 text-slate-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-700">{field.label}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Status: {getStatusBadge(field.status)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 w-full">
+                      <label className="text-sm font-medium text-slate-700">
+                        Valor Original
+                      </label>
+                      <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 w-full overflow-auto">
+                        <p className="text-sm text-slate-600 break-words">{field.value}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 w-full">
+                      <label className="text-sm font-medium text-slate-700">
+                        Novo Valor Corrigido
+                      </label>
+                      <Textarea
+                        value={corrections[editingField] || field.value}
+                        onChange={(e) => handleCorrectionChange(editingField, e.target.value)}
+                        className="min-h-[120px] resize-none w-full !max-w-full box-border"
+                        placeholder="Digite o valor corrigido..."
+                      />
+                      <p className="text-xs text-slate-500">
+                        Esta correção será aplicada ao campo e marcada para revisão.
+                      </p>
+                    </div>
+
+                    {field.hasEvidence && (
+                      <div className="space-y-3 w-full">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                            <Eye className="h-4 w-4 text-blue-600" />
+                            Evidência do Campo
+                          </label>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleUpdateEvidence}
+                            className="h-8 text-xs hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300"
+                          >
+                            <Upload className="h-3 w-3 mr-1.5" />
+                            Atualizar
+                          </Button>
+                        </div>
+                        
+                        <div className="border rounded-lg overflow-hidden bg-slate-50 w-full">
+                          <div className="p-4">
+                            {updatedEvidences[field.label] ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-green-600 text-sm break-words">
+                                  <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                                  <span className="break-words">Nova evidência carregada: {updatedEvidences[field.label].name}</span>
+                                </div>
+                                <div className="p-3 bg-white rounded border-2 border-dashed border-green-300">
+                                  <p className="text-xs text-slate-400">
+                                    [Visualização da nova evidência]
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <p className="text-sm text-slate-600">
+                                  Captura da seção do contrato referente ao campo "{field.label}"
+                                </p>
+                                <div className="p-8 bg-white rounded border-2 border-dashed border-slate-300 flex items-center justify-center min-h-[200px]">
+                                  <p className="text-xs text-slate-400">
+                                    [Imagem da evidência será carregada aqui]
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+              </div>
+            </ScrollArea>
+
+            <div className="flex-shrink-0 flex justify-end gap-2 px-4 py-3 border-t bg-white">
+              <Button
+                variant="outline"
+                onClick={() => handleCancelEdit(editingField)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleSaveCorrection(editingField)}
+                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Salvar Correção
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

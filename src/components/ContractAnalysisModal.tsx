@@ -21,7 +21,11 @@ import {
   Save,
   RotateCcw,
   Check,
-  Ban
+  Ban,
+  Receipt,
+  FileSpreadsheet,
+  Calculator,
+  Upload
 } from 'lucide-react';
 
 interface ContractAnalysisModalProps {
@@ -50,6 +54,9 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
   const [editingField, setEditingField] = useState<string | null>(null);
   const [corrections, setCorrections] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // Estado para evidências atualizadas
+  const [updatedEvidences, setUpdatedEvidences] = useState<Record<string, File>>({});
 
   // Dados simulados da análise de IA
   const analysisData: AnalysisField[] = [
@@ -266,6 +273,32 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
     setSelectedEvidence(null);
   };
 
+  const handleUpdateEvidence = () => {
+    // Criar input file invisível
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,.pdf';
+    
+    input.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      
+      if (file && selectedEvidence) {
+        setUpdatedEvidences(prev => ({
+          ...prev,
+          [selectedEvidence]: file
+        }));
+        setHasChanges(true);
+        
+        // Feedback visual
+        console.log(`Evidência atualizada para "${selectedEvidence}":`, file.name);
+        // Aqui você pode adicionar um toast ou notificação
+      }
+    };
+    
+    input.click();
+  };
+
   return (
     <>
       {/* Modal Principal */}
@@ -275,7 +308,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
             <div className="flex items-center justify-between">
               <DialogTitle className="text-2xl font-bold text-slate-800 flex items-center gap-3">
                 <FileText className="h-6 w-6 text-purple-600" />
-                Análise de IA - Contrato {contractId}
+                Análise de IA - Pagamento {contractId}
               </DialogTitle>
               <DialogClose asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -283,7 +316,48 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                 </Button>
               </DialogClose>
             </div>
-            <p className="text-slate-600 mt-2">
+            
+            {/* Ícones de Visualização de Documentos */}
+            <div className="flex items-center gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs hover:bg-vivo-purple hover:text-white hover:border-vivo-purple"
+                title="Visualizar Pagamento"
+              >
+                <DollarSign className="h-3.5 w-3.5 mr-1.5" />
+                Pagamento
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs hover:bg-vivo-purple hover:text-white hover:border-vivo-purple"
+                title="Visualizar Contrato"
+              >
+                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                Contrato
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs hover:bg-vivo-purple hover:text-white hover:border-vivo-purple"
+                title="Visualizar Nota Fiscal"
+              >
+                <Receipt className="h-3.5 w-3.5 mr-1.5" />
+                Nota Fiscal
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs hover:bg-vivo-purple hover:text-white hover:border-vivo-purple"
+                title="Visualizar Cálculo de Memória"
+              >
+                <Calculator className="h-3.5 w-3.5 mr-1.5" />
+                Cálculo de Memória
+              </Button>
+            </div>
+            
+            <p className="text-slate-600 mt-3">
               Resultados da análise automatizada por Inteligência Artificial
             </p>
           </DialogHeader>
@@ -315,6 +389,11 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                               {corrections[field.id] && (
                                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                                   Corrigido
+                                </Badge>
+                              )}
+                              {updatedEvidences[field.label] && (
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs">
+                                  Evidência Atualizada
                                 </Badge>
                               )}
                             </div>
@@ -565,13 +644,31 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
             </div>
             
             <div className="flex-shrink-0 p-6 pt-4 border-t bg-white">
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={closeEvidence}>
-                  Fechar
-                </Button>
-                <Button>
-                  Download Evidência
-                </Button>
+              <div className="flex justify-between items-center gap-2">
+                <div className="text-sm text-slate-600">
+                  {updatedEvidences[selectedEvidence] && (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Nova evidência carregada: {updatedEvidences[selectedEvidence].name}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleUpdateEvidence}
+                    className="hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Atualizar evidência
+                  </Button>
+                  <Button variant="outline" onClick={closeEvidence}>
+                    Fechar
+                  </Button>
+                  <Button className="bg-vivo-purple hover:bg-vivo-purple/90">
+                    Download Evidência
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogContent>

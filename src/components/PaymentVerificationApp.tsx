@@ -15,6 +15,7 @@ import LocationFilter from "./filters/LocationFilter";
 import DueDateFilter from "./filters/DueDateFilter";
 import SupplierNameFilter from "./filters/SupplierNameFilter";
 import ContractNumberFilter from "./filters/ContractNumberFilter";
+import TreasuryCycleFilter from "./filters/TreasuryCycleFilter";
 import { PaymentStatusFilter, AlertTypeFilter, RiskFilter } from "./filters/vivo/VivoSelectFilters";
 import PaginatedContractsTable from "./PaginatedContractsTable";
 import ContractAnalysisModal from "./ContractAnalysisModal";
@@ -75,6 +76,7 @@ const PaymentVerificationApp = () => {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus[]>([]);
   const [alertType, setAlertType] = useState<AlertType[]>([]);
   const [riskLevel, setRiskLevel] = useState<ContractRisk[]>([]);
+  const [treasuryCycle, setTreasuryCycle] = useState<string>("all");
   
   // Custom filter values
   const [customFilterValues, setCustomFilterValues] = useState<Record<string, unknown>>({});
@@ -185,6 +187,7 @@ const PaymentVerificationApp = () => {
     setPaymentStatus([]);
     setAlertType([]);
     setRiskLevel([]);
+    setTreasuryCycle("all");
     setCustomFilterValues({});
     
     // Resetar estados da tabela
@@ -289,7 +292,7 @@ const PaymentVerificationApp = () => {
   };
 
   // Preparar filtros para a FilterBar na ordem solicitada:
-  // Tipo de Fluxo, Data do Vencimento, Valor do Pagamento, Valor do Contrato, 
+  // Tipo de Fluxo, Data do Vencimento, Ciclo de Tesouraria, Valor do Pagamento, Valor do Contrato, 
   // Nível de Risco, Tipo de Alerta, Status do Pagamento, Fornecedor, Nº do Pagamento
   const filterItems: FilterItem[] = [
     {
@@ -317,6 +320,20 @@ const PaymentVerificationApp = () => {
             onChange={setDueDate}
             onCustomStartChange={setCustomStart}
             onCustomEndChange={setCustomEnd}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'treasury',
+      label: 'Ciclo de Tesouraria',
+      activeCount: (treasuryCycle && treasuryCycle !== 'all') ? 1 : 0,
+      isActive: treasuryCycle && treasuryCycle !== 'all',
+      component: (
+        <FilterWrapper>
+          <TreasuryCycleFilter
+            value={treasuryCycle}
+            onChange={setTreasuryCycle}
           />
         </FilterWrapper>
       )

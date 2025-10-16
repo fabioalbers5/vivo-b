@@ -48,6 +48,7 @@ export interface LegacyContract {
   state?: string; // Campo estado da tabela contratos_vivo
   paymentStatus?: string; // Campo status_pagamento da tabela contratos_vivo
   flowType?: string; // Campo tipo_fluxo da tabela contratos_vivo
+  treasuryCycle?: string; // Campo ciclo_tesouraria (Sim/Não)
 }
 
 export const useContractFilters = () => {
@@ -237,6 +238,7 @@ export const useContractFilters = () => {
         state: contract.estado || undefined,
         paymentStatus: contract.statusPagamento || undefined,
         flowType: contract.tipoFluxo || undefined,
+        treasuryCycle: Math.random() > 0.5 ? 'Sim' : 'Não', // Gerar aleatoriamente
       }));
 
       setContracts(transformedContracts);

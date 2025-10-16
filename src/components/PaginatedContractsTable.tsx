@@ -85,6 +85,8 @@ const PaginatedContractsTable = ({
         return (contract.flowType || contract.type || '')?.toLowerCase();
       case 'dueDate':
         return new Date(contract.dueDate).getTime();
+      case 'treasuryCycle':
+        return contract.treasuryCycle || '';
       case 'paymentValue':
         return contract.paymentValue || 0;
       case 'value':
@@ -282,7 +284,7 @@ const PaginatedContractsTable = ({
             }
           }}
         >
-          <Table className="w-full relative min-w-[1590px]" style={{ tableLayout: 'fixed', height: 'auto' }}>
+          <Table className="w-full relative min-w-[1720px]" style={{ tableLayout: 'fixed', height: 'auto' }}>
             <TableHeader className="sticky top-0 z-30 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
                 <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center sticky left-0 z-40 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
@@ -290,6 +292,7 @@ const PaginatedContractsTable = ({
                 <SortableHeader column="supplier" className="min-w-[180px]">Fornecedor</SortableHeader>
                 <SortableHeader column="flowType" className="min-w-[150px]">Tipo de Fluxo</SortableHeader>
                 <SortableHeader column="dueDate" className="min-w-[130px]">Data de Vencimento</SortableHeader>
+                <SortableHeader column="treasuryCycle" className="min-w-[130px]">Ciclo de Tesouraria</SortableHeader>
                 <SortableHeader column="paymentValue" className="min-w-[130px]">Valor do Pagamento</SortableHeader>
                 <SortableHeader column="value" className="min-w-[120px]">Valor do Contrato</SortableHeader>
                 <SortableHeader column="risk" className="min-w-[80px]">Risco</SortableHeader>
@@ -385,6 +388,22 @@ const PaginatedContractsTable = ({
                       {contract.flowType || contract.type || '-'}
                     </TableCell>
                     <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{formatDate(contract.dueDate)}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                      {contract.treasuryCycle ? (
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs whitespace-nowrap ${
+                            contract.treasuryCycle === 'Sim' 
+                              ? 'bg-green-50 text-green-800 border-green-200' 
+                              : 'bg-gray-50 text-gray-800 border-gray-200'
+                          }`}
+                        >
+                          {contract.treasuryCycle}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">-</span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                       {contract.paymentValue ? (
                         formatCurrency(contract.paymentValue)
@@ -426,7 +445,7 @@ const PaginatedContractsTable = ({
               {/* Loading indicator para scroll infinito */}
               {hasMore && (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-2 text-xs text-muted-foreground">
                     Role para carregar mais...
                   </TableCell>
                 </TableRow>
@@ -434,7 +453,7 @@ const PaginatedContractsTable = ({
               
               {!hasMore && currentContracts.length > 0 && (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-2 text-xs text-muted-foreground">
                     Mostrando todos os {displayContracts.length} contratos
                   </TableCell>
                 </TableRow>

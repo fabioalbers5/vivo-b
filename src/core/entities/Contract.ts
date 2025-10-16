@@ -99,6 +99,8 @@ export interface ContractFilters {
   status?: ContractStatus[];
   valorMin?: number;
   valorMax?: number;
+  valorPagamentoMin?: number;
+  valorPagamentoMax?: number;
   dataVencimentoInicio?: Date;
   dataVencimentoFim?: Date;
   prioridade?: ContractPriority[];

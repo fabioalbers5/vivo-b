@@ -18,8 +18,6 @@ export interface FilterParams {
   flowType: string[];
   contractValue: [number, number];
   paymentValue: [number, number];
-  region: string;
-  selectedStates: string[];
   dueDate: string;
   customStart: string;
   customEnd: string;
@@ -68,19 +66,13 @@ export const useContractFilters = () => {
         filters.tipoFluxo = filterParams.flowType;
       }
 
-      // States filter
-      if (filterParams.selectedStates.length > 0) {
-        filters.estado = filterParams.selectedStates;
-      }
-
-      // Region filter (converter para array se necessário)
-      if (filterParams.region) {
-        filters.regiao = [filterParams.region];
-      }
-
       // Contract value range
       filters.valorMin = filterParams.contractValue[0];
       filters.valorMax = filterParams.contractValue[1];
+
+      // Payment value range
+      filters.valorPagamentoMin = filterParams.paymentValue[0];
+      filters.valorPagamentoMax = filterParams.paymentValue[1];
 
       // Due date filter
       if (filterParams.dueDate) {

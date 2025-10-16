@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
+import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp, AlertCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -9,15 +9,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import FilterBar, { FilterItem } from "./FilterBar";
-import FilterWrapper from "./FilterWrapper";
 import FlowTypeFilter from "./filters/FlowTypeFilter";
 import ValueRangeFilter from "./filters/ValueRangeFilter";
-import LocationFilter from "./filters/LocationFilter";
 import DueDateFilter from "./filters/DueDateFilter";
 import SupplierNameFilter from "./filters/SupplierNameFilter";
 import ContractNumberFilter from "./filters/ContractNumberFilter";
 import TreasuryCycleFilter from "./filters/TreasuryCycleFilter";
 import { PaymentStatusFilter, AlertTypeFilter, RiskFilter } from "./filters/vivo/VivoSelectFilters";
+import FilterWrapper from "./FilterWrapper";
 import PaginatedContractsTable from "./PaginatedContractsTable";
 import ContractAnalysisModal from "./ContractAnalysisModal";
 import SampleManagementTab from "./SampleManagementTab";
@@ -74,8 +73,6 @@ const PaymentVerificationApp = () => {
   const [flowType, setFlowType] = useState<string[]>([]);
   const [contractValue, setContractValue] = useState<[number, number]>([0, 10000000]);
   const [paymentValue, setPaymentValue] = useState<[number, number]>([0, 10000000]);
-  const [region, setRegion] = useState<string>("");
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState<string>("all");
   const [customStart, setCustomStart] = useState<string>("");
   const [customEnd, setCustomEnd] = useState<string>("");
@@ -101,8 +98,6 @@ const PaymentVerificationApp = () => {
       flowType: flowType.sort(),
       contractValue,
       paymentValue,
-      region,
-      selectedStates: selectedStates.sort(),
       dueDate,
       customStart,
       customEnd,
@@ -112,7 +107,7 @@ const PaymentVerificationApp = () => {
       customFilterValues
     };
     return JSON.stringify(params);
-  }, [flowType, contractValue, paymentValue, region, selectedStates, dueDate, customStart, customEnd, supplierName, contractNumber, contractCount, customFilterValues]);
+  }, [flowType, contractValue, paymentValue, dueDate, customStart, customEnd, supplierName, contractNumber, contractCount, customFilterValues]);
 
   // useEffect com debouncing para aplicar filtros automaticamente
   useEffect(() => {
@@ -125,8 +120,6 @@ const PaymentVerificationApp = () => {
       flowType,
       contractValue,
       paymentValue,
-      region,
-      selectedStates,
       dueDate,
       customStart,
       customEnd,
@@ -141,7 +134,6 @@ const PaymentVerificationApp = () => {
     const hasFilters = currentFilterParams.flowType.length > 0 || 
                       currentFilterParams.contractValue[0] > 0 || currentFilterParams.contractValue[1] < 10000000 ||
                       currentFilterParams.paymentValue[0] > 0 || currentFilterParams.paymentValue[1] < 10000000 ||
-                      currentFilterParams.selectedStates.length > 0 ||
                       (currentFilterParams.dueDate && currentFilterParams.dueDate !== 'all' && currentFilterParams.dueDate !== '') ||
                       (treasuryCycle && treasuryCycle !== 'all') ||
                       currentFilterParams.supplierName.length > 0 ||
@@ -188,8 +180,6 @@ const PaymentVerificationApp = () => {
     setFlowType([]);
     setContractValue([0, 10000000]);
     setPaymentValue([0, 10000000]);
-    setRegion("");
-    setSelectedStates([]);
     setDueDate("all");
     setCustomStart("");
     setCustomEnd("");
@@ -236,12 +226,22 @@ const PaymentVerificationApp = () => {
     const motorLabels: Record<SamplingMotorType, string> = {
       'highest-value': 'Maior Valor',
       'top-suppliers': 'Top Fornecedores',
-      'random': 'Aleatório'
+      'random': 'Aleatório',
+      'due-date': 'Data de Vencimento'
     };
     
     toast({
       title: "Amostra gerada",
       description: `${newSelection.size} pagamento(s) selecionado(s) usando o motor "${motorLabels[samplingMotor]}".`
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedPayments(new Set());
+    
+    toast({
+      title: "Seleção limpa",
+      description: "Todos os contratos foram desmarcados."
     });
   };
 
@@ -288,6 +288,7 @@ const PaymentVerificationApp = () => {
     return {
       count: selectedPayments.size,
       totalValue,
+      totalAvailableValue,
       percentage,
       totalAvailable: availableContracts.length
     };
@@ -300,29 +301,10 @@ const PaymentVerificationApp = () => {
     }).format(value);
   };
 
-  // Calcular contagem de filtros ativos
-  const activeFiltersCount = useMemo(() => {
-    let count = 0;
-    if (flowType.length > 0) count++;
-    if (contractValue[0] > 0 || contractValue[1] < 10000000) count++;
-    if (paymentValue[0] > 0 || paymentValue[1] < 10000000) count++;
-    if (selectedStates.length > 0) count++;
-    if (dueDate && dueDate !== 'all') count++;
-    if (treasuryCycle && treasuryCycle !== 'all') count++;
-    if (supplierName.length > 0) count++;
-    if (contractNumber.length > 0) count++;
-    if (paymentStatus.length > 0) count++;
-    if (alertType.length > 0) count++;
-    if (riskLevel.length > 0) count++;
-    return count;
-  }, [flowType, contractValue, paymentValue, selectedStates, dueDate, treasuryCycle, supplierName, contractNumber, paymentStatus, alertType, riskLevel]);
-
-  // Preparar filtros para a FilterBar na ordem solicitada:
-  // Tipo de Fluxo, Data do Vencimento, Ciclo de Tesouraria, Valor do Pagamento, Valor do Contrato, 
-  // Nível de Risco, Tipo de Alerta, Status do Pagamento, Fornecedor, Nº do Pagamento
-  const filterItems: FilterItem[] = [
+  // Array de filtros para o FilterBar
+  const filterItems: FilterItem[] = useMemo(() => [
     {
-      id: 'flowtype',
+      id: 'flowType',
       label: 'Tipo de Fluxo',
       activeCount: flowType.length,
       isActive: flowType.length > 0,
@@ -333,39 +315,7 @@ const PaymentVerificationApp = () => {
       )
     },
     {
-      id: 'duedate',
-      label: 'Data de Vencimento',
-      activeCount: (dueDate && dueDate !== 'all') ? 1 : 0,
-      isActive: dueDate && dueDate !== 'all',
-      component: (
-        <FilterWrapper>
-          <DueDateFilter
-            value={dueDate}
-            customStart={customStart}
-            customEnd={customEnd}
-            onChange={setDueDate}
-            onCustomStartChange={setCustomStart}
-            onCustomEndChange={setCustomEnd}
-          />
-        </FilterWrapper>
-      )
-    },
-    {
-      id: 'treasury',
-      label: 'Ciclo de Tesouraria',
-      activeCount: (treasuryCycle && treasuryCycle !== 'all') ? 1 : 0,
-      isActive: treasuryCycle && treasuryCycle !== 'all',
-      component: (
-        <FilterWrapper>
-          <TreasuryCycleFilter
-            value={treasuryCycle}
-            onChange={setTreasuryCycle}
-          />
-        </FilterWrapper>
-      )
-    },
-    {
-      id: 'paymentvalue',
+      id: 'paymentValue',
       label: 'Valor do Pagamento',
       activeCount: (paymentValue[0] > 0 || paymentValue[1] < 10000000) ? 1 : 0,
       isActive: paymentValue[0] > 0 || paymentValue[1] < 10000000,
@@ -382,7 +332,7 @@ const PaymentVerificationApp = () => {
       )
     },
     {
-      id: 'contractvalue',
+      id: 'contractValue',
       label: 'Valor do Contrato',
       activeCount: (contractValue[0] > 0 || contractValue[1] < 10000000) ? 1 : 0,
       isActive: contractValue[0] > 0 || contractValue[1] < 10000000,
@@ -399,43 +349,33 @@ const PaymentVerificationApp = () => {
       )
     },
     {
-      id: 'risk',
-      label: 'Nível de Risco',
-      activeCount: riskLevel.length,
-      isActive: riskLevel.length > 0,
+      id: 'dueDate',
+      label: 'Vencimento',
+      activeCount: (dueDate && dueDate !== 'all') ? 1 : 0,
+      isActive: dueDate !== 'all',
       component: (
         <FilterWrapper>
-          <RiskFilter
-            selectedValues={riskLevel}
-            onValueChange={setRiskLevel}
+          <DueDateFilter
+            value={dueDate}
+            onChange={setDueDate}
+            customStart={customStart}
+            customEnd={customEnd}
+            onCustomStartChange={setCustomStart}
+            onCustomEndChange={setCustomEnd}
           />
         </FilterWrapper>
       )
     },
     {
-      id: 'alert',
-      label: 'Tipo de Alerta',
-      activeCount: alertType.length,
-      isActive: alertType.length > 0,
+      id: 'treasuryCycle',
+      label: 'Ciclo de Tesouraria',
+      activeCount: (treasuryCycle && treasuryCycle !== 'all') ? 1 : 0,
+      isActive: treasuryCycle !== 'all',
       component: (
         <FilterWrapper>
-          <AlertTypeFilter
-            selectedValues={alertType}
-            onValueChange={setAlertType}
-          />
-        </FilterWrapper>
-      )
-    },
-    {
-      id: 'paymentstatus',
-      label: 'Status do Pagamento',
-      activeCount: paymentStatus.length,
-      isActive: paymentStatus.length > 0,
-      component: (
-        <FilterWrapper>
-          <PaymentStatusFilter
-            selectedValues={paymentStatus}
-            onValueChange={setPaymentStatus}
+          <TreasuryCycleFilter
+            value={treasuryCycle}
+            onChange={setTreasuryCycle}
           />
         </FilterWrapper>
       )
@@ -447,28 +387,22 @@ const PaymentVerificationApp = () => {
       isActive: supplierName.length > 0,
       component: (
         <FilterWrapper>
-          <SupplierNameFilter
-            value={supplierName}
-            onChange={setSupplierName}
-          />
+          <SupplierNameFilter value={supplierName} onChange={setSupplierName} />
         </FilterWrapper>
       )
     },
     {
-      id: 'contract',
-      label: 'Nº do Pagamento',
+      id: 'contractNumber',
+      label: 'Número do Contrato',
       activeCount: contractNumber.length,
       isActive: contractNumber.length > 0,
       component: (
         <FilterWrapper>
-          <ContractNumberFilter
-            value={contractNumber}
-            onChange={setContractNumber}
-          />
+          <ContractNumberFilter value={contractNumber} onChange={setContractNumber} />
         </FilterWrapper>
       )
     }
-  ];
+  ], [flowType, contractValue, paymentValue, dueDate, customStart, customEnd, treasuryCycle, supplierName, contractNumber]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -492,12 +426,6 @@ const PaymentVerificationApp = () => {
           </div>
 
           <TabsContent value="selection" className="mt-0">
-            {/* Barra de Filtros - sempre visível */}
-            <FilterBar 
-              filters={filterItems}
-              onClearAll={resetFilters}
-            />
-            
             {/* Contracts Table */}
             <div className="p-6">
               {/* Cabeçalho com controles da amostra */}
@@ -506,7 +434,7 @@ const PaymentVerificationApp = () => {
                   <h2 className="text-lg font-semibold">
                     {showFilteredResults ? 
                       `Pagamentos Filtrados ${isLoading ? "" : `(${contracts.length})`}` : 
-                      `Todos os Pagamentos ${allContractsLoading ? "" : `(${allContracts.length})`}`
+                      `Todos os Pagamentos`
                     }
                   </h2>
                   {showFilteredResults && (
@@ -523,13 +451,14 @@ const PaymentVerificationApp = () => {
                       Motor:
                     </Label>
                     <Select value={samplingMotor} onValueChange={(value) => setSamplingMotor(value as SamplingMotorType)}>
-                      <SelectTrigger id="samplingMotor" className="w-[140px] h-8 text-xs">
+                      <SelectTrigger id="samplingMotor" className="w-[180px] h-8 text-xs">
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="highest-value">Maior valor</SelectItem>
                         <SelectItem value="top-suppliers">Top fornecedores</SelectItem>
                         <SelectItem value="random">Aleatório</SelectItem>
+                        <SelectItem value="due-date">Data de vencimento</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -557,6 +486,17 @@ const PaymentVerificationApp = () => {
                   >
                     <Shuffle className="h-3 w-3 mr-1.5" />
                     Gerar amostra
+                  </Button>
+                  
+                  <Button
+                    onClick={handleClearSelection}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs hover:bg-red-500 hover:text-white hover:border-red-500"
+                    disabled={selectedPayments.size === 0}
+                  >
+                    <X className="h-3 w-3 mr-1.5" />
+                    Limpar seleção
                   </Button>
                   
                   <Button
@@ -610,6 +550,9 @@ const PaymentVerificationApp = () => {
                           </p>
                         </div>
                       </div>
+                      <div className="text-xs text-slate-500">
+                        de {formatCurrency(sampleStats.totalAvailableValue)}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -633,6 +576,14 @@ const PaymentVerificationApp = () => {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* FilterBar - sempre expandido por padrão */}
+              <div className="mb-4">
+                <FilterBar 
+                  filters={filterItems} 
+                  onClearAll={resetFilters}
+                />
+              </div>
               
               <PaginatedContractsTable
                 contracts={allContracts}
@@ -645,9 +596,7 @@ const PaymentVerificationApp = () => {
                 onSelectionChange={setSelectedPayments}
               />
             </div>
-          </TabsContent>
-
-          <TabsContent value="management" className="mt-0">
+          </TabsContent>          <TabsContent value="management" className="mt-0">
             <div className="p-6">
               <SampleManagementTab />
             </div>

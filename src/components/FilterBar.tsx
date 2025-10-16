@@ -20,7 +20,7 @@ interface FilterBarProps {
 
 const FilterBar = ({ filters, onClearAll, onAddFilter }: FilterBarProps) => {
   const [openFilter, setOpenFilter] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // Expandido por padrão
   
   const activeFiltersCount = filters.reduce((acc, filter) => acc + filter.activeCount, 0);
   
@@ -106,25 +106,12 @@ const FilterBar = ({ filters, onClearAll, onAddFilter }: FilterBarProps) => {
             </PopoverTrigger>
             
             <PopoverContent 
-              className="w-80 p-4" 
+              className="w-80 p-0" 
               side="bottom" 
               align="start"
               sideOffset={5}
             >
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOpenFilter(null)}
-                  className="absolute top-0 right-0 h-6 w-6 p-0 z-10"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                
-                <div className="max-h-96 overflow-y-auto pr-8">
-                  {filter.component}
-                </div>
-              </div>
+              {filter.component}
             </PopoverContent>
           </Popover>
         ))}

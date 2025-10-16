@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -10,13 +8,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 
 // Lista completa dos estados brasileiros organizados por região
 const brazilianStates = [
@@ -59,15 +50,11 @@ const brazilianStates = [
 ];
 
 interface LocationFilterProps {
-  region: string;
   selectedStates: string[];
-  onRegionChange: (value: string) => void;
   onStatesChange: (states: string[]) => void;
 }
 
 const LocationFilter = ({ selectedStates, onStatesChange }: LocationFilterProps) => {
-  const [open, setOpen] = useState(false);
-
   const handleToggle = (stateValue: string) => {
     if (selectedStates.includes(stateValue)) {
       onStatesChange(selectedStates.filter(s => s !== stateValue));
@@ -76,18 +63,7 @@ const LocationFilter = ({ selectedStates, onStatesChange }: LocationFilterProps)
     }
   };
 
-  const handleRemove = (stateValue: string) => {
-    onStatesChange(selectedStates.filter(s => s !== stateValue));
-  };
-
-  const getSelectedStateLabels = () => {
-    return selectedStates.map(stateValue => {
-      const state = brazilianStates.find(s => s.value === stateValue);
-      return state ? state.label : stateValue;
-    });
-  };
-
-  // Agrupar estados por região para melhor organização no dropdown
+  // Agrupar estados por região para melhor organização
   const statesByRegion = brazilianStates.reduce((acc, state) => {
     if (!acc[state.region]) {
       acc[state.region] = [];
@@ -97,81 +73,32 @@ const LocationFilter = ({ selectedStates, onStatesChange }: LocationFilterProps)
   }, {} as Record<string, typeof brazilianStates>);
 
   return (
-    <div className="space-y-2">
-      {/* Selected states display */}
-      {selectedStates.length > 0 && (
-        <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto">
-          {selectedStates.map((stateValue) => {
-            const state = brazilianStates.find(s => s.value === stateValue);
-            return (
-              <Badge key={stateValue} variant="secondary" className="text-xs py-0 px-1">
-                {state?.value || stateValue}
-                <button
-                  className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleRemove(stateValue);
-                    }
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onClick={() => handleRemove(stateValue)}
-                >
-                  <X className="h-2 w-2 text-muted-foreground hover:text-foreground" />
-                </button>
-              </Badge>
-            );
-          })}
-        </div>
-      )}
-
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {selectedStates.length === 0
-              ? "Selecione estados..."
-              : `${selectedStates.length} estado(s) selecionado(s)`}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
-          <Command>
-            <CommandInput placeholder="Buscar estado..." />
-            <CommandList>
-              <CommandEmpty>Nenhum estado encontrado.</CommandEmpty>
-              
-              {/* Render states grouped by region */}
-              {Object.entries(statesByRegion).map(([region, states]) => (
-                <CommandGroup key={region} heading={region}>
-                  {states.map((state) => (
-                    <CommandItem
-                      key={state.value}
-                      value={state.value}
-                      onSelect={() => handleToggle(state.value)}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedStates.includes(state.value) ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {state.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              ))}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
+    <Command className="border rounded-md">
+      <CommandInput placeholder="Buscar estado..." />
+      <CommandList>
+        <CommandEmpty>Nenhum estado encontrado.</CommandEmpty>
+        
+        {Object.entries(statesByRegion).map(([region, states]) => (
+          <CommandGroup key={region} heading={region}>
+            {states.map((state) => (
+              <CommandItem
+                key={state.value}
+                value={state.value}
+                onSelect={() => handleToggle(state.value)}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedStates.includes(state.value) ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {state.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ))}
+      </CommandList>
+    </Command>
   );
 };
 

@@ -209,6 +209,14 @@ export class SupabaseContractRepository implements IContractRepository {
       query = query.lte('valor_contrato', filters.valorMax);
     }
     
+    if (filters.valorPagamentoMin !== undefined) {
+      query = query.gte('valor_pagamento', filters.valorPagamentoMin);
+    }
+    
+    if (filters.valorPagamentoMax !== undefined) {
+      query = query.lte('valor_pagamento', filters.valorPagamentoMax);
+    }
+    
     if (filters.dataVencimentoInicio) {
       query = query.gte('data_vencimento_pagamento', filters.dataVencimentoInicio.toISOString().split('T')[0]);
     }

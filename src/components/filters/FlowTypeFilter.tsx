@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -10,14 +8,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-
 const flowTypes = [
   { value: "RE", label: "RE - Receita" },
   { value: "real-state", label: "Real State - Imobiliário" },
@@ -33,8 +23,6 @@ interface FlowTypeFilterProps {
 }
 
 const FlowTypeFilter = ({ value, onChange }: FlowTypeFilterProps) => {
-  const [open, setOpen] = useState(false);
-
   const handleToggle = (selectedValue: string) => {
     if (value.includes(selectedValue)) {
       onChange(value.filter(v => v !== selectedValue));
@@ -43,90 +31,30 @@ const FlowTypeFilter = ({ value, onChange }: FlowTypeFilterProps) => {
     }
   };
 
-  const handleRemove = (selectedValue: string) => {
-    onChange(value.filter(v => v !== selectedValue));
-  };
-
-  const getSelectedLabels = () => {
-    return value.map(v => {
-      const flowType = flowTypes.find(ft => ft.value === v);
-      return flowType ? flowType.label : v;
-    });
-  };
-
   return (
-    <div className="space-y-2">
-      {/* Selected items display */}
-      {value.length > 0 && (
-        <div className="flex flex-wrap gap-1 max-h-12 overflow-y-auto">
-          {value.map((selectedValue) => {
-            const flowType = flowTypes.find(ft => ft.value === selectedValue);
-            const displayName = flowType?.value || selectedValue;
-            return (
-              <Badge key={selectedValue} variant="secondary" className="text-xs py-0 px-1">
-                {displayName}
-                <button
-                  className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleRemove(selectedValue);
-                    }
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onClick={() => handleRemove(selectedValue)}
-                >
-                  <X className="h-2 w-2 text-muted-foreground hover:text-foreground" />
-                </button>
-              </Badge>
-            );
-          })}
-        </div>
-      )}
-
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {value.length === 0
-              ? "Selecione tipos de fluxo..."
-              : `${value.length} tipo(s) selecionado(s)`}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
-          <Command>
-            <CommandInput placeholder="Buscar tipo de fluxo..." />
-            <CommandList>
-              <CommandEmpty>Nenhum tipo de fluxo encontrado.</CommandEmpty>
-              <CommandGroup>
-                {flowTypes.map((flowType) => (
-                  <CommandItem
-                    key={flowType.value}
-                    value={flowType.value}
-                    onSelect={() => handleToggle(flowType.value)}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value.includes(flowType.value) ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {flowType.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
+    <Command className="border rounded-md">
+      <CommandInput placeholder="Buscar tipo de fluxo..." />
+      <CommandList>
+        <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+        <CommandGroup>
+          {flowTypes.map((flowType) => (
+            <CommandItem
+              key={flowType.value}
+              value={flowType.value}
+              onSelect={() => handleToggle(flowType.value)}
+            >
+              <Check
+                className={cn(
+                  "mr-2 h-4 w-4",
+                  value.includes(flowType.value) ? "opacity-100" : "opacity-0"
+                )}
+              />
+              {flowType.label}
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      </CommandList>
+    </Command>
   );
 };
 

@@ -1,89 +1,98 @@
-Implemente a seguinte melhoria na área de filtros da tela de Seleção de Amostra (seguir rigorosamente os padrões de UI e componentes já existentes no projeto):
+Contexto: Tela Seleção da Amostra da aplicação “Verificação Inteligente de Pagamentos”.
+Importante: NÃO mudar regras de negócio, APIs, queries ou lógica dos motores. A alteração é apenas de UI/UX. Siga rigorosamente nosso Design System (cores, tipografia, espaçamentos, componentes).
 
-Objetivo
+🎯 Objetivo
 
-A opção de selecionar filtros deve ficar colada à galeria/lista de pagamentos (sem espaçamento grande entre eles).
+Reduzir camadas para aplicar filtro: os filtros devem ficar logo acima e colados à galeria/lista de pagamentos (sem ter que abrir painel/nível extra).
 
-Cada filtro deve ter Label acima e controle abaixo (drop-down ou combo box, conforme componente padrão do projeto).
+Estado sempre visível: quando houver filtros selecionados, o usuário vê quais são sem abrir nada (chips/resumo inline).
 
-A opção selecionada precisa ficar sempre visível para o usuário (fora do menu), para indicar claramente o estado atual dos filtros.
+Manter funcionalidades existentes (mesmos filtros, mesmos eventos, mesma integração de dados).
 
-Requisitos de UI/UX
+🧩 Requisitos de UI
 
-Posicionamento
+Posicionamento: Renderize um container de filtros imediatamente acima da tabela/galeria. Remova a necessidade de clicar em “Filtros” para abrir outro nível.
 
-Renderize o container de filtros imediatamente acima e colado à galeria de pagamentos.
+Estrutura do filtro: Para cada filtro existente (Tipo de Fluxo, Data de Vencimento, Ciclo de Tesouraria, Valor do Pagamento, Valor do Contrato, Nível de Risco, Tipo de Alerta, etc.):
 
-Respeite grid/spacing do design system (usar os tokens/variáveis do projeto).
+Label visível (ex.: “Tipo de Fluxo”) acima do controle.
 
-Estrutura de cada filtro
+Abaixo do label, use o componente padrão Select/Combobox (single ou multi conforme já implementado).
 
-Label (texto curto, ex.: “Tipo de Fluxo”) acima do controle.
+Placeholder: “Selecione…”.
 
-Abaixo do label, use o componente padrão de Select/Combobox do projeto (single-select por padrão; suportar multi-select se o componente já tiver essa capacidade).
+Estado visível da seleção (fora do menu):
 
-Estado visível da seleção
+Single-select: mostrar o valor no input e um chip/badge logo abaixo do controle (ou ao lado do label, conforme nosso padrão).
 
-Ao selecionar uma opção, exibir sempre seu valor visível fora do menu:
+Multi-select: chips/badges para cada valor, com ícone X para remover.
 
-Para single-select: exibir o valor selecionado no próprio input e um chip/badge logo abaixo do controle (ou ao lado do label, conforme padrão do projeto).
+Barra de resumo de filtros ativos: uma faixa compacta entre o container de filtros e a galeria listando chips do tipo Campo: Valor. Incluir ação “Limpar todos” (mantendo a que já existe).
 
-Para multi-select (se suportado): exibir chips/badges empilhados com opção de remover (X).
+Ações por filtro:
 
-Incluir um Clear/“Limpar” por filtro (ícone ou link) para retirar a seleção rapidamente.
+Botão/link “Limpar” por filtro (reseta apenas aquele campo).
 
-Resumo compacto (opcional e colado à galeria)
+Tooltip curto no label explicando o campo (se já existir texto de ajuda).
 
-Abaixo da fileira de filtros e imediatamente acima da galeria, renderizar uma faixa de resumo com os filtros ativos (chips).
+Visual/Spacing: Container de filtros colado à galeria (use tokens/spacing do DS; evitar “buraco” visual). Respeitar grid atual.
 
-Exemplo: Tipo de Fluxo: Proposta, Vencimento: Out/2025–Jan/2026.
+♿ Acessibilidade e Responsividade
 
-Se nenhum filtro estiver ativo, não renderizar a faixa.
+label associado ao controle (htmlFor/aria-labelledby), aria-expanded, aria-controls no dropdown.
 
-Acessibilidade e responsividade
+Navegação 100% por teclado (abrir/fechar/select).
 
-Associar label e aria-describedby ao controle.
+Em telas estreitas, uma coluna: label acima, controle abaixo, chips logo em seguida.
 
-Teclado: abrir/fechar, navegar e selecionar via teclado.
+🔁 Estado e Persistência (sem alterar back-end)
 
-Em telas estreitas, alinhar filtros em uma coluna, mantendo label acima e chips logo abaixo do controle.
+Continuar usando o mesmo estado/fonte de verdade dos filtros (store/context/hooks atuais).
 
-Manter contraste e tamanhos conforme DS.
+Se já persistimos em URL/localStorage, preservar.
 
-Persistência (se já houver no projeto)
+A barra de resumo deve refletir em tempo real o estado global dos filtros.
 
-Persistir filtros selecionados (ex.: URL query params ou store) e restaurar ao reabrir a tela.
+🧪 Critérios de Aceite
 
-Mensagens e placeholders
+Os filtros aparecem sempre visíveis logo acima da galeria; não é preciso abrir camadas.
 
-Placeholder neutro: “Selecione…”.
+Ao selecionar, o valor fica visível (input + chip).
 
-Quando sem seleção, não mostrar chip.
+A barra de resumo mostra todos os filtros ativos; “Limpar todos” limpa e a galeria atualiza.
 
-Quando houver erro/validação, usar o padrão de erro do form do projeto.
+“Limpar” por filtro remove apenas aquele filtro.
 
-Aceite / Critérios de Teste
+Nada de regressão: resultados, contadores e ações (Gerar amostra, Finalizar) continuam iguais.
 
-O container de filtros está colado à galeria (sem “buraco” visual).
+Padrões do Design System preservados (cores, ícones, tipografia, espaçamentos).
 
-Cada filtro exibe label acima e o valor selecionado é sempre visível fora do menu.
+Testes manuais: teclado, screen reader básico, e layouts desktop/mobile.
 
-Existe forma clara e rápida de limpar a seleção (por filtro).
+🏗️ Técnica (orientação)
 
-Em multi-select (se aplicável), todas as seleções aparecem como chips removíveis.
+Reutilizar componentes existentes do DS: FormField, Label, Select/Combobox, Chip/Badge, IconButton (close), InlineAlert (para “Filtros ativos”).
 
-O resumo compacto (chips) aparece apenas quando existem filtros ativos.
+Criar componentes leves e desacoplados:
 
-Totalmente navegável por teclado e com aria-* corretos.
+FilterField (label + controle + chips + limpar)
 
-Mantém os padrões de tipografia, espaçamento, cores e componentes do projeto.
+ActiveFiltersBar (lista de chips + “Limpar todos”)
 
-Notas técnicas
+FiltersContainer (grid responsivo, colado à galeria)
 
-Reutilize os componentes do DS: FormField, Label, Select/Combobox, Chip/Badge, IconButton (close).
+Não criar CSS ad-hoc; usar tokens/utilitários do projeto.
 
-Componentize: FilterField (label+controle+chips), ActiveFiltersBar (resumo colado).
+Expor data-testid em:
 
-Expor data-testid em FilterField e nos chips para testes.
+filters-container, active-filters-bar, filter-field-[nome], chip-[campo]-[valor], clear-filter-[campo], clear-all-filters.
 
-Não alterar estilos via CSS ad-hoc; usar tokens/utilitários do projeto.
+✅ Entregáveis
+
+Código refatorado com o novo container de filtros colado à galeria.
+
+Barra de resumo funcional.
+
+Sem mudanças em APIs/queries/motores.
+
+Pequenos testes unitários/RTL para FilterField e ActiveFiltersBar (interação de seleção e limpar).

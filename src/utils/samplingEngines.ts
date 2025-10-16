@@ -1,6 +1,6 @@
 import { LegacyContract } from '@/hooks/useContractFilters';
 
-export type SamplingMotorType = 'highest-value' | 'top-suppliers' | 'random';
+export type SamplingMotorType = 'highest-value' | 'top-suppliers' | 'random' | 'due-date';
 
 /**
  * Remove duplicatas de fornecedores, mantendo apenas o contrato de maior valor por fornecedor
@@ -137,6 +137,49 @@ export const sampleRandomly = (
 };
 
 /**
+ * Motor: Data de Vencimento
+ * Seleciona os X pagamentos com data de vencimento mais próxima da data atual
+ * Evita duplicatas do mesmo fornecedor (mantém o de maior valor se houver duplicata)
+ */
+export const sampleByDueDate = (
+  contracts: LegacyContract[],
+  sampleSize: number
+): Set<string> => {
+  // Remover duplicatas de fornecedores primeiro
+  const uniqueContracts = removeDuplicateSuppliers(contracts);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Zerar horas para comparação apenas de datas
+
+  // Ordenar por proximidade da data de vencimento (mais próxima primeiro)
+  const sorted = uniqueContracts.sort((a, b) => {
+    const aDate = a.dueDate ? new Date(a.dueDate) : new Date('9999-12-31');
+    const bDate = b.dueDate ? new Date(b.dueDate) : new Date('9999-12-31');
+    
+    // Calcular diferença em dias absoluta
+    const aDiff = Math.abs(aDate.getTime() - today.getTime());
+    const bDiff = Math.abs(bDate.getTime() - today.getTime());
+    
+    // Se as datas forem iguais, desempatar pelo valor (maior primeiro)
+    if (aDiff === bDiff) {
+      const aValue = a.paymentValue || a.value || 0;
+      const bValue = b.paymentValue || b.value || 0;
+      return bValue - aValue;
+    }
+    
+    return aDiff - bDiff;
+  });
+
+  // Selecionar os X primeiros
+  const selected = sorted.slice(0, Math.min(sampleSize, sorted.length));
+
+  // Retornar IDs
+  return new Set(
+    selected.map(contract => contract.id || `${contract.number}-${contract.supplier}`)
+  );
+};
+
+/**
  * Função principal que executa o motor selecionado
  */
 export const executeSamplingMotor = (
@@ -153,6 +196,9 @@ export const executeSamplingMotor = (
 
     case 'random':
       return sampleRandomly(contracts, sampleSize);
+
+    case 'due-date':
+      return sampleByDueDate(contracts, sampleSize);
 
     default:
       return new Set();

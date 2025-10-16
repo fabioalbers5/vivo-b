@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Brain, Edit, Trash2 } from "lucide-react";
 
 interface SamplePayment {
@@ -17,6 +18,7 @@ interface SamplePayment {
   supplier: string;
   paymentValue: number;
   analysisStatus: 'pending' | 'in_progress' | 'completed' | 'rejected';
+  isUrgent?: boolean;
 }
 
 // Dados fictícios para demonstração
@@ -106,6 +108,14 @@ const SampleManagementTab = () => {
     // Implementar exclusão com confirmação
   };
 
+  const handleToggleUrgent = (paymentId: string) => {
+    setPayments(payments.map(p => 
+      p.id === paymentId 
+        ? { ...p, isUrgent: !p.isUrgent }
+        : p
+    ));
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -122,23 +132,27 @@ const SampleManagementTab = () => {
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-gray-50">
               <TableRow>
-                <TableHead className="w-[140px] text-center">Ações</TableHead>
+                <TableHead className="w-[180px] text-center">Ações</TableHead>
                 <TableHead className="text-center">Número do Pagamento</TableHead>
                 <TableHead className="text-center">Fornecedor</TableHead>
                 <TableHead className="text-center">Valor do Pagamento</TableHead>
                 <TableHead className="text-center">Status da Análise</TableHead>
+                <TableHead className="w-[80px] text-center">Urgente</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Nenhum pagamento selecionado na amostra
                   </TableCell>
                 </TableRow>
               ) : (
                 payments.map((payment) => (
-                  <TableRow key={payment.id} className="hover:bg-muted/50">
+                  <TableRow 
+                    key={payment.id} 
+                    className={`hover:bg-muted/50 ${payment.isUrgent ? 'bg-red-50/50' : ''}`}
+                  >
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Button
@@ -191,6 +205,16 @@ const SampleManagementTab = () => {
                     <TableCell className="text-center">
                       {getStatusBadge(payment.analysisStatus)}
                     </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        <Checkbox
+                          checked={payment.isUrgent || false}
+                          onCheckedChange={() => handleToggleUrgent(payment.id)}
+                          className={payment.isUrgent ? 'border-red-500 data-[state=checked]:bg-red-600' : ''}
+                          title={payment.isUrgent ? "Remover urgência" : "Marcar como urgente"}
+                        />
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -208,6 +232,8 @@ const SampleManagementTab = () => {
           <span>Em análise: {payments.filter(p => p.analysisStatus === 'in_progress').length}</span>
           <span>•</span>
           <span>Concluídos: {payments.filter(p => p.analysisStatus === 'completed').length}</span>
+          <span>•</span>
+          <span className="text-red-600 font-medium">Urgentes: {payments.filter(p => p.isUrgent).length}</span>
         </div>
       </div>
     </div>

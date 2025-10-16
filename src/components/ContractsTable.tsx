@@ -108,6 +108,7 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
           {/* Fixed Table Header */}
           <TableHeader className="sticky top-0 z-10 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
             <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
+              <TableHead className="w-[100px] text-center bg-gray-50 py-0 text-xs sticky left-0 z-40 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
               <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Número do Pagamento</TableHead>
               <TableHead className="min-w-[180px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Fornecedor</TableHead>
               <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Tipo</TableHead>
@@ -119,7 +120,6 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
               <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor da Multa</TableHead>
               <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Pagamento</TableHead>
               <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Data de Vencimento</TableHead>
-              <TableHead className="min-w-[100px] text-center bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -127,6 +127,28 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
           <TableBody>
             {contracts.map((contract, index) => (
               <TableRow key={contract.id || `contract-${index}`} className="hover:bg-muted/50 !h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
+                <TableCell className="text-center whitespace-nowrap py-0 sticky left-0 z-30 bg-white border-r border-gray-200 shadow-sm" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                  <div className="flex items-center justify-center gap-0.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onAnalyzeContract?.(contract.id)}
+                      className="h-4 w-4 p-0 hover:bg-purple-50 hover:text-purple-600"
+                      title="Ver análise de IA"
+                    >
+                      <Brain className="h-2 w-2" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onViewContract(contract.id)}
+                      className="h-4 w-4 p-0 hover:bg-blue-50 hover:text-blue-600"
+                      title="Visualizar documento"
+                    >
+                      <Eye className="h-2 w-2" />
+                    </Button>
+                  </div>
+                </TableCell>
                 <TableCell className="font-mono text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{contract.number}</TableCell>
                 <TableCell className="font-medium max-w-[180px] truncate py-0 text-xs" title={contract.supplier} style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                   {contract.supplier}
@@ -176,28 +198,6 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
                   )}
                 </TableCell>
                 <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{formatDate(contract.dueDate)}</TableCell>
-                <TableCell className="text-center whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
-                  <div className="flex items-center justify-center gap-0.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onAnalyzeContract?.(contract.id)}
-                      className="h-4 w-4 p-0 hover:bg-purple-50 hover:text-purple-600"
-                      title="Ver análise de IA"
-                    >
-                      <Brain className="h-2 w-2" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onViewContract(contract.id)}
-                      className="h-4 w-4 p-0 hover:bg-blue-50 hover:text-blue-600"
-                      title="Visualizar documento"
-                    >
-                      <Eye className="h-2 w-2" />
-                    </Button>
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -405,7 +405,8 @@ const SampleManagementTab = () => {
           height: '264px', 
           minHeight: '264px', 
           maxHeight: '264px', 
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'relative'
         }}
       >
         <div 
@@ -415,7 +416,8 @@ const SampleManagementTab = () => {
             maxHeight: '264px',
             flex: '1 1 auto',
             overflowY: 'auto',
-            overflowX: 'auto'
+            overflowX: 'auto',
+            position: 'relative'
           }}
           onScroll={(e) => {
             const target = e.currentTarget;
@@ -424,7 +426,7 @@ const SampleManagementTab = () => {
             }
           }}
         >
-          <Table className="w-full relative min-w-[1670px]" style={{ tableLayout: 'fixed', height: 'auto' }}>
+          <Table className="w-full relative min-w-[1670px]" style={{ tableLayout: 'fixed', height: 'auto', position: 'relative' }}>
             <TableHeader className="sticky top-0 z-30 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
                 <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center sticky left-0 z-40 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
@@ -465,7 +467,7 @@ const SampleManagementTab = () => {
                       }`} 
                       style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}
                     >
-                      <TableCell className={`py-0 sticky left-0 z-20 border-r border-gray-200 ${payment.isUrgent ? 'bg-red-100/70' : 'bg-white'}`} style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                      <TableCell className={`py-0 sticky left-0 z-30 border-r border-gray-200 shadow-sm ${payment.isUrgent ? 'bg-red-100/70 hover:bg-red-200/60' : 'bg-white'}`} style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                         <div className="flex items-center gap-1">
                           <Checkbox
                             checked={payment.isUrgent || false}

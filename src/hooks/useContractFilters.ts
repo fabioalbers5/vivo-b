@@ -198,16 +198,15 @@ export const useContractFilters = () => {
         }
       }
 
-      // 🎲 CORREÇÃO: Embaralhar antes de aplicar limite para evitar sempre os mesmos contratos
+      // Ordenar por número do contrato de forma determinística e aplicar limite
       if (filterParams.contractCount > 0) {
-        // Embaralhar com timestamp para aleatoriedade real
-        const timestamp = Date.now();
-        const shuffledContracts = [...contractsResult].sort(() => {
-          const seed = timestamp + Math.random() * 1000;
-          return (seed % 2) - 1;
+        const sortedContracts = [...contractsResult].sort((a, b) => {
+          const numA = a.numeroContrato || '';
+          const numB = b.numeroContrato || '';
+          return numA.localeCompare(numB);
         });
         
-        contractsResult = shuffledContracts.slice(0, filterParams.contractCount);
+        contractsResult = sortedContracts.slice(0, filterParams.contractCount);
       }
 
       // Transformar para o formato legado

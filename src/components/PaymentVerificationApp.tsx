@@ -168,6 +168,28 @@ const PaymentVerificationApp = () => {
     return () => clearTimeout(timeoutId);
   }, [filterParamsHash, applyFilters]); // Dependência apenas do hash memoizado
 
+  // Limpar seleções inválidas quando os contratos disponíveis mudarem
+  useEffect(() => {
+    if (selectedPayments.size === 0) return; // Sem seleções, nada a fazer
+
+    const availableContracts = showFilteredResults ? contracts : allContracts;
+    const availableIds = new Set(
+      availableContracts.map(contract => contract.id || `${contract.number}-${contract.supplier}`)
+    );
+
+    // Verificar se há seleções que não estão mais disponíveis
+    const invalidSelections = Array.from(selectedPayments).filter(id => !availableIds.has(id));
+    
+    if (invalidSelections.length > 0) {
+      // Remover seleções inválidas
+      setSelectedPayments(prev => {
+        const newSet = new Set(prev);
+        invalidSelections.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    }
+  }, [contracts, allContracts, showFilteredResults]); // Não incluir selectedPayments para evitar loop
+
 
 
 
@@ -296,21 +318,61 @@ const PaymentVerificationApp = () => {
   const sampleStats = useMemo(() => {
     const availableContracts = showFilteredResults ? contracts : allContracts;
     
+    // Converter Set para Array ordenado para garantir consistência
+    const selectedIds = Array.from(selectedPayments).sort();
+    
     // Filtrar apenas os contratos selecionados
     const selectedContractsList = availableContracts.filter(contract => {
       const contractId = contract.id || `${contract.number}-${contract.supplier}`;
-      return selectedPayments.has(contractId);
+      return selectedIds.includes(contractId);
     });
 
-    // Calcular soma dos valores
-    const totalValue = selectedContractsList.reduce((sum, contract) => {
-      return sum + (contract.paymentValue || contract.value || 0);
+    // Log para debug (remover depois)
+    console.log('=== DEBUG CÁLCULO ===');
+    console.log('Contratos selecionados:', selectedContractsList.length);
+    console.log('IDs selecionados:', selectedIds);
+    
+    // Calcular soma dos valores - COM VALIDAÇÃO
+    const totalValue = selectedContractsList.reduce((sum, contract, index) => {
+      // Priorizar paymentValue, depois value, garantindo sempre o mesmo campo
+      const contractValue = contract.paymentValue ?? contract.value ?? 0;
+      
+      // Validar se o valor é um número válido
+      const validValue = typeof contractValue === 'number' && !isNaN(contractValue) ? contractValue : 0;
+      
+      // Log de cada contrato
+      console.log(`Contrato ${index + 1}: ${contract.number}, Valor: ${validValue.toFixed(2)}`);
+      
+      return sum + validValue;
     }, 0);
+    
+    console.log('Total calculado:', totalValue.toFixed(2));
+    console.log('====================');
 
-    // Calcular valor total disponível
-    const totalAvailableValue = availableContracts.reduce((sum, contract) => {
-      return sum + (contract.paymentValue || contract.value || 0);
+    // Calcular valor total disponível - COM VALIDAÇÃO E DEBUG
+    console.log('=== DEBUG TOTAL DISPONÍVEL ===');
+    console.log('Total de contratos disponíveis:', availableContracts.length);
+    console.log('Fonte:', showFilteredResults ? 'FILTRADOS' : 'TODOS');
+    
+    const totalAvailableValue = availableContracts.reduce((sum, contract, index) => {
+      // Usar a mesma lógica para manter consistência
+      const contractValue = contract.paymentValue ?? contract.value ?? 0;
+      
+      // Validar se o valor é um número válido
+      const validValue = typeof contractValue === 'number' && !isNaN(contractValue) ? contractValue : 0;
+      
+      // Log dos primeiros 5 e últimos 5 contratos para debug
+      if (index < 5 || index >= availableContracts.length - 5) {
+        console.log(`[${index}] ${contract.number}: paymentValue=${contract.paymentValue}, value=${contract.value}, usado=${validValue.toFixed(2)}`);
+      } else if (index === 5) {
+        console.log('... (contratos intermediários omitidos) ...');
+      }
+      
+      return sum + validValue;
     }, 0);
+    
+    console.log('Total Disponível calculado:', totalAvailableValue.toFixed(2));
+    console.log('==============================');
 
     // Calcular percentual
     const percentage = totalAvailableValue > 0 ? (totalValue / totalAvailableValue) * 100 : 0;

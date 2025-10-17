@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/command";
 const flowTypes = [
   { value: "RE", label: "RE - Receita" },
-  { value: "real-state", label: "Real State - Imobiliário" },
+  { value: "Real State", label: "Real State - Imobiliário" },
   { value: "FI", label: "FI - Financeiro" },
-  { value: "proposta", label: "Proposta - Comercial" },
-  { value: "engenharia", label: "Engenharia - Técnico" },
+  { value: "Proposta", label: "Proposta - Comercial" },
+  { value: "Engenharia", label: "Engenharia - Técnico" },
   { value: "RC", label: "RC - Recursos" },
 ];
 

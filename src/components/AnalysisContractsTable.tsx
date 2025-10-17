@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
 import { 
   FileText, 
   Brain, 
@@ -19,40 +18,40 @@ import {
   ArrowUpDown, 
   ArrowUp, 
   ArrowDown,
-  ListChecks,
-  DollarSign,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  XCircle,
-  Flame
+  Eye
 } from "lucide-react";
-import { useFilteredContractsOnly } from "@/hooks/useFilteredContractsOnly";
 import { LegacyContract } from "@/hooks/useContractFilters";
 import EditSampleModal from "./EditSampleModal";
 
-interface SamplePayment extends LegacyContract {
+interface AnalysisPayment extends LegacyContract {
   analysisStatus?: 'pending' | 'in_progress' | 'completed' | 'rejected';
   isUrgent?: boolean;
   analyst?: string;
   analysisStartDate?: string;
 }
 
-const SampleManagementTab = () => {
-  const { contracts: allContracts, isLoading } = useFilteredContractsOnly();
-  const [samplePayments, setSamplePayments] = useState<SamplePayment[]>([]);
+interface AnalysisContractsTableProps {
+  contracts: LegacyContract[];
+  onViewContract?: (contractId: string) => void;
+  onAnalyzeContract?: (contractId: string) => void;
+}
+
+const AnalysisContractsTable: React.FC<AnalysisContractsTableProps> = ({ 
+  contracts,
+  onViewContract,
+  onAnalyzeContract
+}) => {
+  const [samplePayments, setSamplePayments] = useState<AnalysisPayment[]>(contracts as AnalysisPayment[]);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [visibleCount, setVisibleCount] = useState(20);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<SamplePayment | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<AnalysisPayment | null>(null);
 
-  // Carregar todos os contratos quando o componente montar
-  useEffect(() => {
-    if (allContracts && allContracts.length > 0) {
-      setSamplePayments(allContracts as SamplePayment[]);
-    }
-  }, [allContracts]);
+  // Atualizar quando os contratos mudarem
+  React.useEffect(() => {
+    setSamplePayments(contracts as AnalysisPayment[]);
+  }, [contracts]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -74,7 +73,7 @@ const SampleManagementTab = () => {
     }
   };
 
-  const getSortValue = (payment: SamplePayment, column: string): any => {
+  const getSortValue = (payment: AnalysisPayment, column: string): any => {
     switch (column) {
       case 'number':
         return payment.number;
@@ -183,30 +182,6 @@ const SampleManagementTab = () => {
     );
   };
 
-  const getPaymentStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: 'default' | 'destructive' | 'secondary' | 'outline'; className: string }> = {
-      paid: { label: 'Pago', variant: 'default', className: 'bg-status-paid text-white' },
-      pending: { label: 'Pendente', variant: 'default', className: 'bg-status-pending text-white' },
-      overdue: { label: 'Vencido', variant: 'destructive', className: 'bg-status-overdue text-white' },
-      processing: { label: 'Processando', variant: 'default', className: 'bg-status-processing text-white' }
-    };
-
-    const config = statusConfig[status];
-    if (config) {
-      return (
-        <Badge variant={config.variant} className={`${config.className} text-xs whitespace-nowrap`}>
-          {config.label}
-        </Badge>
-      );
-    }
-
-    return (
-      <Badge variant="secondary" className="bg-gray-100 text-gray-800 text-xs whitespace-nowrap">
-        {status}
-      </Badge>
-    );
-  };
-
   const getAnalysisStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
       'pending': { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
@@ -225,13 +200,15 @@ const SampleManagementTab = () => {
   };
 
   const handleViewDocument = (paymentId: string) => {
-    console.log('Ver documento:', paymentId);
-    // Implementar visualização do documento
+    if (onViewContract) {
+      onViewContract(paymentId);
+    }
   };
 
   const handleAnalyze = (paymentId: string) => {
-    console.log('Analisar:', paymentId);
-    // Implementar análise
+    if (onAnalyzeContract) {
+      onAnalyzeContract(paymentId);
+    }
   };
 
   const handleEdit = (paymentId: string) => {
@@ -250,7 +227,7 @@ const SampleManagementTab = () => {
     setSamplePayments(samplePayments.map(p => {
       const pId = p.id || `${p.number}-${p.supplier}`;
       const updatedId = updatedPayment.id || `${updatedPayment.number}-${updatedPayment.supplier}`;
-      return pId === updatedId ? updatedPayment as SamplePayment : p;
+      return pId === updatedId ? { ...p, ...updatedPayment } : p;
     }));
     setIsEditModalOpen(false);
     setSelectedPayment(null);
@@ -262,7 +239,6 @@ const SampleManagementTab = () => {
       const pId = p.id || `${p.number}-${p.supplier}`;
       return pId !== paymentId;
     }));
-    // Implementar exclusão com confirmação
   };
 
   const handleToggleUrgent = (paymentId: string) => {
@@ -274,155 +250,8 @@ const SampleManagementTab = () => {
     }));
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="border rounded-lg p-8 text-center bg-white">
-          <p className="text-muted-foreground">Carregando contratos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Calcular métricas
-  const totalPayments = samplePayments.length;
-  const totalValue = samplePayments.reduce((sum, p) => sum + (p.paymentValue || 0), 0);
-  const pendingCount = samplePayments.filter(p => p.analysisStatus === 'pending').length;
-  const inProgressCount = samplePayments.filter(p => p.analysisStatus === 'in_progress').length;
-  const completedCount = samplePayments.filter(p => p.analysisStatus === 'completed').length;
-  const rejectedCount = samplePayments.filter(p => p.analysisStatus === 'rejected').length;
-  const urgentCount = samplePayments.filter(p => p.isUrgent).length;
-
   return (
-    <div className="flex flex-col h-full space-y-4">
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total de Pagamentos */}
-        <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-blue-50">
-                  <ListChecks className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-600">Total de Pagamentos</p>
-                  <p className="text-lg font-bold text-blue-600">{totalPayments}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Valor Total */}
-        <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-green-50">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-600">Valor Total</p>
-                  <p className="text-lg font-bold text-green-600">
-                    {formatCurrency(totalValue)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pendentes */}
-        <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-yellow-50">
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-600">Pendentes</p>
-                  <p className="text-lg font-bold text-yellow-600">{pendingCount}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Urgentes */}
-        <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-red-50">
-                  <Flame className="h-4 w-4 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-600">Urgentes</p>
-                  <p className="text-lg font-bold text-red-600">{urgentCount}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Segundo grid de cards - Status de Análise */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Em Análise */}
-        <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-blue-50">
-                  <Brain className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-600">Em Análise</p>
-                  <p className="text-lg font-bold text-blue-600">{inProgressCount}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Concluídos */}
-        <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-green-50">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-600">Concluídos</p>
-                  <p className="text-lg font-bold text-green-600">{completedCount}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Rejeitados */}
-        <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-red-50">
-                  <XCircle className="h-4 w-4 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-600">Rejeitados</p>
-                  <p className="text-lg font-bold text-red-600">{rejectedCount}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Table Container */}
+    <>
       <div 
         className="border rounded-lg bg-white flex flex-col" 
         style={{ 
@@ -470,7 +299,6 @@ const SampleManagementTab = () => {
               </TableRow>
             </TableHeader>
 
-            {/* Scrollable Table Body */}
             <TableBody>
               {currentPayments.length === 0 ? (
                 <TableRow>
@@ -504,8 +332,8 @@ const SampleManagementTab = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleAnalyze(paymentId)}
-                            className="h-4 w-4 p-0 hover:bg-purple-50 hover:text-purple-600"
-                            title="Analisar com IA"
+                            className="h-4 w-4 p-0 hover:bg-green-50 hover:text-green-600"
+                            title="Ver análise de IA"
                           >
                             <Brain className="h-2 w-2" />
                           </Button>
@@ -516,13 +344,13 @@ const SampleManagementTab = () => {
                             className="h-4 w-4 p-0 hover:bg-blue-50 hover:text-blue-600"
                             title="Visualizar documento"
                           >
-                            <FileText className="h-2 w-2" />
+                            <Eye className="h-2 w-2" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(paymentId)}
-                            className="h-4 w-4 p-0 hover:bg-green-50 hover:text-green-600"
+                            className="h-4 w-4 p-0 hover:bg-yellow-50 hover:text-yellow-600"
                             title="Editar"
                           >
                             <Edit className="h-2 w-2" />
@@ -593,25 +421,20 @@ const SampleManagementTab = () => {
                         )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
-                        {payment.risk ? (
-                          getRiskBadge(payment.risk)
-                        ) : (
-                          <span className="text-muted-foreground text-xs">-</span>
-                        )}
+                        {payment.risk ? getRiskBadge(payment.risk) : '-'}
                       </TableCell>
                       <TableCell className="font-medium text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                         {payment.fine ? (
                           formatCurrency(payment.fine)
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground text-xs">-</span>
                         )}
                       </TableCell>
                     </TableRow>
                   );
                 })
               )}
-              
-              {/* Loading indicator para scroll infinito */}
+
               {hasMore && (
                 <TableRow>
                   <TableCell colSpan={14} className="text-center py-2 text-xs text-muted-foreground">
@@ -632,31 +455,20 @@ const SampleManagementTab = () => {
         </div>
       </div>
 
-      {/* Status do scroll infinito */}
-      <div className="flex items-center justify-between px-2 mt-2">
-        <span className="text-xs text-muted-foreground">
-          Exibindo {currentPayments.length} de {samplePayments.length} pagamentos
-        </span>
-        <div className="flex gap-4 text-xs">
-          <span className="text-muted-foreground">Pendentes: {samplePayments.filter(p => p.analysisStatus === 'pending').length}</span>
-          <span className="text-muted-foreground">Em análise: {samplePayments.filter(p => p.analysisStatus === 'in_progress').length}</span>
-          <span className="text-muted-foreground">Concluídos: {samplePayments.filter(p => p.analysisStatus === 'completed').length}</span>
-          <span className="text-red-600 font-medium">Urgentes: {samplePayments.filter(p => p.isUrgent).length}</span>
-        </div>
-      </div>
-
-      {/* Modal de Edição */}
-      <EditSampleModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedPayment(null);
-        }}
-        payment={selectedPayment}
-        onSave={handleSaveEdit}
-      />
-    </div>
+      {/* Edit Modal */}
+      {selectedPayment && (
+        <EditSampleModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedPayment(null);
+          }}
+          payment={selectedPayment}
+          onSave={handleSaveEdit}
+        />
+      )}
+    </>
   );
 };
 
-export default SampleManagementTab;
+export default AnalysisContractsTable;

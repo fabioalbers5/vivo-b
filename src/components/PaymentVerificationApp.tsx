@@ -40,6 +40,7 @@ import { useAllContracts } from "@/hooks/useAllContracts";
 import { useAnalysts } from "@/hooks/useAnalysts";
 import { executeSamplingMotor, SamplingMotorType } from "@/utils/samplingEngines";
 import { PaymentStatus, AlertType, ContractRisk } from "@/core/entities/Contract";
+import { supabase } from "@/integrations/supabase/client";
 
 
 
@@ -48,6 +49,9 @@ const PaymentVerificationApp = () => {
   const { contracts, isLoading, applyFilters: originalApplyFilters } = useContractFilters();
   const { allContracts, isLoading: allContractsLoading } = useAllContracts();
   const { analysts, isLoading: analystsLoading } = useAnalysts();
+  
+  // Estado para armazenar números de contratos já filtrados (em contratos_filtrados)
+  const [filteredContractNumbers, setFilteredContractNumbers] = useState<Set<string>>(new Set());
   
   // Estado para mostrar resultados filtrados na tabela
   const [showFilteredResults, setShowFilteredResults] = useState(false);
@@ -66,6 +70,37 @@ const PaymentVerificationApp = () => {
   
   // Motor de amostragem
   const [samplingMotor, setSamplingMotor] = useState<SamplingMotorType>('highest-value');
+
+  // Buscar contratos que já estão em contratos_filtrados
+  useEffect(() => {
+    const fetchFilteredContracts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('contratos_filtrados')
+          .select('numero_contrato');
+
+        if (error) {
+          console.error('Erro ao buscar contratos filtrados:', error);
+          return;
+        }
+
+        if (data) {
+          const contractNumbers = new Set(data.map(item => item.numero_contrato));
+          setFilteredContractNumbers(contractNumbers);
+          console.log(`📋 ${contractNumbers.size} contratos já estão em contratos_filtrados`);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar contratos filtrados:', error);
+      }
+    };
+
+    fetchFilteredContracts();
+  }, []);
+
+  // Filtrar contratos disponíveis (excluindo os que já estão em contratos_filtrados)
+  const availableContracts = useMemo(() => {
+    return allContracts.filter(contract => !filteredContractNumbers.has(contract.number));
+  }, [allContracts, filteredContractNumbers]);
 
   // Função memoizada para aplicar filtros - evita recriação constante e múltiplas chamadas
   const applyFilters = useCallback(async (filterParams: any) => {
@@ -297,7 +332,7 @@ const PaymentVerificationApp = () => {
     setAnalystModalOpen(true);
   };
 
-  const handleDefineSample = () => {
+  const handleDefineSample = async () => {
     if (!selectedAnalyst) {
       toast({
         title: "Atenção",
@@ -307,26 +342,108 @@ const PaymentVerificationApp = () => {
       return;
     }
 
-    toast({
-      title: "Amostra definida",
-      description: `${selectedPayments.size} pagamento(s) atribuído(s) ao analista ${selectedAnalyst}.`
-    });
-    
-    // Fechar modal e resetar seleção
-    setAnalystModalOpen(false);
-    setSelectedAnalyst('');
-    // Aqui você pode adicionar a lógica para salvar a amostra no backend
+    if (selectedPayments.size === 0) {
+      toast({
+        title: "Atenção",
+        description: "Por favor, selecione pelo menos um contrato para a amostra.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Gerar amostra_id baseado na data atual (formato YYYY-MM-DD)
+      const dataAtual = new Date();
+      const ano = dataAtual.getFullYear();
+      const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+      const dia = String(dataAtual.getDate()).padStart(2, '0');
+      const amostraId = `${ano}-${mes}-${dia}`;
+
+      // Mês de referência (formato YYYY-MM)
+      const mesReferencia = `${ano}-${mes}`;
+
+      // Obter contratos selecionados
+      const contractsToUse = showFilteredResults ? contracts.filter(c => !filteredContractNumbers.has(c.number)) : availableContracts;
+      const selectedIds = Array.from(selectedPayments);
+      
+      const selectedContractsList = contractsToUse.filter(contract => {
+        const contractId = contract.id || `${contract.number}-${contract.supplier}`;
+        return selectedIds.includes(contractId);
+      });
+
+      // Preparar dados para inserção
+      const contractsToInsert = selectedContractsList.map(contract => ({
+        numero_contrato: contract.number,
+        mes_referencia: mesReferencia,
+        usuario: selectedAnalyst,
+        amostra_id: amostraId,
+        data_analise: null
+      }));
+
+      console.log('📋 Inserindo contratos em contratos_filtrados:', {
+        quantidade: contractsToInsert.length,
+        analista: selectedAnalyst,
+        amostraId: amostraId
+      });
+
+      // Inserir na tabela contratos_filtrados
+      const { data, error } = await supabase
+        .from('contratos_filtrados')
+        .insert(contractsToInsert);
+
+      if (error) {
+        console.error('❌ Erro ao inserir contratos:', error);
+        toast({
+          title: "Erro",
+          description: `Erro ao salvar amostra: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Contratos inseridos com sucesso');
+
+      toast({
+        title: "Amostra definida com sucesso!",
+        description: `${selectedPayments.size} contrato(s) atribuído(s) ao analista ${selectedAnalyst}.`
+      });
+      
+      // Atualizar lista de contratos filtrados
+      const { data: newFilteredData } = await supabase
+        .from('contratos_filtrados')
+        .select('numero_contrato');
+
+      if (newFilteredData) {
+        const contractNumbers = new Set(newFilteredData.map(item => item.numero_contrato));
+        setFilteredContractNumbers(contractNumbers);
+      }
+
+      // Fechar modal e resetar seleção
+      setAnalystModalOpen(false);
+      setSelectedAnalyst('');
+      setSelectedPayments(new Set());
+      
+    } catch (error) {
+      console.error('❌ Erro inesperado ao definir amostra:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao salvar amostra. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Calcular estatísticas da amostra selecionada
   const sampleStats = useMemo(() => {
-    const availableContracts = showFilteredResults ? contracts : allContracts;
+    // Usar availableContracts (que já exclui contratos_filtrados) 
+    // ou filtrar ainda mais se houver filtros aplicados
+    const contractsToUse = showFilteredResults ? contracts.filter(c => !filteredContractNumbers.has(c.number)) : availableContracts;
     
     // Converter Set para Array ordenado para garantir consistência
     const selectedIds = Array.from(selectedPayments).sort();
     
     // Filtrar apenas os contratos selecionados
-    const selectedContractsList = availableContracts.filter(contract => {
+    const selectedContractsList = contractsToUse.filter(contract => {
       const contractId = contract.id || `${contract.number}-${contract.supplier}`;
       return selectedIds.includes(contractId);
     });
@@ -355,10 +472,10 @@ const PaymentVerificationApp = () => {
 
     // Calcular valor total disponível - COM VALIDAÇÃO E DEBUG
     console.log('=== DEBUG TOTAL DISPONÍVEL ===');
-    console.log('Total de contratos disponíveis:', availableContracts.length);
-    console.log('Fonte:', showFilteredResults ? 'FILTRADOS' : 'TODOS');
+    console.log('Total de contratos disponíveis:', contractsToUse.length);
+    console.log('Fonte:', showFilteredResults ? 'FILTRADOS (excluindo contratos_filtrados)' : 'TODOS (excluindo contratos_filtrados)');
     
-    const totalAvailableValue = availableContracts.reduce((sum, contract, index) => {
+    const totalAvailableValue = contractsToUse.reduce((sum, contract, index) => {
       // Usar a mesma lógica para manter consistência
       const contractValue = contract.paymentValue ?? contract.value ?? 0;
       
@@ -366,7 +483,7 @@ const PaymentVerificationApp = () => {
       const validValue = typeof contractValue === 'number' && !isNaN(contractValue) ? contractValue : 0;
       
       // Log dos primeiros 5 e últimos 5 contratos para debug
-      if (index < 5 || index >= availableContracts.length - 5) {
+      if (index < 5 || index >= contractsToUse.length - 5) {
         console.log(`[${index}] ${contract.number}: paymentValue=${contract.paymentValue}, value=${contract.value}, usado=${validValue.toFixed(2)}`);
       } else if (index === 5) {
         console.log('... (contratos intermediários omitidos) ...');
@@ -386,9 +503,9 @@ const PaymentVerificationApp = () => {
       totalValue,
       totalAvailableValue,
       percentage,
-      totalAvailable: availableContracts.length
+      totalAvailable: contractsToUse.length
     };
-  }, [selectedPayments, contracts, allContracts, showFilteredResults]);
+  }, [selectedPayments, contracts, availableContracts, showFilteredResults, filteredContractNumbers]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -703,7 +820,7 @@ const PaymentVerificationApp = () => {
               </div>
               
               <PaginatedContractsTable
-                contracts={allContracts}
+                contracts={availableContracts}
                 filteredContracts={contracts}
                 showFilteredResults={showFilteredResults}
                 onViewContract={handleViewContract}

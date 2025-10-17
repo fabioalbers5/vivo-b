@@ -107,7 +107,27 @@ export const useSampleHistory = (): UseSampleHistoryReturn => {
         return [];
       }
 
-      // 3. Converter para formato LegacyContract
+      // 3. Buscar dados de analistas da tabela contratos_filtrados
+      const { data: analystData, error: analystError } = await supabase
+        .from('contratos_filtrados')
+        .select('numero_contrato, usuario')
+        .eq('amostra_id', amostraId);
+
+      if (analystError) {
+        console.warn('Aviso ao buscar analistas:', analystError.message);
+      }
+
+      // Criar mapa de numero_contrato -> usuario
+      const analystMap = new Map<string, string>();
+      if (analystData) {
+        analystData.forEach(item => {
+          if (item.numero_contrato && item.usuario) {
+            analystMap.set(item.numero_contrato, item.usuario);
+          }
+        });
+      }
+
+      // 4. Converter para formato LegacyContract
       const legacyContracts: LegacyContract[] = contractsData.map(contract => ({
         id: contract.id,
         number: contract.numero_contrato,
@@ -116,6 +136,8 @@ export const useSampleHistory = (): UseSampleHistoryReturn => {
         value: contract.valor_contrato,
         status: contract.status || '',
         dueDate: contract.data_vencimento,
+        contractDueDate: contract.data_vencimento,
+        paymentDueDate: contract.data_vencimento_pagamento,
         alertType: contract.tipo_alerta || '',
         requestingArea: contract.area_solicitante || '',
         risk: contract.risco || '',
@@ -123,7 +145,8 @@ export const useSampleHistory = (): UseSampleHistoryReturn => {
         paymentValue: contract.valor_pagamento || 0,
         region: contract.regiao || '',
         state: contract.estado,
-        paymentStatus: contract.status_pagamento || ''
+        paymentStatus: contract.status_pagamento || '',
+        analyst: analystMap.get(contract.numero_contrato) || '' // Buscar analista do mapa
       }));
 
       console.log(`✅ Carregados ${legacyContracts.length} contratos da amostra ${amostraId}`);

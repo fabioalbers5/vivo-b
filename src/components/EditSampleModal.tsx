@@ -50,6 +50,7 @@ import { LegacyContract } from "@/hooks/useContractFilters";
 import { useAnalysts } from "@/hooks/useAnalysts";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EditSampleModalProps {
   isOpen: boolean;
@@ -191,28 +192,55 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!payment) return;
 
-    const updatedPayment: LegacyContract = {
-      ...payment,
-      analyst: selectedAnalyst,
-      isUrgent,
-      notes,
-      analysisStatus,
-      priority,
-      estimatedCompletionDate,
-      reviewComments,
-      watchers: watchers.map(w => w.email),
-      lastModified: new Date().toISOString(),
-    };
+    try {
+      // Atualizar analista no Supabase (tabela contratos_filtrados)
+      if (selectedAnalyst && payment.number) {
+        const { error: updateError } = await supabase
+          .from('contratos_filtrados')
+          .update({ usuario: selectedAnalyst })
+          .eq('numero_contrato', payment.number);
 
-    onSave(updatedPayment);
-    
-    toast({
-      title: "Amostra atualizada",
-      description: "As alterações foram salvas com sucesso",
-    });
+        if (updateError) {
+          console.error('Erro ao atualizar analista no Supabase:', updateError);
+          toast({
+            title: "Erro ao salvar",
+            description: "Não foi possível atualizar o analista no banco de dados",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      const updatedPayment: LegacyContract = {
+        ...payment,
+        analyst: selectedAnalyst,
+        isUrgent,
+        notes,
+        analysisStatus,
+        priority,
+        estimatedCompletionDate,
+        reviewComments,
+        watchers: watchers.map(w => w.email),
+        lastModified: new Date().toISOString(),
+      };
+
+      onSave(updatedPayment);
+      
+      toast({
+        title: "Amostra atualizada",
+        description: "As alterações foram salvas com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar as alterações",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatCurrency = (amount: number) => {

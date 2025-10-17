@@ -15,6 +15,7 @@ import { calculateRepresentativityScore } from '@/utils/representativityCalculat
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, AlertTriangle, CheckCircle, Users, Target, Database, History, ChevronDown, BarChart3 } from 'lucide-react';
 import ContractsTable from '@/components/ContractsTable';
+import AnalysisContractsTable from '@/components/AnalysisContractsTable';
 import ContractAnalysisModal from '@/components/ContractAnalysisModal';
 
 const COLORS = [
@@ -669,7 +670,7 @@ const SampleAnalysisPage: React.FC = () => {
                 <TabsContent value="contracts" className="h-full overflow-hidden">
                   <div className="h-full flex flex-col">
                     <div className="flex-1 overflow-hidden">
-                      <ContractsTable 
+                      <AnalysisContractsTable 
                         contracts={contracts}
                         onViewContract={(contractId) => {
                           console.log('Visualizar contrato:', contractId);

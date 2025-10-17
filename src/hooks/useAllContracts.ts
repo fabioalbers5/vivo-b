@@ -24,20 +24,22 @@ export const useAllContracts = (): UseAllContractsReturn => {
     setError(null);
     
     try {
-      // Buscar todos os contratos da tabela principal com um timeout
+      // Buscar todos os contratos da tabela contratos_vivo
       const { data: contractsData, error: contractsError } = await supabase
         .from('contratos_vivo')
-        .select('*')
-        .limit(200); // Reduzir para 200 para evitar sobrecarga
+        .select('*');
 
       if (contractsError) {
         throw new Error(`Erro ao buscar contratos: ${contractsError.message}`);
       }
 
       if (!contractsData || contractsData.length === 0) {
+        console.log('Nenhum contrato encontrado em contratos_vivo');
         setAllContracts([]);
         return;
       }
+
+      console.log(`📋 Carregados ${contractsData.length} contratos de contratos_vivo`);
 
       // Converter para formato LegacyContract
       const legacyContracts: LegacyContract[] = contractsData.map(contract => ({
@@ -57,7 +59,8 @@ export const useAllContracts = (): UseAllContractsReturn => {
         paymentValue: contract.valor_pagamento || 0,
         region: contract.regiao || '',
         state: contract.estado,
-        paymentStatus: contract.status_pagamento || ''
+        paymentStatus: contract.status_pagamento || '',
+        analyst: '' // Será preenchido conforme necessário por cada tela
       }));
 
       setAllContracts(legacyContracts);

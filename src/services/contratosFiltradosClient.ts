@@ -13,7 +13,7 @@ export interface ContratoFiltradoData {
   mes_referencia: string;
   data_analise?: string;
   usuario?: string;
-  amostra_id: number;
+  amostra_id: string;
 }
 
 export interface RegistroResult {
@@ -24,7 +24,7 @@ export interface RegistroResult {
   mes_referencia: string;
   data_analise: string;
   usuario?: string;
-  amostra_id: number;
+  amostra_id: string;
   erro?: string;
 }
 
@@ -76,30 +76,25 @@ export class ContratosFiltradosService {
   }
 
   /**
-   * Busca o próximo amostra_id disponível
-   * Se for a primeira amostra, retorna 1. Caso contrário, incrementa o último usado.
+   * Gera um amostra_id baseado na data atual no formato YYYY-MM-DD
    */
-  private static async obterProximoAmostraId(): Promise<number> {
+  private static async obterProximoAmostraId(): Promise<string> {
     try {
-      const { data, error } = await supabase
-        .from('contratos_filtrados')
-        .select('amostra_id')
-        .order('amostra_id', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error('Erro ao buscar último amostra_id:', error);
-        return 1; // Fallback para primeira amostra
-      }
-
-      if (!data || data.length === 0) {
-        return 1; // Primeira amostra
-      }
-
-      return data[0].amostra_id + 1;
+      // Gerar ID baseado na data atual (formato YYYY-MM-DD)
+      const dataAtual = new Date();
+      const ano = dataAtual.getFullYear();
+      const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+      const dia = String(dataAtual.getDate()).padStart(2, '0');
+      
+      return `${ano}-${mes}-${dia}`;
     } catch (error) {
-      console.error('Erro inesperado ao buscar amostra_id:', error);
-      return 1; // Fallback para primeira amostra
+      console.error('Erro inesperado ao gerar amostra_id:', error);
+      // Fallback: retorna data atual
+      const dataAtual = new Date();
+      const ano = dataAtual.getFullYear();
+      const mes = String(dataAtual.getMonth() + 1).padStart(2, '0');
+      const dia = String(dataAtual.getDate()).padStart(2, '0');
+      return `${ano}-${mes}-${dia}`;
     }
   }
 
@@ -122,7 +117,7 @@ export class ContratosFiltradosService {
         duplicados_ignorados: 0,
         mes_referencia: this.gerarMesReferencia(),
         data_analise: this.formatarDataAnalise(),
-        amostra_id: 0, // Valor padrão para erro
+        amostra_id: '', // Valor padrão para erro
         erro: 'Lista de contratos está vazia'
       };
     }
@@ -241,7 +236,7 @@ export class ContratosFiltradosService {
         duplicados_ignorados: 0,
         mes_referencia: mesReferencia,
         data_analise: dataAnalise,
-        amostra_id: 0, // Valor padrão para erro
+        amostra_id: '', // Valor padrão para erro
         erro: errorMessage
       };
     }

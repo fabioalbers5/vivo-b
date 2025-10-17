@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LegacyContract } from './useContractFilters';
 
 interface SampleHistoryItem {
-  amostra_id: number;
+  amostra_id: string;
   totalContracts: number;
   createdAt: string;
   mesReferencia: string;
@@ -13,7 +13,7 @@ interface UseSampleHistoryReturn {
   sampleHistory: SampleHistoryItem[];
   isLoading: boolean;
   error: string | null;
-  loadSampleById: (amostraId: number) => Promise<LegacyContract[]>;
+  loadSampleById: (amostraId: string) => Promise<LegacyContract[]>;
   refreshHistory: () => Promise<void>;
 }
 
@@ -57,9 +57,9 @@ export const useSampleHistory = (): UseSampleHistoryReturn => {
           acc[amostraId].totalContracts++;
         }
         return acc;
-      }, {} as Record<number, SampleHistoryItem>);
+      }, {} as Record<string, SampleHistoryItem>);
 
-      const historyItems = Object.values(groupedSamples).sort((a, b) => b.amostra_id - a.amostra_id);
+      const historyItems = Object.values(groupedSamples).sort((a, b) => b.amostra_id.localeCompare(a.amostra_id));
       setSampleHistory(historyItems);
 
     } catch (err) {
@@ -70,7 +70,7 @@ export const useSampleHistory = (): UseSampleHistoryReturn => {
     }
   };
 
-  const loadSampleById = async (amostraId: number): Promise<LegacyContract[]> => {
+  const loadSampleById = async (amostraId: string): Promise<LegacyContract[]> => {
     try {
       console.log(`🔍 Carregando amostra ${amostraId}...`);
       

@@ -132,7 +132,7 @@ export type Database = {
           mes_referencia: string
           data_analise: string | null
           usuario: string | null
-          amostra_id: number
+          amostra_id: string
         }
         Insert: {
           id?: number
@@ -140,7 +140,7 @@ export type Database = {
           mes_referencia: string
           data_analise?: string | null
           usuario?: string | null
-          amostra_id: number
+          amostra_id: string
         }
         Update: {
           id?: number
@@ -148,7 +148,7 @@ export type Database = {
           mes_referencia?: string
           data_analise?: string | null
           usuario?: string | null
-          amostra_id?: number
+          amostra_id?: string
         }
         Relationships: []
       }

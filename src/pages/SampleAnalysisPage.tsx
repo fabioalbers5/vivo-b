@@ -66,19 +66,18 @@ const SampleAnalysisPage: React.FC = () => {
     // Carregar amostra específica
     setLoadingSample(true);
     try {
-      const amostraIdNumber = parseInt(sampleId);
-      console.log(`🔄 Carregando amostra ${amostraIdNumber}...`);
+      console.log(`🔄 Carregando amostra ${sampleId}...`);
       
-      const historicalContracts = await loadSampleById(amostraIdNumber);
+      const historicalContracts = await loadSampleById(sampleId);
       
       // Atualizar contexto com dados históricos
       setSample(historicalContracts, {
         totalCount: historicalContracts.length,
         appliedFilters: { _historicalSample: true },
         lastUpdated: new Date()
-      }, amostraIdNumber);
+      }, sampleId);
       
-      console.log(`✅ Amostra ${amostraIdNumber} carregada com ${historicalContracts.length} contratos`);
+      console.log(`✅ Amostra ${sampleId} carregada com ${historicalContracts.length} contratos`);
       
     } catch (error) {
       console.error('❌ Erro ao carregar amostra:', error);
@@ -378,7 +377,7 @@ const SampleAnalysisPage: React.FC = () => {
                     Todos os Contratos Analisados
                   </SelectItem>
                   {sampleHistory.map((sample) => (
-                    <SelectItem key={sample.amostra_id} value={sample.amostra_id.toString()}>
+                    <SelectItem key={sample.amostra_id} value={sample.amostra_id}>
                       Amostra {sample.amostra_id}
                     </SelectItem>
                   ))}

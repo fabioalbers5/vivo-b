@@ -8,7 +8,7 @@ interface SampleContextType {
     totalCount: number;
     appliedFilters: Record<string, unknown>;
     lastUpdated: Date;
-    amostraId?: number;
+    amostraId?: string;
   };
   
   // Analista responsável
@@ -16,7 +16,7 @@ interface SampleContextType {
   setSelectedAnalyst: (analyst: string) => void;
   
   // Funções para gerenciar a amostra
-  setSample: (contracts: LegacyContract[], filters: Record<string, unknown>, amostraId?: number) => void;
+  setSample: (contracts: LegacyContract[], filters: Record<string, unknown>, amostraId?: string) => void;
   clearSample: () => void;
   
   // Estado de carregamento
@@ -72,7 +72,7 @@ export const SampleProvider: React.FC<SampleProviderProps> = ({ children }) => {
   const [selectedAnalyst, setSelectedAnalyst] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const setSample = (contracts: LegacyContract[], filters: Record<string, unknown>, amostraId?: number) => {
+  const setSample = (contracts: LegacyContract[], filters: Record<string, unknown>, amostraId?: string) => {
     const metadata = {
       totalCount: contracts.length,
       appliedFilters: filters,

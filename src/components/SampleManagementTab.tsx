@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useAllContracts } from "@/hooks/useAllContracts";
 import { LegacyContract } from "@/hooks/useContractFilters";
+import EditSampleModal from "./EditSampleModal";
 
 interface SamplePayment extends LegacyContract {
   analysisStatus?: 'pending' | 'in_progress' | 'completed' | 'rejected';
@@ -43,6 +44,8 @@ const SampleManagementTab = () => {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [visibleCount, setVisibleCount] = useState(20);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<SamplePayment | null>(null);
 
   // Carregar todos os contratos quando o componente montar
   useEffect(() => {
@@ -228,8 +231,25 @@ const SampleManagementTab = () => {
   };
 
   const handleEdit = (paymentId: string) => {
-    console.log('Editar:', paymentId);
-    // Implementar edição
+    const payment = samplePayments.find(p => {
+      const pId = p.id || `${p.number}-${p.supplier}`;
+      return pId === paymentId;
+    });
+    
+    if (payment) {
+      setSelectedPayment(payment);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveEdit = (updatedPayment: LegacyContract) => {
+    setSamplePayments(samplePayments.map(p => {
+      const pId = p.id || `${p.number}-${p.supplier}`;
+      const updatedId = updatedPayment.id || `${updatedPayment.number}-${updatedPayment.supplier}`;
+      return pId === updatedId ? updatedPayment as SamplePayment : p;
+    }));
+    setIsEditModalOpen(false);
+    setSelectedPayment(null);
   };
 
   const handleDelete = (paymentId: string) => {
@@ -614,6 +634,17 @@ const SampleManagementTab = () => {
           <span className="text-red-600 font-medium">Urgentes: {samplePayments.filter(p => p.isUrgent).length}</span>
         </div>
       </div>
+
+      {/* Modal de Edição */}
+      <EditSampleModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedPayment(null);
+        }}
+        payment={selectedPayment}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 };

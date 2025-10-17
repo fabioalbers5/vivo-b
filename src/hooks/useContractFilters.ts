@@ -47,6 +47,16 @@ export interface LegacyContract {
   paymentStatus?: string; // Campo status_pagamento da tabela contratos_vivo
   flowType?: string; // Campo tipo_fluxo da tabela contratos_vivo
   treasuryCycle?: string; // Campo ciclo_tesouraria (Sim/Não)
+  // Campos de gestão de amostra
+  analyst?: string;
+  analysisStatus?: 'pending' | 'in_progress' | 'completed' | 'rejected';
+  isUrgent?: boolean;
+  notes?: string;
+  priority?: string;
+  estimatedCompletionDate?: string;
+  reviewComments?: string;
+  watchers?: string[];
+  lastModified?: string;
 }
 
 export const useContractFilters = () => {

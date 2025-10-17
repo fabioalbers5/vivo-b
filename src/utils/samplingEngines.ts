@@ -107,7 +107,7 @@ export const sampleByTopSuppliers = (
 };
 
 /**
- * Motor: Aleatório
+ * Motor: Personalizado
  * Gera uma amostra aleatória
  * Evita duplicatas do mesmo fornecedor (apenas o maior pagamento por fornecedor)
  */

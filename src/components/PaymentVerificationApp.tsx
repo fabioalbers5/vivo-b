@@ -264,7 +264,7 @@ const PaymentVerificationApp = () => {
     const motorLabels: Record<SamplingMotorType, string> = {
       'highest-value': 'Maior Valor',
       'top-suppliers': 'Top Fornecedores',
-      'random': 'Aleatório',
+      'random': 'Personalizado',
       'due-date': 'Data de Vencimento'
     };
     
@@ -574,8 +574,8 @@ const PaymentVerificationApp = () => {
                       <SelectContent>
                         <SelectItem value="highest-value">Maior valor</SelectItem>
                         <SelectItem value="top-suppliers">Top fornecedores</SelectItem>
-                        <SelectItem value="random">Aleatório</SelectItem>
                         <SelectItem value="due-date">Data de vencimento</SelectItem>
+                        <SelectItem value="random">Personalizado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

@@ -47,7 +47,9 @@ export const useAllContracts = (): UseAllContractsReturn => {
         type: contract.tipo_contrato || contract.tipo_fluxo,
         value: contract.valor_contrato,
         status: contract.status || '',
-        dueDate: contract.data_vencimento,
+        dueDate: contract.data_vencimento_pagamento || contract.data_vencimento, // Vencimento do pagamento
+        contractDueDate: contract.data_vencimento, // Vencimento do contrato
+        paymentDueDate: contract.data_vencimento_pagamento, // Vencimento do pagamento
         alertType: contract.tipo_alerta || '',
         requestingArea: contract.area_solicitante || '',
         risk: contract.risco || '',

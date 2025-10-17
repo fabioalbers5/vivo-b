@@ -304,8 +304,12 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
                     <p className="font-semibold text-xs truncate w-full">{payment.flowType || payment.type}</p>
                   </div>
                   <div className="space-y-1 min-w-0 overflow-hidden">
-                    <Label className="text-xs text-muted-foreground">Data de Vencimento</Label>
-                    <p className="font-semibold text-xs truncate w-full">{formatDate(payment.dueDate)}</p>
+                    <Label className="text-xs text-muted-foreground">Vencimento do Pagamento</Label>
+                    <p className="font-semibold text-xs truncate w-full">{payment.paymentDueDate ? formatDate(payment.paymentDueDate) : (payment.dueDate ? formatDate(payment.dueDate) : "N/A")}</p>
+                  </div>
+                  <div className="space-y-1 min-w-0 overflow-hidden">
+                    <Label className="text-xs text-muted-foreground">Vencimento do Contrato</Label>
+                    <p className="font-semibold text-xs truncate w-full">{payment.contractDueDate ? formatDate(payment.contractDueDate) : "N/A"}</p>
                   </div>
                   <div className="space-y-1 min-w-0 overflow-hidden">
                     <Label className="text-xs text-muted-foreground">Ciclo Tesouraria</Label>
@@ -423,7 +427,7 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
                     htmlFor="urgent"
                     className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Flame className="h-3 w-3 text-red-500" />
+                    
                     Marcar esta amostra como URGENTE
                   </Label>
                 </div>
@@ -623,19 +627,19 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
             {/* ABA HISTÓRICO */}
             <TabsContent value="logs" className="mt-3 space-y-2 w-full overflow-hidden box-border">
               <div className="space-y-2 w-full overflow-hidden box-border">
-                <h3 className="text-sm font-semibold flex items-center gap-1.5 pr-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5 pr-2 ml-2">
                   <History className="h-3.5 w-3.5 flex-shrink-0" />
                   <span className="truncate">Histórico</span>
                 </h3>
 
-                <div className="space-y-1.5 w-full overflow-hidden box-border">
+                <div className="space-y-1.5 w-full overflow-hidden box-border ml-2">
                   {activityLogs.map((log, index) => (
                     <div
                       key={log.id}
                       className="relative pl-4 pb-2.5 border-l-2 border-muted last:border-l-0 last:pb-0 w-full overflow-hidden box-border pr-2"
                       style={{ maxWidth: '100%' }}
                     >
-                      <div className="absolute left-[-4px] top-0.5 h-2 w-2 rounded-full bg-primary border border-background flex-shrink-0" />
+                      <div className="ml-2 absolute left-[-4px] top-0.5 h-2 w-2 rounded-full bg-primary border border-background flex-shrink-0" />
                       <div className="space-y-0.5 w-full overflow-hidden box-border" style={{ maxWidth: '100%' }}>
                         <div className="w-full overflow-hidden box-border" style={{ maxWidth: '100%' }}>
                           <p className="font-semibold text-[11px] truncate w-full mb-0.5" style={{ maxWidth: '100%' }}>

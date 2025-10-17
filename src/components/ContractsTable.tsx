@@ -104,7 +104,7 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
           overflowX: 'auto'
         }}
       >
-        <Table className="min-w-[1400px] !h-auto" style={{ tableLayout: 'fixed', height: 'auto' }}>
+        <Table className="min-w-[1540px] !h-auto" style={{ tableLayout: 'fixed', height: 'auto' }}>
           {/* Fixed Table Header */}
           <TableHeader className="sticky top-0 z-10 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
             <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
@@ -119,7 +119,8 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
               <TableHead className="min-w-[80px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Risco</TableHead>
               <TableHead className="min-w-[120px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor da Multa</TableHead>
               <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Valor do Pagamento</TableHead>
-              <TableHead className="min-w-[130px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Data de Vencimento</TableHead>
+              <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Vencimento do Pagamento</TableHead>
+              <TableHead className="min-w-[140px] bg-gray-50 py-0 text-xs" style={{ height: '24px', lineHeight: '1.2' }}>Vencimento do Contrato</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -197,7 +198,12 @@ const ContractsTable = ({ contracts, onViewContract, onAnalyzeContract }: Contra
                     <span className="text-muted-foreground text-xs">-</span>
                   )}
                 </TableCell>
-                <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{formatDate(contract.dueDate)}</TableCell>
+                <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                  {contract.paymentDueDate ? formatDate(contract.paymentDueDate) : (contract.dueDate ? formatDate(contract.dueDate) : '-')}
+                </TableCell>
+                <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                  {contract.contractDueDate ? formatDate(contract.contractDueDate) : '-'}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

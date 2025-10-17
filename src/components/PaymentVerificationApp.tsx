@@ -85,7 +85,9 @@ const PaymentVerificationApp = () => {
   const [flowType, setFlowType] = useState<string[]>([]);
   const [contractValue, setContractValue] = useState<[number, number]>([0, 10000000]);
   const [paymentValue, setPaymentValue] = useState<[number, number]>([0, 10000000]);
-  const [dueDate, setDueDate] = useState<string>("all");
+  const [dueDate, setDueDate] = useState<string>("all"); // Mantido para compatibilidade - representa vencimento do pagamento
+  const [contractDueDate, setContractDueDate] = useState<string>("all"); // Novo: vencimento do contrato
+  const [paymentDueDate, setPaymentDueDate] = useState<string>("all"); // Novo: vencimento do pagamento (alias mais claro)
   const [customStart, setCustomStart] = useState<string>("");
   const [customEnd, setCustomEnd] = useState<string>("");
   const [supplierName, setSupplierName] = useState<string[]>([]);
@@ -215,6 +217,8 @@ const PaymentVerificationApp = () => {
     setContractValue([0, 10000000]);
     setPaymentValue([0, 10000000]);
     setDueDate("all");
+    setContractDueDate("all");
+    setPaymentDueDate("all");
     setCustomStart("");
     setCustomEnd("");
     setSupplierName([]);
@@ -441,15 +445,36 @@ const PaymentVerificationApp = () => {
       )
     },
     {
-      id: 'dueDate',
-      label: 'Vencimento',
-      activeCount: (dueDate && dueDate !== 'all') ? 1 : 0,
-      isActive: dueDate !== 'all',
+      id: 'paymentDueDate',
+      label: 'Vencimento do Pagamento',
+      activeCount: (paymentDueDate && paymentDueDate !== 'all') ? 1 : 0,
+      isActive: paymentDueDate !== 'all',
       component: (
         <FilterWrapper>
           <DueDateFilter
-            value={dueDate}
-            onChange={setDueDate}
+            value={paymentDueDate}
+            onChange={(value) => {
+              setPaymentDueDate(value);
+              setDueDate(value); // Manter sincronizado para compatibilidade
+            }}
+            customStart={customStart}
+            customEnd={customEnd}
+            onCustomStartChange={setCustomStart}
+            onCustomEndChange={setCustomEnd}
+          />
+        </FilterWrapper>
+      )
+    },
+    {
+      id: 'contractDueDate',
+      label: 'Vencimento do Contrato',
+      activeCount: (contractDueDate && contractDueDate !== 'all') ? 1 : 0,
+      isActive: contractDueDate !== 'all',
+      component: (
+        <FilterWrapper>
+          <DueDateFilter
+            value={contractDueDate}
+            onChange={setContractDueDate}
             customStart={customStart}
             customEnd={customEnd}
             onCustomStartChange={setCustomStart}

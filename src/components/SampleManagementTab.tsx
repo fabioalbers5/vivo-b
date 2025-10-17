@@ -84,6 +84,10 @@ const SampleManagementTab = () => {
         return (payment.flowType || payment.type || '')?.toLowerCase();
       case 'dueDate':
         return new Date(payment.dueDate).getTime();
+      case 'contractDueDate':
+        return payment.contractDueDate ? new Date(payment.contractDueDate).getTime() : 0;
+      case 'paymentDueDate':
+        return payment.paymentDueDate ? new Date(payment.paymentDueDate).getTime() : 0;
       case 'treasuryCycle':
         return payment.treasuryCycle || '';
       case 'paymentValue':
@@ -446,14 +450,15 @@ const SampleManagementTab = () => {
             }
           }}
         >
-          <Table className="w-full relative min-w-[1670px]" style={{ tableLayout: 'fixed', height: 'auto', position: 'relative' }}>
-            <TableHeader className="sticky top-0 z-30 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
+          <Table className="w-full relative min-w-[1810px]" style={{ tableLayout: 'fixed', height: 'auto', position: 'relative' }}>
+            <TableHeader className="sticky top-0 z-50 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
-                <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center sticky left-0 z-40 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
+                <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center sticky left-0 z-50 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
                 <SortableHeader column="number" className="min-w-[140px]">Número do Pagamento</SortableHeader>
                 <SortableHeader column="supplier" className="min-w-[180px]">Fornecedor</SortableHeader>
                 <SortableHeader column="flowType" className="min-w-[120px]">Tipo de Fluxo</SortableHeader>
-                <SortableHeader column="dueDate" className="min-w-[120px]">Data de Vencimento</SortableHeader>
+                <SortableHeader column="paymentDueDate" className="min-w-[140px]">Vencimento do Pagamento</SortableHeader>
+                <SortableHeader column="contractDueDate" className="min-w-[140px]">Vencimento do Contrato</SortableHeader>
                 <SortableHeader column="treasuryCycle" className="min-w-[130px]">Ciclo de Tesouraria</SortableHeader>
                 <SortableHeader column="analyst" className="min-w-[150px]">Analista Responsável</SortableHeader>
                 <SortableHeader column="analysisStartDate" className="min-w-[150px]">Data Início da Análise</SortableHeader>
@@ -469,7 +474,7 @@ const SampleManagementTab = () => {
             <TableBody>
               {currentPayments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
                     Nenhum pagamento na amostra
                   </TableCell>
                 </TableRow>
@@ -540,7 +545,12 @@ const SampleManagementTab = () => {
                       <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                         {payment.flowType || payment.type || '-'}
                       </TableCell>
-                      <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{formatDate(payment.dueDate)}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                        {payment.paymentDueDate ? formatDate(payment.paymentDueDate) : (payment.dueDate ? formatDate(payment.dueDate) : '-')}
+                      </TableCell>
+                      <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                        {payment.contractDueDate ? formatDate(payment.contractDueDate) : '-'}
+                      </TableCell>
                       <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                         {payment.treasuryCycle ? (
                           <Badge 
@@ -604,7 +614,7 @@ const SampleManagementTab = () => {
               {/* Loading indicator para scroll infinito */}
               {hasMore && (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={14} className="text-center py-2 text-xs text-muted-foreground">
                     Role para carregar mais...
                   </TableCell>
                 </TableRow>
@@ -612,7 +622,7 @@ const SampleManagementTab = () => {
               
               {!hasMore && currentPayments.length > 0 && (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-2 text-xs text-muted-foreground">
+                  <TableCell colSpan={14} className="text-center py-2 text-xs text-muted-foreground">
                     Mostrando todos os {samplePayments.length} pagamentos
                   </TableCell>
                 </TableRow>

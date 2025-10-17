@@ -85,6 +85,10 @@ const PaginatedContractsTable = ({
         return (contract.flowType || contract.type || '')?.toLowerCase();
       case 'dueDate':
         return new Date(contract.dueDate).getTime();
+      case 'contractDueDate':
+        return contract.contractDueDate ? new Date(contract.contractDueDate).getTime() : 0;
+      case 'paymentDueDate':
+        return contract.paymentDueDate ? new Date(contract.paymentDueDate).getTime() : 0;
       case 'treasuryCycle':
         return contract.treasuryCycle || '';
       case 'paymentValue':
@@ -284,14 +288,15 @@ const PaginatedContractsTable = ({
             }
           }}
         >
-          <Table className="w-full relative min-w-[1720px]" style={{ tableLayout: 'fixed', height: 'auto' }}>
+          <Table className="w-full relative min-w-[1860px]" style={{ tableLayout: 'fixed', height: 'auto' }}>
             <TableHeader className="sticky top-0 z-30 bg-gray-50 shadow-sm [&_th]:sticky [&_th]:top-0">
               <TableRow className="!h-6" style={{ height: '24px !important', minHeight: '24px', maxHeight: '24px' }}>
                 <TableHead className="w-[120px] bg-gray-50 py-0 text-xs text-center sticky left-0 z-40 border-r border-gray-300 shadow-sm" style={{ height: '24px', lineHeight: '1.2' }}>Ações</TableHead>
                 <SortableHeader column="number" className="min-w-[140px]">Número do Pagamento</SortableHeader>
                 <SortableHeader column="supplier" className="min-w-[180px]">Fornecedor</SortableHeader>
                 <SortableHeader column="flowType" className="min-w-[150px]">Tipo de Fluxo</SortableHeader>
-                <SortableHeader column="dueDate" className="min-w-[130px]">Data de Vencimento</SortableHeader>
+                <SortableHeader column="paymentDueDate" className="min-w-[140px]">Vencimento do Pagamento</SortableHeader>
+                <SortableHeader column="contractDueDate" className="min-w-[140px]">Vencimento do Contrato</SortableHeader>
                 <SortableHeader column="treasuryCycle" className="min-w-[130px]">Ciclo de Tesouraria</SortableHeader>
                 <SortableHeader column="paymentValue" className="min-w-[130px]">Valor do Pagamento</SortableHeader>
                 <SortableHeader column="value" className="min-w-[120px]">Valor do Contrato</SortableHeader>
@@ -387,7 +392,12 @@ const PaginatedContractsTable = ({
                     <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                       {contract.flowType || contract.type || '-'}
                     </TableCell>
-                    <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>{formatDate(contract.dueDate)}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                      {contract.paymentDueDate ? formatDate(contract.paymentDueDate) : (contract.dueDate ? formatDate(contract.dueDate) : '-')}
+                    </TableCell>
+                    <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
+                      {contract.contractDueDate ? formatDate(contract.contractDueDate) : '-'}
+                    </TableCell>
                     <TableCell className="text-xs whitespace-nowrap py-0" style={{ height: '24px', lineHeight: '1.2', padding: '2px 8px' }}>
                       {contract.treasuryCycle ? (
                         <Badge 

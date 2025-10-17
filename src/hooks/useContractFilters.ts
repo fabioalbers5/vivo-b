@@ -36,7 +36,9 @@ export interface LegacyContract {
   type: string;
   value: number;
   status: string; // Aceitar qualquer valor da tabela contratos_vivo
-  dueDate: string;
+  dueDate: string; // data_vencimento_pagamento (vencimento do pagamento)
+  contractDueDate?: string; // data_vencimento (vencimento do contrato)
+  paymentDueDate?: string; // data_vencimento_pagamento (vencimento do pagamento) - alias de dueDate
   alertType?: string; // Campo tipo_alerta da tabela contratos_vivo
   requestingArea?: string; // Campo area_solicitante da tabela contratos_vivo
   risk?: string; // Campo risco da tabela contratos_vivo

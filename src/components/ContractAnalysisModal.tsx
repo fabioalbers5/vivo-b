@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import JustificationModal from "./JustificationModal";
 import ConfirmActionModal from "./ConfirmActionModal";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +32,9 @@ import {
   Calculator,
   Upload,
   FileDown,
-  Undo2
+  Undo2,
+  Plus,
+  Trash2
 } from 'lucide-react';
 
 interface ContractAnalysisModalProps {
@@ -48,6 +52,14 @@ interface AnalysisField {
   icon: React.ComponentType<any>;
   status?: 'compliant' | 'non-compliant' | 'warning' | 'neutral';
   hasEvidence?: boolean;
+  isCustom?: boolean; // Novo: indica se é um campo adicionado pelo usuário
+  customEvidence?: File; // Novo: evidência customizada
+}
+
+interface CustomFieldForm {
+  label: string;
+  value: string;
+  evidence: File | null;
 }
 
 const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
@@ -74,6 +86,15 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
 
   // Estados para modais de confirmação
   const [approveModalOpen, setApproveModalOpen] = useState(false);
+
+  // Estados para campos customizados
+  const [customFields, setCustomFields] = useState<AnalysisField[]>([]);
+  const [addFieldModalOpen, setAddFieldModalOpen] = useState(false);
+  const [newFieldForm, setNewFieldForm] = useState<CustomFieldForm>({
+    label: '',
+    value: '',
+    evidence: null
+  });
 
   // Verificar se o pagamento está bloqueado
   const isLocked = paymentStatus !== 'pending';
@@ -257,6 +278,55 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
   // Função para obter o valor atual (correção ou valor original)
   const getCurrentValue = (field: AnalysisField) => {
     return corrections[field.id] || field.value;
+  };
+
+  // Funções para gerenciar campos customizados
+  const handleAddCustomField = () => {
+    if (!newFieldForm.label.trim() || !newFieldForm.value.trim()) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha o título e a descrição do campo.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newField: AnalysisField = {
+      id: `custom_${Date.now()}`,
+      label: newFieldForm.label,
+      value: newFieldForm.value,
+      icon: FileText,
+      status: 'neutral',
+      hasEvidence: !!newFieldForm.evidence,
+      isCustom: true,
+      customEvidence: newFieldForm.evidence || undefined
+    };
+
+    setCustomFields(prev => [...prev, newField]);
+    
+    toast({
+      title: "Campo adicionado",
+      description: `O campo "${newFieldForm.label}" foi adicionado com sucesso.`,
+    });
+
+    // Resetar formulário e fechar modal
+    setNewFieldForm({ label: '', value: '', evidence: null });
+    setAddFieldModalOpen(false);
+  };
+
+  const handleRemoveCustomField = (fieldId: string) => {
+    setCustomFields(prev => prev.filter(f => f.id !== fieldId));
+    toast({
+      title: "Campo removido",
+      description: "O campo customizado foi removido.",
+    });
+  };
+
+  const handleEvidenceUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setNewFieldForm(prev => ({ ...prev, evidence: file }));
+    }
   };
 
   // Funções para devolução e rejeição
@@ -719,6 +789,80 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                   </Card>
                 );
               })}
+
+              {/* Campos Customizados Adicionados pelo Usuário */}
+              {customFields.map((field, index) => {
+                const IconComponent = field.icon;
+                return (
+                  <Card key={field.id} className="transition-all hover:shadow-md border-l-2 border-l-blue-500">
+                    <CardContent className="p-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className="rounded p-1 bg-blue-50 flex-shrink-0">
+                            <IconComponent className="h-3.5 w-3.5 text-blue-600" />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <p className="text-xs font-semibold text-slate-700">
+                                {field.label}
+                              </p>
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-blue-50 text-blue-700 border-blue-200">
+                                Campo Adicionado
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-slate-600 break-words">
+                              {field.value}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-1 flex-shrink-0">
+                          {/* Botão de visualizar evidência */}
+                          {field.hasEvidence && field.customEvidence && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedEvidence(`${field.label} (Custom)`)}
+                              className="h-7 w-7 p-0 hover:bg-blue-50 hover:text-blue-600"
+                              title="Ver evidência"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {/* Botão de remover campo customizado */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveCustomField(field.id)}
+                            className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600"
+                            title="Remover campo"
+                            disabled={isLocked}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+
+              {/* Botão para adicionar novo campo */}
+              {!isLocked && (
+                <Card className="transition-all hover:shadow-md border-2 border-dashed border-slate-300 hover:border-vivo-purple cursor-pointer">
+                  <CardContent className="p-4">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setAddFieldModalOpen(true)}
+                      className="w-full flex items-center justify-center gap-2 text-slate-600 hover:text-vivo-purple"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="text-sm font-medium">Adicionar Novo Campo</span>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Resumo da Análise */}
@@ -845,27 +989,79 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
             <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b">
               <DialogTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5 text-blue-600" />
-                Evidência: {selectedEvidence}
+                Evidência: {selectedEvidence?.replace(' (Custom)', '')}
+                {selectedEvidence?.includes('(Custom)') && (
+                  <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
+                    Campo Adicionado
+                  </Badge>
+                )}
               </DialogTitle>
             </DialogHeader>
             
             <div className="flex-1 overflow-hidden p-6">
               <ScrollArea className="h-full">
-                <div className="bg-slate-50 rounded-lg p-4 min-h-[400px] flex items-center justify-center">
-                  <div className="text-center text-slate-500">
-                    <FileText className="h-16 w-16 mx-auto mb-4 text-slate-400" />
-                    <h3 className="text-lg font-semibold mb-2">Evidência do Contrato</h3>
-                    <p className="text-sm">
-                      Aqui seria exibida a imagem/captura da seção do contrato<br />
-                      referente ao campo "{selectedEvidence}"
-                    </p>
-                    <div className="mt-4 p-3 bg-white rounded border-2 border-dashed border-slate-300">
-                      <p className="text-xs text-slate-400">
-                        [Imagem da evidência será carregada aqui]
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                {(() => {
+                  // Verificar se é uma evidência de campo customizado
+                  const isCustomField = selectedEvidence?.includes('(Custom)');
+                  const fieldName = selectedEvidence?.replace(' (Custom)', '');
+                  const customField = customFields.find(f => f.label === fieldName);
+                  
+                  if (isCustomField && customField?.customEvidence) {
+                    // Exibir evidência customizada
+                    const fileURL = URL.createObjectURL(customField.customEvidence);
+                    const isImage = customField.customEvidence.type.startsWith('image/');
+                    
+                    return (
+                      <div className="bg-slate-50 rounded-lg p-4 min-h-[400px]">
+                        {isImage ? (
+                          <img 
+                            src={fileURL} 
+                            alt={`Evidência de ${fieldName}`}
+                            className="w-full h-auto rounded border border-slate-300"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center min-h-[400px]">
+                            <FileText className="h-16 w-16 text-slate-400 mb-4" />
+                            <p className="text-sm text-slate-600 mb-2">Arquivo PDF</p>
+                            <p className="text-xs text-slate-500">{customField.customEvidence.name}</p>
+                            <Button
+                              variant="outline"
+                              className="mt-4"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = fileURL;
+                                link.download = customField.customEvidence!.name;
+                                link.click();
+                              }}
+                            >
+                              <FileDown className="h-4 w-4 mr-2" />
+                              Baixar PDF
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else {
+                    // Evidência padrão da IA
+                    return (
+                      <div className="bg-slate-50 rounded-lg p-4 min-h-[400px] flex items-center justify-center">
+                        <div className="text-center text-slate-500">
+                          <FileText className="h-16 w-16 mx-auto mb-4 text-slate-400" />
+                          <h3 className="text-lg font-semibold mb-2">Evidência do Contrato</h3>
+                          <p className="text-sm">
+                            Aqui seria exibida a imagem/captura da seção do contrato<br />
+                            referente ao campo "{selectedEvidence}"
+                          </p>
+                          <div className="mt-4 p-3 bg-white rounded border-2 border-dashed border-slate-300">
+                            <p className="text-xs text-slate-400">
+                              [Imagem da evidência será carregada aqui]
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                })()}
               </ScrollArea>
             </div>
             
@@ -1057,6 +1253,117 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
         contractId={contractId}
         actionType="reject"
       />
+
+      {/* Modal para Adicionar Novo Campo */}
+      <Dialog open={addFieldModalOpen} onOpenChange={setAddFieldModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Plus className="h-5 w-5 text-vivo-purple" />
+              Adicionar Novo Campo à Análise
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Título do Campo */}
+            <div className="space-y-2">
+              <Label htmlFor="field-label" className="text-sm font-medium">
+                Título do Campo *
+              </Label>
+              <Input
+                id="field-label"
+                placeholder="Ex: Data de Assinatura, Valor do Reajuste, etc."
+                value={newFieldForm.label}
+                onChange={(e) => setNewFieldForm(prev => ({ ...prev, label: e.target.value }))}
+                className="w-full"
+              />
+              <p className="text-xs text-slate-500">
+                Dê um nome descritivo para identificar este campo.
+              </p>
+            </div>
+
+            {/* Descrição/Valor do Campo */}
+            <div className="space-y-2">
+              <Label htmlFor="field-value" className="text-sm font-medium">
+                Descrição/Valor *
+              </Label>
+              <Textarea
+                id="field-value"
+                placeholder="Descreva o conteúdo ou valor deste campo..."
+                value={newFieldForm.value}
+                onChange={(e) => setNewFieldForm(prev => ({ ...prev, value: e.target.value }))}
+                className="w-full min-h-[100px] resize-none"
+              />
+              <p className="text-xs text-slate-500">
+                Forneça informações detalhadas sobre este campo.
+              </p>
+            </div>
+
+            {/* Upload de Evidência */}
+            <div className="space-y-2">
+              <Label htmlFor="field-evidence" className="text-sm font-medium">
+                Evidência (Opcional)
+              </Label>
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 hover:border-vivo-purple transition-colors">
+                <input
+                  id="field-evidence"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleEvidenceUpload}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="field-evidence"
+                  className="flex flex-col items-center justify-center cursor-pointer"
+                >
+                  <Upload className="h-10 w-10 text-slate-400 mb-2" />
+                  <p className="text-sm font-medium text-slate-700 mb-1">
+                    {newFieldForm.evidence ? newFieldForm.evidence.name : 'Clique para fazer upload'}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    PNG, JPG ou PDF (máx. 10MB)
+                  </p>
+                </label>
+              </div>
+              {newFieldForm.evidence && (
+                <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded">
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span className="text-sm text-green-700 break-all">
+                    Arquivo selecionado: {newFieldForm.evidence.name}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setNewFieldForm(prev => ({ ...prev, evidence: null }))}
+                    className="ml-auto h-6 w-6 p-0 hover:bg-red-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNewFieldForm({ label: '', value: '', evidence: null });
+                setAddFieldModalOpen(false);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAddCustomField}
+              className="bg-vivo-purple hover:bg-purple-700 flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Adicionar Campo
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

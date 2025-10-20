@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,12 +10,13 @@ import { useSample } from '@/contexts/SampleContext';
 import { useSampleHistory } from '@/hooks/useSampleHistory';
 import { useAnalysts } from '@/hooks/useAnalysts';
 import { useContractsByAnalyst } from '@/hooks/useContractsByAnalyst';
-import { calculateRepresentativityScore } from '@/utils/representativityCalculator';
+import { useFilteredContractsOnly } from '@/hooks/useFilteredContractsOnly';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, AlertTriangle, CheckCircle, Users, Target, Database, History, ChevronDown, BarChart3 } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle, Users, Database, History, ChevronDown, BarChart3, FileText } from 'lucide-react';
 import ContractsTable from '@/components/ContractsTable';
-import AnalysisContractsTable from '@/components/AnalysisContractsTable';
+import PaginatedContractsTable from '@/components/PaginatedContractsTable';
 import ContractAnalysisModal from '@/components/ContractAnalysisModal';
+import { DollarSign } from 'lucide-react';
 
 const COLORS = [
   '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', 
@@ -37,10 +37,10 @@ const SampleAnalysisPage: React.FC = () => {
   const { contractsByAnalyst, isLoading: contractsByAnalystLoading } = useContractsByAnalyst(
     selectedAnalyst && selectedAnalyst !== 'all' ? selectedAnalyst : null
   );
+  const { contracts: allFilteredContracts, isLoading: allFilteredLoading } = useFilteredContractsOnly(); // TODOS os contratos em contratos_filtrados
   const [selectedSampleId, setSelectedSampleId] = useState<string>('current');
   const [loadingSample, setLoadingSample] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [isRepresentativityExpanded, setIsRepresentativityExpanded] = useState(false);
   const [isChartsExpanded, setIsChartsExpanded] = useState(false);
   
   // Estados para modal de análise
@@ -91,12 +91,18 @@ const SampleAnalysisPage: React.FC = () => {
   
   // ✅ Combinar filtros de amostra e analista
   const contracts = useMemo(() => {
-    // Determinar base de contratos (amostra específica ou todos)
+    // Determinar base de contratos
     let baseContracts: LegacyContract[] = [];
-    if (selectedSampleId !== 'current' && contextContracts && contextContracts.length > 0) {
+    
+    if (selectedSampleId === 'current') {
+      // "Todos os Contratos Analisados" - buscar TODOS da tabela contratos_filtrados
+      baseContracts = allFilteredContracts;
+    } else if (contextContracts && contextContracts.length > 0) {
+      // Amostra histórica específica - usar contratos do contexto
       baseContracts = contextContracts;
     } else {
-      baseContracts = allContracts || [];
+      // Sem amostra selecionada
+      baseContracts = [];
     }
     
     // Se não há analista selecionado ou é "todos os analistas", retornar base
@@ -119,20 +125,48 @@ const SampleAnalysisPage: React.FC = () => {
     
     // Se não há contratos do analista, retornar array vazio
     return [];
-  }, [selectedSampleId, contextContracts, allContracts, selectedAnalyst, contractsByAnalyst]);
+  }, [selectedSampleId, allFilteredContracts, contextContracts, selectedAnalyst, contractsByAnalyst]);
+  
+  const isLoading = contractsLoading || loadingSample || contractsByAnalystLoading || allFilteredLoading; // Loading dos contratos ou amostra específica
+  
+  // Função para formatar moeda
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
-  // Calcular representatividade dinamicamente
-  const representativityScore = useMemo(() => {
-    if (contracts.length === 0 || allContracts.length === 0) {
-      return 0;
-    }
+  // Calcular estatísticas da amostra (igual à tela de Gestão)
+  const sampleStats = useMemo(() => {
+    // Soma do valor de PAGAMENTO dos contratos exibidos na tabela
+    // Prioriza paymentValue, mas usa value como fallback
+    const totalValue = contracts.reduce((sum, c) => {
+      const contractValue = c.paymentValue ?? c.value ?? 0;
+      const validValue = typeof contractValue === 'number' && !isNaN(contractValue) ? contractValue : 0;
+      return sum + validValue;
+    }, 0);
+    const count = contracts.length;
     
-    return calculateRepresentativityScore(allContracts, contracts);
-  }, [contracts, allContracts]);
-  
-  const isLoading = contractsLoading || loadingSample || contractsByAnalystLoading; // Loading dos contratos ou amostra específica
-  
+    // Calcular valor total disponível (TODOS os contratos em amostra) - depende do filtro selecionado
+    const baseContracts = selectedSampleId === 'current' ? allFilteredContracts : contextContracts;
+    const totalAvailableValue = baseContracts.reduce((sum, c) => {
+      const contractValue = c.paymentValue ?? c.value ?? 0;
+      const validValue = typeof contractValue === 'number' && !isNaN(contractValue) ? contractValue : 0;
+      return sum + validValue;
+    }, 0);
+    const totalAvailable = baseContracts.length;
+    
+    const percentage = totalAvailableValue > 0 ? (totalValue / totalAvailableValue) * 100 : 0;
 
+    return {
+      count,
+      totalValue,
+      percentage,
+      totalAvailable,
+      totalAvailableValue
+    };
+  }, [contracts, selectedSampleId, allFilteredContracts, contextContracts]);
 
   // Métricas superiores
   const metrics = useMemo(() => {
@@ -260,17 +294,16 @@ const SampleAnalysisPage: React.FC = () => {
     );
   }
 
-  // Verificar se há dados para análise (DESABILITADO PARA MANTER FILTROS SEMPRE VISÍVEIS)
-  // eslint-disable-next-line no-constant-condition
-  if (false && contracts.length === 0) {
+  // Verificar se há contratos disponíveis
+  if (!isLoading && allFilteredContracts.length === 0 && contextContracts.length === 0) {
     return (
       <div className="h-full">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900">
-            Análise dos Contratos
+            Análise da Amostra
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Dashboards e métricas dos contratos filtrados
+            Visualize e analise os contratos da amostra selecionada
           </p>
         </div>
         
@@ -278,14 +311,14 @@ const SampleAnalysisPage: React.FC = () => {
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
               <Database className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <CardTitle>Nenhum Contrato Disponível</CardTitle>
+              <CardTitle>Nenhuma Amostra Disponível</CardTitle>
               <CardDescription>
-                Não foram encontrados contratos na base de dados para análise.
+                Não há contratos analisados. Vá para "Gestão da Amostra" para selecionar e finalizar contratos.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <Badge variant="outline" className="text-xs">
-                Última verificação: {new Date().toLocaleString('pt-BR')}
+                {allFilteredContracts.length} contratos disponíveis
               </Badge>
             </CardContent>
           </Card>
@@ -437,45 +470,69 @@ const SampleAnalysisPage: React.FC = () => {
         </div>
       </div>
       
-      <div className="p-2 space-y-2 h-full flex flex-col">
-        {/* Container de Métricas Superiores */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-2">
-              <CardTitle className="text-xs font-medium">Total de Contratos</CardTitle>
-              <Users className="h-3 w-3 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="pt-0 pb-1 px-2">
-              <div className="text-sm font-bold text-vivo-purple">{metrics.total}</div>
-              <p className="text-xs text-muted-foreground leading-tight">
-                Contratos na amostra
-              </p>
+      <div className="p-6 space-y-4 h-full flex flex-col">
+        {/* Cards de Estatísticas da Amostra */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Número de Pagamentos na Amostra */}
+          <Card className="hover:shadow-sm transition-shadow bg-white border-vivo-purple/20">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg p-1.5 bg-vivo-purple/10">
+                    <FileText className="h-3.5 w-3.5 text-vivo-purple" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-600">Pagamentos na Amostra</p>
+                    <p className="text-xl font-bold text-vivo-purple">
+                      {sampleStats.count}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-xs text-slate-500">
+                  de {sampleStats.totalAvailable}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-2">
-              <CardTitle className="text-xs font-medium">Contratos com Alerta</CardTitle>
-              <AlertTriangle className="h-3 w-3 text-orange-500" />
-            </CardHeader>
-            <CardContent className="pt-0 pb-1 px-2">
-              <div className="text-sm font-bold text-orange-500">{metrics.withAlert}</div>
-              <p className="text-xs text-muted-foreground leading-tight">
-                Requerem atenção
-              </p>
+          {/* Valor Total da Amostra */}
+          <Card className="hover:shadow-sm transition-shadow bg-white border-blue-200/50">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg p-1.5 bg-blue-50">
+                    <DollarSign className="h-3.5 w-3.5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-600">Valor Total</p>
+                    <p className="text-lg font-bold text-blue-600">
+                      {formatCurrency(sampleStats.totalValue)}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-xs text-slate-500">
+                  de {formatCurrency(sampleStats.totalAvailableValue)}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-2">
-              <CardTitle className="text-xs font-medium">Porcentagem de Alerta</CardTitle>
-              <TrendingUp className="h-3 w-3 text-red-500" />
-            </CardHeader>
-            <CardContent className="pt-0 pb-1 px-2">
-              <div className="text-sm font-bold text-red-500">{metrics.alertPercentage}%</div>
-              <p className="text-xs text-muted-foreground leading-tight">
-                Percentual com alerta
-              </p>
+          {/* Percentual do Valor Total */}
+          <Card className="hover:shadow-sm transition-shadow bg-white border-green-200/50">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg p-1.5 bg-green-50">
+                    <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-600">% do Valor Total</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {sampleStats.percentage.toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -485,14 +542,10 @@ const SampleAnalysisPage: React.FC = () => {
           <Card className="h-full flex flex-col">
             <Tabs defaultValue="contracts" className="h-full flex flex-col">
               <CardHeader className="pb-2 pt-3">
-                <TabsList className="grid w-full grid-cols-3 h-8">
+                <TabsList className="grid w-full grid-cols-2 h-8">
                   <TabsTrigger value="contracts" className="flex items-center gap-2 text-xs">
                     <Database className="h-3 w-3" />
                     Contratos Detalhados
-                  </TabsTrigger>
-                  <TabsTrigger value="representativity" className="flex items-center gap-2 text-xs">
-                    <Target className="h-3 w-3" />
-                    Representatividade
                   </TabsTrigger>
                   <TabsTrigger value="charts" className="flex items-center gap-2 text-xs">
                     <BarChart3 className="h-3 w-3" />
@@ -502,60 +555,24 @@ const SampleAnalysisPage: React.FC = () => {
               </CardHeader>
 
               <CardContent className="flex-1 overflow-hidden p-3">
-                {/* Aba Representatividade */}
-                <TabsContent value="representativity" className="h-full overflow-auto">
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-                      {/* Score Geral */}
-                      <div className="text-center p-2 bg-gray-50 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600 mb-1">
-                          {contractsLoading ? (
-                            <div className="text-blue-500 animate-pulse">...</div>
-                          ) : (
-                            representativityScore !== null && representativityScore !== undefined && !isNaN(representativityScore) && representativityScore > 0 ? 
-                              `${(representativityScore * 100).toFixed(1)}%` : 
-                              'N/A'
-                          )}
-                        </div>
-                        <div className="text-xs font-medium text-gray-700">Score Geral</div>
-                        <div className="text-xs text-gray-500">
-                          Representatividade global
-                          {contractsLoading && (
-                            <span className="block text-blue-500 text-xs">
-                              Carregando dados...
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Tamanho da Amostra */}
-                      <div className="text-center p-2 bg-blue-50 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600 mb-1">
-                          {contracts.length}
-                        </div>
-                        <div className="text-xs font-medium text-gray-700">Tamanho</div>
-                        <div className="text-xs text-gray-500">Contratos na amostra</div>
-                      </div>
-
-                      {/* Diversidade */}
-                      <div className="text-center p-2 bg-purple-50 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600 mb-1">
-                          {new Set(contracts.map(c => c.type)).size}
-                        </div>
-                        <div className="text-xs font-medium text-gray-700">Tipos</div>
-                        <div className="text-xs text-gray-500">Diferentes tipos de fluxo</div>
-                      </div>
-
-                      {/* Cobertura Regional */}
-                      <div className="text-center p-2 bg-orange-50 rounded-lg">
-                        <div className="text-2xl font-bold text-orange-600 mb-1">
-                          {new Set(contracts.map(c => c.region).filter(Boolean)).size}
-                        </div>
-                        <div className="text-xs font-medium text-gray-700">Regiões</div>
-                        <div className="text-xs text-gray-500">Cobertura geográfica</div>
-                      </div>
-                    </div>
-                  </div>
+                {/* Aba Contratos Detalhados */}
+                <TabsContent value="contracts" className="h-full overflow-auto m-0">
+                  <PaginatedContractsTable
+                    contracts={contracts}
+                    filteredContracts={contracts}
+                    showFilteredResults={false}
+                    onViewContract={(contractId) => {
+                      console.log('Visualizar contrato:', contractId);
+                    }}
+                    onAnalyzeContract={(contractId) => {
+                      setSelectedContractId(contractId);
+                      setAnalysisModalOpen(true);
+                      console.log('Analisar contrato:', contractId);
+                    }}
+                    isLoading={isLoading}
+                    selectedContracts={new Set()}
+                    onSelectionChange={() => {}}
+                  />
                 </TabsContent>
 
                 {/* Aba Gráficos */}
@@ -663,27 +680,6 @@ const SampleAnalysisPage: React.FC = () => {
                         </div>
                       </div>
                     </Tabs>
-                  </div>
-                </TabsContent>
-
-                {/* Aba Contratos */}
-                <TabsContent value="contracts" className="h-full overflow-hidden">
-                  <div className="h-full flex flex-col">
-                    <div className="flex-1 overflow-hidden">
-                      <AnalysisContractsTable 
-                        contracts={contracts}
-                        onViewContract={(contractId) => {
-                          console.log('Visualizar contrato:', contractId);
-                          // TODO: Implementar modal de visualização do contrato
-                          alert(`Funcionalidade de visualização do contrato ${contractId} será implementada em breve.`);
-                        }}
-                        onAnalyzeContract={(contractId) => {
-                          setSelectedContractId(contractId);
-                          setAnalysisModalOpen(true);
-                          console.log('Analisar contrato:', contractId);
-                        }}
-                      />
-                    </div>
                   </div>
                 </TabsContent>
               </CardContent>

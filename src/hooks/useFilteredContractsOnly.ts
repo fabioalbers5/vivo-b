@@ -6,31 +6,38 @@ interface UseFilteredContractsOnlyReturn {
   contracts: LegacyContract[];
   isLoading: boolean;
   error: string | null;
+  refetch: () => void;
+}
+
+interface UseFilteredContractsOnlyParams {
+  sampleId?: string;
 }
 
 /**
  * Hook para buscar APENAS os contratos que estão na tabela contratos_filtrados
  * Usado na tela de Gestão da Amostra (SampleManagementTab)
  */
-export const useFilteredContractsOnly = (): UseFilteredContractsOnlyReturn => {
+export const useFilteredContractsOnly = (params?: UseFilteredContractsOnlyParams): UseFilteredContractsOnlyReturn => {
   const [contracts, setContracts] = useState<LegacyContract[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasLoaded, setHasLoaded] = useState(false);
 
   const loadFilteredContracts = async () => {
-    if (hasLoaded) {
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
     
     try {
       // 1. Buscar números de contrato da tabela contratos_filtrados
-      const { data: filteredData, error: filteredError } = await supabase
+      let query = supabase
         .from('contratos_filtrados')
-        .select('numero_contrato, usuario');
+        .select('numero_contrato, usuario, amostra_id');
+
+      // Aplicar filtro por amostra_id se fornecido
+      if (params?.sampleId && params.sampleId !== 'all') {
+        query = query.eq('amostra_id', params.sampleId);
+      }
+
+      const { data: filteredData, error: filteredError } = await query;
 
       if (filteredError) {
         throw new Error(`Erro ao buscar contratos filtrados: ${filteredError.message}`);
@@ -39,17 +46,20 @@ export const useFilteredContractsOnly = (): UseFilteredContractsOnlyReturn => {
       if (!filteredData || filteredData.length === 0) {
         console.log('Nenhum contrato encontrado em contratos_filtrados');
         setContracts([]);
-        setHasLoaded(true);
         return;
       }
 
-      // 2. Extrair números de contratos e criar mapa de analistas
+      // 2. Extrair números de contratos e criar mapa de analistas e amostras
       const numeroContratos = filteredData.map(item => item.numero_contrato);
       const analystMap = new Map<string, string>();
+      const sampleMap = new Map<string, string>();
       
       filteredData.forEach(item => {
         if (item.numero_contrato && item.usuario) {
           analystMap.set(item.numero_contrato, item.usuario);
+        }
+        if (item.numero_contrato && item.amostra_id) {
+          sampleMap.set(item.numero_contrato, item.amostra_id);
         }
       });
 
@@ -68,7 +78,6 @@ export const useFilteredContractsOnly = (): UseFilteredContractsOnlyReturn => {
       if (!contractsData || contractsData.length === 0) {
         console.log('Nenhum contrato encontrado em contratos_vivo para os filtrados');
         setContracts([]);
-        setHasLoaded(true);
         return;
       }
 
@@ -91,11 +100,11 @@ export const useFilteredContractsOnly = (): UseFilteredContractsOnlyReturn => {
         region: contract.regiao || '',
         state: contract.estado,
         paymentStatus: contract.status_pagamento || '',
-        analyst: analystMap.get(contract.numero_contrato) || ''
+        analyst: analystMap.get(contract.numero_contrato) || '',
+        sampleId: sampleMap.get(contract.numero_contrato) || ''
       }));
 
       setContracts(legacyContracts);
-      setHasLoaded(true);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -106,7 +115,7 @@ export const useFilteredContractsOnly = (): UseFilteredContractsOnlyReturn => {
 
   useEffect(() => {
     loadFilteredContracts();
-  }, []);
+  }, [params?.sampleId]);
 
-  return { contracts, isLoading, error };
+  return { contracts, isLoading, error, refetch: loadFilteredContracts };
 };

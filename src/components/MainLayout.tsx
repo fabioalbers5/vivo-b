@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import SampleSelectionPage from '@/pages/SampleSelectionPage';
 import SampleAnalysisPage from '@/pages/SampleAnalysisPage';
+import QualityDashboardPage from '@/pages/QualityDashboardPage';
 import CriteriaSelection from '@/pages/CriteriaSelection';
 import { SampleProvider } from '@/contexts/SampleContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1200,7 +1201,7 @@ const MainLayout: React.FC = () => {
       case 'sample-analysis':
         return <SampleAnalysisPage />;
       case 'quality-dashboard':
-        return <QualityDashboardPageInline />;
+        return <QualityDashboardPage />;
       case 'criteria-selection':
         return <CriteriaSelection />;
       default:

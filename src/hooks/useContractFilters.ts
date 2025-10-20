@@ -51,7 +51,8 @@ export interface LegacyContract {
   treasuryCycle?: string; // Campo ciclo_tesouraria (Sim/Não)
   // Campos de gestão de amostra
   analyst?: string;
-  analysisStatus?: 'pending' | 'in_progress' | 'completed' | 'rejected';
+  sampleId?: string; // Campo amostra_id da tabela contratos_filtrados
+  analysisStatus?: 'pending' | 'in_progress' | 'completed' | 'rejected' | string;
   isUrgent?: boolean;
   notes?: string;
   priority?: string;

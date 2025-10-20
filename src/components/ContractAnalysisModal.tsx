@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import JustificationModal from "./JustificationModal";
 import ConfirmActionModal from "./ConfirmActionModal";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +96,10 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
     value: '',
     evidence: null
   });
+
+  // Estados para geração de WP
+  const [wpModalOpen, setWpModalOpen] = useState(false);
+  const [selectedFieldsForWP, setSelectedFieldsForWP] = useState<Set<string>>(new Set());
 
   // Verificar se o pagamento está bloqueado
   const isLocked = paymentStatus !== 'pending';
@@ -426,11 +431,58 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
     setSelectedEvidence(null);
   };
 
+  const handleOpenWPModal = () => {
+    // Selecionar todos os campos por padrão
+    const allFields = [...analysisData, ...customFields];
+    setSelectedFieldsForWP(new Set(allFields.map(f => f.id)));
+    setWpModalOpen(true);
+  };
+
+  const toggleFieldSelection = (fieldId: string) => {
+    setSelectedFieldsForWP(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fieldId)) {
+        newSet.delete(fieldId);
+      } else {
+        newSet.add(fieldId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allFields = [...analysisData, ...customFields];
+    if (selectedFieldsForWP.size === allFields.length) {
+      // Desselecionar todos
+      setSelectedFieldsForWP(new Set());
+    } else {
+      // Selecionar todos
+      setSelectedFieldsForWP(new Set(allFields.map(f => f.id)));
+    }
+  };
+
   const handleGenerateWP = () => {
+    if (selectedFieldsForWP.size === 0) {
+      toast({
+        title: "Nenhum campo selecionado",
+        description: "Por favor, selecione pelo menos um campo para incluir no WP.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Filtrar apenas os campos selecionados
+    const allFields = [...analysisData, ...customFields];
+    const selectedFields = allFields.filter(f => selectedFieldsForWP.has(f.id));
+
     // Criar uma nova janela para o PDF
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('Popup bloqueado! Por favor, permita popups para gerar o WP.');
+      toast({
+        title: "Popup bloqueado",
+        description: "Por favor, permita popups para gerar o WP.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -547,13 +599,15 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
 
         <div class="info-section">
           <div><span class="info-label">Contrato ID:</span> <span class="info-value">${contractId}</span></div>
-          <div><span class="info-label">Total de Campos Analisados:</span> <span class="info-value">${analysisData.length}</span></div>
+          <div><span class="info-label">Total de Campos Incluídos:</span> <span class="info-value">${selectedFields.length}</span></div>
+          <div><span class="info-label">Campos da IA:</span> <span class="info-value">${selectedFields.filter(f => !f.isCustom).length}</span></div>
+          <div><span class="info-label">Campos Adicionados:</span> <span class="info-value">${selectedFields.filter(f => f.isCustom).length}</span></div>
           <div><span class="info-label">Correções Aplicadas:</span> <span class="info-value">${Object.keys(corrections).length}</span></div>
         </div>
 
         <div class="fields-section">
           <h2 style="color: #660099; border-bottom: 2px solid #660099; padding-bottom: 10px;">Campos Analisados</h2>
-          ${analysisData.map(field => {
+          ${selectedFields.map(field => {
             const currentValue = getCurrentValue(field);
             const isCorrected = corrections[field.id];
             const statusClass = field.status === 'compliant' ? 'status-compliant' : 
@@ -568,10 +622,11 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                 <div class="field-label">
                   ${field.label}
                   <span class="field-status ${statusClass}">${statusLabel}</span>
+                  ${field.isCustom ? '<span style="color: #0066cc; font-weight: bold;"> [CAMPO ADICIONADO]</span>' : ''}
                   ${isCorrected ? '<span style="color: #ffc107; font-weight: bold;"> [CORRIGIDO]</span>' : ''}
                 </div>
                 <div class="field-value">${currentValue}</div>
-                ${isCorrected ? `<div style="color: #999; font-size: 12px; margin-top: 5px;">Valor original: ${field.value}</div>` : ''}
+                ${isCorrected && !field.isCustom ? `<div style="color: #999; font-size: 12px; margin-top: 5px;">Valor original: ${field.value}</div>` : ''}
               </div>
             `;
           }).join('')}
@@ -582,7 +637,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
             <h3 style="color: #856404; margin-top: 0;">Resumo de Correções</h3>
             <p>Total de ${Object.keys(corrections).length} campo(s) foi(foram) corrigido(s) durante a análise.</p>
             ${Object.entries(corrections).map(([fieldId, value]) => {
-              const field = analysisData.find(f => f.id === fieldId);
+              const field = selectedFields.find(f => f.id === fieldId);
               return field ? `<div>• <strong>${field.label}</strong>: ${value}</div>` : '';
             }).join('')}
           </div>
@@ -604,6 +659,15 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
     printWindow.onload = () => {
       printWindow.print();
     };
+
+    // Fechar o modal de seleção de campos
+    setWpModalOpen(false);
+    
+    // Toast de sucesso
+    toast({
+      title: "WP Gerado com Sucesso",
+      description: `${selectedFields.length} campo(s) incluído(s) no documento.`,
+    });
   };
 
   const handleUpdateEvidence = () => {
@@ -943,7 +1007,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={handleGenerateWP}
+                    onClick={handleOpenWPModal}
                     className="border-vivo-purple text-vivo-purple hover:bg-vivo-purple hover:text-white flex items-center gap-2"
                     disabled={isLocked}
                   >
@@ -1223,6 +1287,207 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Modal de Seleção de Campos para WP */}
+      <Dialog open={wpModalOpen} onOpenChange={setWpModalOpen}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+          <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <FileDown className="h-5 w-5 text-vivo-purple" />
+              Selecionar Campos para o WP
+            </DialogTitle>
+            <p className="text-sm text-slate-600 mt-2">
+              Escolha os campos que deseja incluir no documento Work Package
+            </p>
+          </DialogHeader>
+
+          {/* Barra de ações */}
+          <div className="flex-shrink-0 px-6 py-3 border-b bg-slate-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectAll}
+                  className="h-8"
+                >
+                  {selectedFieldsForWP.size === analysisData.length + customFields.length 
+                    ? 'Desselecionar Todos' 
+                    : 'Selecionar Todos'}
+                </Button>
+                <div className="text-sm text-slate-600">
+                  <span className="font-semibold text-vivo-purple">
+                    {selectedFieldsForWP.size}
+                  </span>
+                  {' '}de{' '}
+                  <span className="font-semibold">
+                    {analysisData.length + customFields.length}
+                  </span>
+                  {' '}campos selecionados
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de campos com scroll */}
+          <ScrollArea className="flex-1 px-6">
+            <div className="space-y-4 py-4">
+                {/* Campos da IA */}
+                {analysisData.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-vivo-purple" />
+                      Campos Analisados pela IA ({analysisData.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {analysisData.map((field) => {
+                        const IconComponent = field.icon;
+                        const isSelected = selectedFieldsForWP.has(field.id);
+                        
+                        return (
+                          <Card 
+                            key={field.id}
+                            className={`transition-all cursor-pointer hover:shadow-md ${
+                              isSelected ? 'border-vivo-purple bg-purple-50' : 'border-slate-200'
+                            }`}
+                            onClick={() => toggleFieldSelection(field.id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleFieldSelection(field.id)}
+                                  className="mt-0.5"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="rounded p-1 bg-slate-100 flex-shrink-0">
+                                      <IconComponent className="h-3.5 w-3.5 text-slate-600" />
+                                    </div>
+                                    <p className="text-sm font-semibold text-slate-800">
+                                      {field.label}
+                                    </p>
+                                    {field.status && (
+                                      <Badge 
+                                        variant="outline" 
+                                        className={`text-[10px] px-1.5 py-0 h-4 ${
+                                          field.status === 'compliant' ? 'bg-green-50 text-green-700 border-green-200' :
+                                          field.status === 'non-compliant' ? 'bg-red-50 text-red-700 border-red-200' :
+                                          field.status === 'warning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                          'bg-slate-50 text-slate-700 border-slate-200'
+                                        }`}
+                                      >
+                                        {field.status === 'compliant' ? 'Conforme' :
+                                         field.status === 'non-compliant' ? 'Não Conforme' :
+                                         field.status === 'warning' ? 'Atenção' : 'Neutro'}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-slate-600 line-clamp-2">
+                                    {getCurrentValue(field)}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Campos Customizados */}
+                {customFields.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                      <Plus className="h-4 w-4 text-blue-600" />
+                      Campos Adicionados ({customFields.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {customFields.map((field) => {
+                        const IconComponent = field.icon;
+                        const isSelected = selectedFieldsForWP.has(field.id);
+                        
+                        return (
+                          <Card 
+                            key={field.id}
+                            className={`transition-all cursor-pointer hover:shadow-md ${
+                              isSelected ? 'border-blue-500 bg-blue-50' : 'border-slate-200'
+                            }`}
+                            onClick={() => toggleFieldSelection(field.id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleFieldSelection(field.id)}
+                                  className="mt-0.5"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="rounded p-1 bg-blue-100 flex-shrink-0">
+                                      <IconComponent className="h-3.5 w-3.5 text-blue-600" />
+                                    </div>
+                                    <p className="text-sm font-semibold text-slate-800">
+                                      {field.label}
+                                    </p>
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-[10px] px-1.5 py-0 h-4 bg-blue-50 text-blue-700 border-blue-200"
+                                    >
+                                      Campo Adicionado
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-slate-600 line-clamp-2">
+                                    {field.value}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+          {/* Footer com botões */}
+          <div className="flex-shrink-0 p-6 pt-4 border-t bg-white">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-slate-600">
+                {selectedFieldsForWP.size === 0 ? (
+                  <span className="text-orange-600 font-medium">
+                    Selecione pelo menos um campo para continuar
+                  </span>
+                ) : (
+                  <span>
+                    <span className="font-semibold text-vivo-purple">{selectedFieldsForWP.size}</span>
+                    {' '}campo(s) será(ão) incluído(s) no documento
+                  </span>
+                )}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setWpModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleGenerateWP}
+                  disabled={selectedFieldsForWP.size === 0}
+                  className="bg-vivo-purple hover:bg-purple-700 flex items-center gap-2"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Gerar WP
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de Confirmação de Aprovação */}
       <ConfirmActionModal

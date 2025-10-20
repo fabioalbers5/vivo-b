@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import JustificationModal from "./JustificationModal";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Eye, 
   X, 
@@ -26,7 +28,8 @@ import {
   FileSpreadsheet,
   Calculator,
   Upload,
-  FileDown
+  FileDown,
+  Undo2
 } from 'lucide-react';
 
 interface ContractAnalysisModalProps {
@@ -49,6 +52,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
   onClose,
   contractId
 }) => {
+  const { toast } = useToast();
   const [selectedEvidence, setSelectedEvidence] = useState<string | null>(null);
   
   // Estados para correções
@@ -58,6 +62,10 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
   
   // Estado para evidências atualizadas
   const [updatedEvidences, setUpdatedEvidences] = useState<Record<string, File>>({});
+
+  // Estados para modais de justificativa
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
 
   // Dados simulados da análise de IA
   const analysisData: AnalysisField[] = [
@@ -238,6 +246,40 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
   // Função para obter o valor atual (correção ou valor original)
   const getCurrentValue = (field: AnalysisField) => {
     return corrections[field.id] || field.value;
+  };
+
+  // Funções para devolução e rejeição
+  const handleReturnPayment = (justification: string) => {
+    console.log('Pagamento devolvido para contrato:', contractId);
+    console.log('Justificativa:', justification);
+    console.log('Correções aplicadas:', corrections);
+
+    toast({
+      title: "Pagamento Devolvido",
+      description: `O pagamento do contrato ${contractId} foi devolvido ao responsável.`,
+    });
+
+    // Aqui você enviaria a justificativa para o backend
+    // Backend enviaria o email para o responsável pelo pagamento
+
+    onClose();
+  };
+
+  const handleRejectPayment = (justification: string) => {
+    console.log('Pagamento rejeitado para contrato:', contractId);
+    console.log('Justificativa:', justification);
+    console.log('Correções aplicadas antes da rejeição:', corrections);
+
+    toast({
+      title: "Pagamento Rejeitado",
+      description: `O pagamento do contrato ${contractId} foi rejeitado e não será processado.`,
+      variant: "destructive"
+    });
+
+    // Aqui você enviaria a justificativa para o backend
+    // Backend enviaria o email para o responsável pelo pagamento
+
+    onClose();
   };
 
   const getStatusIcon = (status?: string) => {
@@ -687,21 +729,19 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                   </Button>
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      const confirmReject = confirm(
-                        `Tem certeza que deseja REJEITAR o pagamento do contrato ${contractId}?\n\nEsta ação não poderá ser desfeita.`
-                      );
-                      if (confirmReject) {
-                        console.log('Pagamento rejeitado para contrato:', contractId);
-                        console.log('Correções aplicadas antes da rejeição:', corrections);
-                        alert('Pagamento rejeitado com sucesso!\nO contrato foi marcado como não conforme para pagamento.');
-                        onClose();
-                      }
-                    }}
+                    onClick={() => setReturnModalOpen(true)}
+                    className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300 flex items-center gap-2"
+                  >
+                    <Undo2 className="h-4 w-4" />
+                    Devolver Pagamento
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setRejectModalOpen(true)}
                     className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
                   >
                     <Ban className="h-4 w-4" />
-                    Rejeitar pagamento
+                    Rejeitar Pagamento
                   </Button>
                   <Button 
                     onClick={() => {
@@ -925,6 +965,24 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Modal de Justificativa para Devolução */}
+      <JustificationModal
+        isOpen={returnModalOpen}
+        onClose={() => setReturnModalOpen(false)}
+        onSubmit={handleReturnPayment}
+        contractId={contractId}
+        actionType="return"
+      />
+
+      {/* Modal de Justificativa para Rejeição */}
+      <JustificationModal
+        isOpen={rejectModalOpen}
+        onClose={() => setRejectModalOpen(false)}
+        onSubmit={handleRejectPayment}
+        contractId={contractId}
+        actionType="reject"
+      />
     </>
   );
 };

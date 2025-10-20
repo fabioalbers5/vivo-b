@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import JustificationModal from "./JustificationModal";
+import ConfirmActionModal from "./ConfirmActionModal";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Eye, 
@@ -36,6 +37,8 @@ interface ContractAnalysisModalProps {
   isOpen: boolean;
   onClose: () => void;
   contractId: string;
+  paymentStatus?: 'pending' | 'approved' | 'returned' | 'rejected';
+  onStatusChange?: (contractId: string, status: 'approved' | 'returned' | 'rejected') => void;
 }
 
 interface AnalysisField {
@@ -50,7 +53,9 @@ interface AnalysisField {
 const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
   isOpen,
   onClose,
-  contractId
+  contractId,
+  paymentStatus = 'pending',
+  onStatusChange
 }) => {
   const { toast } = useToast();
   const [selectedEvidence, setSelectedEvidence] = useState<string | null>(null);
@@ -66,6 +71,12 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
   // Estados para modais de justificativa
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+
+  // Estados para modais de confirmação
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+
+  // Verificar se o pagamento está bloqueado
+  const isLocked = paymentStatus !== 'pending';
 
   // Dados simulados da análise de IA
   const analysisData: AnalysisField[] = [
@@ -254,6 +265,11 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
     console.log('Justificativa:', justification);
     console.log('Correções aplicadas:', corrections);
 
+    // Notificar o componente pai sobre a mudança de status
+    if (onStatusChange) {
+      onStatusChange(contractId, 'returned');
+    }
+
     toast({
       title: "Pagamento Devolvido",
       description: `O pagamento do contrato ${contractId} foi devolvido ao responsável.`,
@@ -270,6 +286,11 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
     console.log('Justificativa:', justification);
     console.log('Correções aplicadas antes da rejeição:', corrections);
 
+    // Notificar o componente pai sobre a mudança de status
+    if (onStatusChange) {
+      onStatusChange(contractId, 'rejected');
+    }
+
     toast({
       title: "Pagamento Rejeitado",
       description: `O pagamento do contrato ${contractId} foi rejeitado e não será processado.`,
@@ -278,6 +299,25 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
 
     // Aqui você enviaria a justificativa para o backend
     // Backend enviaria o email para o responsável pelo pagamento
+
+    onClose();
+  };
+
+  const handleApprovePayment = () => {
+    console.log('Pagamento liberado para contrato:', contractId);
+    console.log('Correções aplicadas:', corrections);
+    console.log('Total de correções:', Object.keys(corrections).length);
+
+    // Notificar o componente pai sobre a mudança de status
+    if (onStatusChange) {
+      onStatusChange(contractId, 'approved');
+    }
+
+    toast({
+      title: "Pagamento Liberado",
+      description: `O pagamento do contrato ${contractId} foi liberado com sucesso e será processado em breve.`,
+      variant: "default"
+    });
 
     onClose();
   };
@@ -585,6 +625,43 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
             </p>
           </DialogHeader>
 
+          {/* Banner de Status Bloqueado */}
+          {isLocked && (
+            <div className={`flex-shrink-0 px-6 py-3 border-b ${
+              paymentStatus === 'approved' ? 'bg-green-50 border-green-200' :
+              paymentStatus === 'returned' ? 'bg-orange-50 border-orange-200' :
+              'bg-red-50 border-red-200'
+            }`}>
+              <div className="flex items-center gap-2">
+                {paymentStatus === 'approved' ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-green-800">Pagamento Aprovado</p>
+                      <p className="text-sm text-green-700">Este pagamento já foi liberado e não pode mais ser editado.</p>
+                    </div>
+                  </>
+                ) : paymentStatus === 'returned' ? (
+                  <>
+                    <Undo2 className="h-5 w-5 text-orange-600 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-orange-800">Pagamento Devolvido</p>
+                      <p className="text-sm text-orange-700">Este pagamento foi devolvido ao responsável e não pode mais ser editado.</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Ban className="h-5 w-5 text-red-600 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-red-800">Pagamento Rejeitado</p>
+                      <p className="text-sm text-red-700">Este pagamento foi rejeitado e não pode mais ser editado.</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex-1 overflow-hidden flex flex-col">
             <ScrollArea className="flex-1 px-6">
               <div className="space-y-2 py-4">
@@ -632,6 +709,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                             onClick={() => handleEditField(field.id)}
                             className="h-7 w-7 p-0 hover:bg-vivo-purple hover:text-white"
                             title="Editar campo"
+                            disabled={isLocked}
                           >
                             <Edit3 className="h-3 w-3" />
                           </Button>
@@ -723,6 +801,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                     variant="outline"
                     onClick={handleGenerateWP}
                     className="border-vivo-purple text-vivo-purple hover:bg-vivo-purple hover:text-white flex items-center gap-2"
+                    disabled={isLocked}
                   >
                     <FileDown className="h-4 w-4" />
                     Gerar WP
@@ -731,6 +810,7 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                     variant="outline" 
                     onClick={() => setReturnModalOpen(true)}
                     className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300 flex items-center gap-2"
+                    disabled={isLocked}
                   >
                     <Undo2 className="h-4 w-4" />
                     Devolver Pagamento
@@ -739,33 +819,15 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
                     variant="outline" 
                     onClick={() => setRejectModalOpen(true)}
                     className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
+                    disabled={isLocked}
                   >
                     <Ban className="h-4 w-4" />
                     Rejeitar Pagamento
                   </Button>
                   <Button 
-                    onClick={() => {
-                      if (hasChanges) {
-                        const confirmWithChanges = confirm(
-                          `Você tem correções não salvas.\n\nDeseja LIBERAR o pagamento do contrato ${contractId} com as correções aplicadas?`
-                        );
-                        if (!confirmWithChanges) return;
-                      } else {
-                        const confirmApprove = confirm(
-                          `Confirma a LIBERAÇÃO do pagamento do contrato ${contractId}?\n\nO pagamento será processado após esta confirmação.`
-                        );
-                        if (!confirmApprove) return;
-                      }
-                      
-                      console.log('Pagamento liberado para contrato:', contractId);
-                      console.log('Correções aplicadas:', corrections);
-                      console.log('Total de correções:', Object.keys(corrections).length);
-                      
-                      alert(`Pagamento liberado com sucesso!\n\nContrato: ${contractId}\nCorreções aplicadas: ${Object.keys(corrections).length}\n\nO pagamento será processado em breve.`);
-                      onClose();
-                    }}
+                    onClick={() => setApproveModalOpen(true)}
                     className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
-                    disabled={editingField !== null} // Desabilita se estiver editando
+                    disabled={editingField !== null || isLocked}
                   >
                     <Check className="h-4 w-4" />
                     Liberar pagamento
@@ -965,6 +1027,18 @@ const ContractAnalysisModal: React.FC<ContractAnalysisModalProps> = ({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Modal de Confirmação de Aprovação */}
+      <ConfirmActionModal
+        isOpen={approveModalOpen}
+        onClose={() => setApproveModalOpen(false)}
+        onConfirm={handleApprovePayment}
+        title="Confirmar Liberação de Pagamento"
+        description={`Confirma a LIBERAÇÃO do pagamento do contrato ${contractId}?`}
+        confirmText="Liberar Pagamento"
+        hasWarning={hasChanges}
+        warningMessage={`Você tem ${Object.keys(corrections).length} correção(ões) não salva(s). As correções serão aplicadas junto com a liberação.`}
+      />
 
       {/* Modal de Justificativa para Devolução */}
       <JustificationModal

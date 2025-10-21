@@ -7,17 +7,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, ChevronsUpDown, Check } from 'lucide-react';
 import { useFilteredContractsOnly } from '@/hooks/useFilteredContractsOnly';
 import { useSampleHistory } from '@/hooks/useSampleHistory';
 import { useToast } from '@/hooks/use-toast';
 import { LegacyContract } from '@/hooks/useContractFilters';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { cn } from '@/lib/utils';
 
 const QualityDashboardPage: React.FC = () => {
   // Estados para filtros
   const [selectedDateRange, setSelectedDateRange] = useState<string>('all');
   const [selectedAnalysisStatus, setSelectedAnalysisStatus] = useState<string>('all');
+  const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
+  const [selectedContract, setSelectedContract] = useState<string>('all');
+  const [openSupplierCombo, setOpenSupplierCombo] = useState(false);
+  const [openContractCombo, setOpenContractCombo] = useState(false);
   
   // Estados para modal de alertas
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
@@ -110,6 +117,26 @@ const QualityDashboardPage: React.FC = () => {
     }
   };
 
+  // Obter lista única de fornecedores
+  const uniqueSuppliers = useMemo(() => {
+    const suppliers = new Set(
+      allContracts
+        .map(c => c.supplier)
+        .filter(s => s && s.trim() !== '')
+    );
+    return Array.from(suppliers).sort();
+  }, [allContracts]);
+
+  // Obter lista única de contratos
+  const uniqueContracts = useMemo(() => {
+    const contracts = new Set(
+      allContracts
+        .map(c => c.number)
+        .filter(n => n && n.trim() !== '')
+    );
+    return Array.from(contracts).sort();
+  }, [allContracts]);
+
   // Filtrar contratos baseado nos filtros selecionados
   const filteredContracts = useMemo(() => {
     let filtered = [...allContracts];
@@ -146,8 +173,18 @@ const QualityDashboardPage: React.FC = () => {
       filtered = filtered.filter(c => c.analysisStatus === selectedAnalysisStatus);
     }
 
+    // Filtro por fornecedor
+    if (selectedSupplier !== 'all') {
+      filtered = filtered.filter(c => c.supplier === selectedSupplier);
+    }
+
+    // Filtro por contrato
+    if (selectedContract !== 'all') {
+      filtered = filtered.filter(c => c.number === selectedContract);
+    }
+
     return filtered;
-  }, [allContracts, selectedDateRange, selectedAnalysisStatus]);
+  }, [allContracts, selectedDateRange, selectedAnalysisStatus, selectedSupplier, selectedContract]);
 
   // Calcular métricas gerais
   const generalMetrics = useMemo(() => {
@@ -319,7 +356,7 @@ const QualityDashboardPage: React.FC = () => {
     <div className="h-full flex flex-col">
       {/* Filtros */}
       <div className="pl-8 pb-3 pt-3 border-b border-gray-100">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           {/* Filtro Data */}
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
@@ -355,6 +392,136 @@ const QualityDashboardPage: React.FC = () => {
                 <SelectItem value="rejected">Rejeitado</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Filtro Fornecedor */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              Fornecedor:
+            </label>
+            <Popover open={openSupplierCombo} onOpenChange={setOpenSupplierCombo}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openSupplierCombo}
+                  className="w-60 h-8 justify-between text-sm"
+                >
+                  {selectedSupplier === 'all'
+                    ? "Todos os fornecedores"
+                    : uniqueSuppliers.find((supplier) => supplier === selectedSupplier) || "Selecionar..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-60 p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar fornecedor..." className="h-8" />
+                  <CommandList>
+                    <CommandEmpty>Nenhum fornecedor encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setSelectedSupplier('all');
+                          setOpenSupplierCombo(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedSupplier === 'all' ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Todos os Fornecedores
+                      </CommandItem>
+                      {uniqueSuppliers.map((supplier) => (
+                        <CommandItem
+                          key={supplier}
+                          value={supplier}
+                          onSelect={(currentValue) => {
+                            setSelectedSupplier(currentValue);
+                            setOpenSupplierCombo(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedSupplier === supplier ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {supplier}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Filtro Contrato */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              Contrato:
+            </label>
+            <Popover open={openContractCombo} onOpenChange={setOpenContractCombo}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openContractCombo}
+                  className="w-48 h-8 justify-between text-sm"
+                >
+                  {selectedContract === 'all'
+                    ? "Todos os contratos"
+                    : uniqueContracts.find((contract) => contract === selectedContract) || "Selecionar..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar contrato..." className="h-8" />
+                  <CommandList>
+                    <CommandEmpty>Nenhum contrato encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setSelectedContract('all');
+                          setOpenContractCombo(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedContract === 'all' ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Todos os Contratos
+                      </CommandItem>
+                      {uniqueContracts.map((contract) => (
+                        <CommandItem
+                          key={contract}
+                          value={contract}
+                          onSelect={(currentValue) => {
+                            setSelectedContract(currentValue);
+                            setOpenContractCombo(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedContract === contract ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {contract}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>

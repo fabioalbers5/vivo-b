@@ -6,7 +6,6 @@ import { Chatbot } from './Chatbot';
 import SampleSelectionPage from '@/pages/SampleSelectionPage';
 import SampleAnalysisPage from '@/pages/SampleAnalysisPage';
 import QualityDashboardPage from '@/pages/QualityDashboardPage';
-import AlertsDashboardPage from '@/pages/AlertsDashboardPage';
 import DocumentUploadPage from '@/pages/DocumentUploadPage';
 import CriteriaSelection from '@/pages/CriteriaSelection';
 import LogsPage from '@/pages/LogsPage';
@@ -1206,8 +1205,6 @@ const MainLayout: React.FC = () => {
         return <SampleAnalysisPage />;
       case 'quality-dashboard':
         return <QualityDashboardPage />;
-      case 'alerts-dashboard':
-        return <AlertsDashboardPage />;
       case 'document-upload':
         return <DocumentUploadPage />;
       case 'criteria-selection':

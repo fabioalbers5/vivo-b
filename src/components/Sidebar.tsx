@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home, PieChart, Bell, Upload, FileText } from 'lucide-react';
+import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home, PieChart, Upload, FileText } from 'lucide-react';
 
 interface SidebarProps {
   activePage: string;
@@ -36,12 +36,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
       label: 'Dashboards de qualidade',
       icon: PieChart,
       description: 'Análise de qualidade e compliance'
-    },
-    {
-      id: 'alerts-dashboard',
-      label: 'Dashboards de alertas',
-      icon: Bell,
-      description: 'Monitoramento proativo de contratos'
     },
     {
       id: 'document-upload',

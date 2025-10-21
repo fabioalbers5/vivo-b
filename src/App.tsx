@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import HomeWithLayout from "./pages/HomeWithLayout";
 import TestModal from "./pages/TestModal";
+import DocumentUploadPage from "./pages/DocumentUploadPage";
 import NotFound from "./pages/NotFound";
 
 // Importar teste de conexão Supabase (executará automaticamente)
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/home" element={<HomeWithLayout />} />
           <Route path="/test-modal" element={<TestModal />} />
+          <Route path="/upload" element={<DocumentUploadPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

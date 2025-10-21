@@ -861,12 +861,24 @@ const AlertsDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={expiringByDayData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="day" fontSize={9} />
-                      <YAxis fontSize={9} />
-                      <Tooltip />
-                      <Bar dataKey="count" fill="#8B5CF6" />
+                    <BarChart data={expiringByDayData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Vencimentos"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -1156,17 +1168,25 @@ const AlertsDashboardPage: React.FC = () => {
               </CardHeader>
               <CardContent className="p-3">
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={expiringByDayData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" fontSize={9} />
-                    <YAxis fontSize={9} />
-                    <Tooltip />
+                  <LineChart data={expiringByDayData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '12px'
+                      }}
+                    />
                     <Line 
                       type="monotone" 
                       dataKey="count" 
                       stroke="#8B5CF6" 
                       strokeWidth={2}
                       dot={{ fill: '#8B5CF6', r: 4 }}
+                      name="Vencimentos"
                     />
                   </LineChart>
                 </ResponsiveContainer>

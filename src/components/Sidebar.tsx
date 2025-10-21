@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home, PieChart, Bell } from 'lucide-react';
+import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home, PieChart, Bell, Upload } from 'lucide-react';
 
 interface SidebarProps {
   activePage: string;
@@ -42,6 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
       label: 'Dashboards de alertas',
       icon: Bell,
       description: 'Monitoramento proativo de contratos'
+    },
+    {
+      id: 'document-upload',
+      label: 'Upload de arquivo',
+      icon: Upload,
+      description: 'Envio de documentação para análise'
     }
   ];
 
@@ -77,6 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activePage === item.id;
+              const isExternalLink = item.id === 'document-upload';
               
               return (
                 <Button
@@ -87,7 +94,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
                       ? "bg-vivo-purple hover:bg-vivo-purple/90 text-white" 
                       : "hover:bg-muted/50"
                   } transition-all duration-300`}
-                  onClick={() => onPageChange(item.id)}
+                  onClick={() => {
+                    if (isExternalLink) {
+                      window.open('/upload', '_blank');
+                    } else {
+                      onPageChange(item.id);
+                    }
+                  }}
                   title={!isExpanded ? item.label : undefined}
                 >
                   {isExpanded ? (

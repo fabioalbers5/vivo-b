@@ -6,6 +6,7 @@ import SampleSelectionPage from '@/pages/SampleSelectionPage';
 import SampleAnalysisPage from '@/pages/SampleAnalysisPage';
 import QualityDashboardPage from '@/pages/QualityDashboardPage';
 import AlertsDashboardPage from '@/pages/AlertsDashboardPage';
+import DocumentUploadPage from '@/pages/DocumentUploadPage';
 import CriteriaSelection from '@/pages/CriteriaSelection';
 import { SampleProvider } from '@/contexts/SampleContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1205,6 +1206,8 @@ const MainLayout: React.FC = () => {
         return <QualityDashboardPage />;
       case 'alerts-dashboard':
         return <AlertsDashboardPage />;
+      case 'document-upload':
+        return <DocumentUploadPage />;
       case 'criteria-selection':
         return <CriteriaSelection />;
       default:

@@ -2,26 +2,36 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useFilteredContractsOnly } from '@/hooks/useFilteredContractsOnly';
 import { useSampleHistory } from '@/hooks/useSampleHistory';
-import { useAnalysts } from '@/hooks/useAnalysts';
+import { useToast } from '@/hooks/use-toast';
 import { LegacyContract } from '@/hooks/useContractFilters';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const QualityDashboardPage: React.FC = () => {
   // Estados para filtros
-  const [selectedSampleId, setSelectedSampleId] = useState<string>('all');
-  const [selectedAnalyst, setSelectedAnalyst] = useState<string>('all');
   const [selectedDateRange, setSelectedDateRange] = useState<string>('all');
   const [selectedAnalysisStatus, setSelectedAnalysisStatus] = useState<string>('all');
+  
+  // Estados para modal de alertas
+  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
+  const [selectedForNextSample, setSelectedForNextSample] = useState<Set<string>>(new Set());
+  const [sortColumn, setSortColumn] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Hooks para dados - passar sampleId para o hook
+  const { toast } = useToast();
+
+  // Hooks para dados
   const { contracts: allContracts, isLoading: contractsLoading } = useFilteredContractsOnly({ 
-    sampleId: selectedSampleId 
+    sampleId: 'all' 
   });
   const { sampleHistory, isLoading: historyLoading } = useSampleHistory();
-  const { analysts, isLoading: analystsLoading } = useAnalysts();
 
   // Função para formatar moeda
   const formatCurrency = (value: number): string => {
@@ -31,14 +41,78 @@ const QualityDashboardPage: React.FC = () => {
     }).format(value);
   };
 
+  // Função para formatar data
+  const formatDate = (dateString: string | undefined): string => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('pt-BR');
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Handlers do modal
+  const handleOpenAlertsModal = () => {
+    setIsAlertsModalOpen(true);
+  };
+
+  const handleCloseAlertsModal = () => {
+    setIsAlertsModalOpen(false);
+  };
+
+  const handleToggleSelection = (contractId: string) => {
+    const newSelection = new Set(selectedForNextSample);
+    if (newSelection.has(contractId)) {
+      newSelection.delete(contractId);
+    } else {
+      newSelection.add(contractId);
+    }
+    setSelectedForNextSample(newSelection);
+  };
+
+  const handleSelectAll = (contracts: LegacyContract[]) => {
+    if (selectedForNextSample.size === contracts.length) {
+      setSelectedForNextSample(new Set());
+    } else {
+      setSelectedForNextSample(new Set(contracts.map(c => c.id || c.number)));
+    }
+  };
+
+  const handleSaveToNextSample = () => {
+    if (selectedForNextSample.size === 0) {
+      toast({
+        title: "Nenhum pagamento selecionado",
+        description: "Selecione pelo menos um pagamento para adicionar à próxima amostragem.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Aqui você pode implementar a lógica de salvar no banco de dados
+    console.log('Pagamentos selecionados para próxima amostragem:', Array.from(selectedForNextSample));
+    
+    toast({
+      title: "Sucesso!",
+      description: `${selectedForNextSample.size} pagamento(s) marcado(s) para próxima amostragem.`,
+    });
+
+    setSelectedForNextSample(new Set());
+    setIsAlertsModalOpen(false);
+  };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   // Filtrar contratos baseado nos filtros selecionados
   const filteredContracts = useMemo(() => {
     let filtered = [...allContracts];
-
-    // Filtro por analista
-    if (selectedAnalyst !== 'all') {
-      filtered = filtered.filter(c => c.analyst === selectedAnalyst);
-    }
 
     // Filtro por data de vencimento
     if (selectedDateRange !== 'all') {
@@ -73,7 +147,7 @@ const QualityDashboardPage: React.FC = () => {
     }
 
     return filtered;
-  }, [allContracts, selectedAnalyst, selectedDateRange, selectedAnalysisStatus]);
+  }, [allContracts, selectedDateRange, selectedAnalysisStatus]);
 
   // Calcular métricas gerais
   const generalMetrics = useMemo(() => {
@@ -85,12 +159,39 @@ const QualityDashboardPage: React.FC = () => {
       const value = c.paymentValue ?? c.value ?? 0;
       return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
     }, 0);
+    const alertPaymentValue = filteredContracts
+      .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+      .reduce((sum, c) => {
+        const value = c.paymentValue ?? c.value ?? 0;
+        return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
+      }, 0);
+    
+    // Contratos auditáveis (sem alerta ou aprovados)
+    const auditableContracts = filteredContracts.filter(
+      c => !c.alertType || c.alertType === 'Contrato aprovado'
+    ).length;
+    const auditablePaymentValue = filteredContracts
+      .filter(c => !c.alertType || c.alertType === 'Contrato aprovado')
+      .reduce((sum, c) => {
+        const value = c.paymentValue ?? c.value ?? 0;
+        return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
+      }, 0);
 
     return {
       totalContracts,
       contractsWithAlert,
-      totalPaymentValue
+      totalPaymentValue,
+      alertPaymentValue,
+      auditableContracts,
+      auditablePaymentValue
     };
+  }, [filteredContracts]);
+
+  // Obter contratos com alerta para o modal
+  const contractsWithAlerts = useMemo(() => {
+    return filteredContracts.filter(
+      c => c.alertType && c.alertType !== 'Contrato aprovado'
+    );
   }, [filteredContracts]);
 
   // Calcular dados para "Todas as Amostras"
@@ -125,6 +226,7 @@ const QualityDashboardPage: React.FC = () => {
 
     return {
       sampleCount: uniqueSampleIds.size,
+      paymentCount: filteredContracts.length, // Total de pagamentos
       totalPaymentValue,
       flowTypeCountsData: Object.entries(flowTypeCounts).map(([name, value]) => ({ name, value })),
       flowTypeValuesData: Object.entries(flowTypeValues).map(([name, value]) => ({ name, value }))
@@ -164,6 +266,7 @@ const QualityDashboardPage: React.FC = () => {
 
     return {
       sampleCount: uniqueSampleIds.size,
+      paymentCount: basicApproved.length, // Total de pagamentos aprovados
       totalPaymentValue,
       flowTypeCountsData: Object.entries(flowTypeCounts).map(([name, value]) => ({ name, value })),
       flowTypeValuesData: Object.entries(flowTypeValues).map(([name, value]) => ({ name, value }))
@@ -203,59 +306,20 @@ const QualityDashboardPage: React.FC = () => {
 
     return {
       sampleCount: uniqueSampleIds.size,
+      paymentCount: humanApproved.length, // Total de pagamentos aprovados por humanos
       totalPaymentValue,
       flowTypeCountsData: Object.entries(flowTypeCounts).map(([name, value]) => ({ name, value })),
       flowTypeValuesData: Object.entries(flowTypeValues).map(([name, value]) => ({ name, value }))
     };
   }, [filteredContracts]);
 
-  const isLoading = contractsLoading || historyLoading || analystsLoading;
+  const isLoading = contractsLoading || historyLoading;
 
   return (
     <div className="h-full flex flex-col">
       {/* Filtros */}
       <div className="pl-8 pb-3 pt-3 border-b border-gray-100">
         <div className="flex items-center gap-4">
-          {/* Filtro Amostra */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              Amostra:
-            </label>
-            <Select value={selectedSampleId} onValueChange={setSelectedSampleId}>
-              <SelectTrigger className="w-48 h-8">
-                <SelectValue placeholder="Selecionar amostra" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Pagamentos</SelectItem>
-                {sampleHistory.map((sample) => (
-                  <SelectItem key={sample.amostra_id} value={sample.amostra_id}>
-                    Amostra {sample.amostra_id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Filtro Analista */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              Analista:
-            </label>
-            <Select value={selectedAnalyst} onValueChange={setSelectedAnalyst}>
-              <SelectTrigger className="w-48 h-8">
-                <SelectValue placeholder="Selecionar analista" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Analistas</SelectItem>
-                {analysts.filter(a => a !== 'all').map((analyst) => (
-                  <SelectItem key={analyst} value={analyst}>
-                    {analyst}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Filtro Data */}
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
@@ -297,7 +361,7 @@ const QualityDashboardPage: React.FC = () => {
 
       {/* Cards de Métricas Gerais */}
       <div className="p-4 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Total de Contratos */}
           <Card className="hover:shadow-sm transition-shadow bg-white border-vivo-purple/20">
             <CardContent className="p-3">
@@ -329,6 +393,40 @@ const QualityDashboardPage: React.FC = () => {
                     <p className="text-xs font-medium text-slate-600">Pagamentos com Alerta</p>
                     <p className="text-xl font-bold text-orange-600">
                       {generalMetrics.contractsWithAlert}
+                    </p>
+                    <p className="text-xs font-medium text-orange-600/70 mt-0.5">
+                      {formatCurrency(generalMetrics.alertPaymentValue)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleOpenAlertsModal}
+                  className="h-8 w-8 p-0 hover:bg-orange-50"
+                  title="Ver detalhes dos alertas"
+                >
+                  <Eye className="h-4 w-4 text-orange-600" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contratos Auditáveis */}
+          <Card className="hover:shadow-sm transition-shadow bg-white border-green-200/50">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg p-1.5 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-600">Contratos Auditáveis</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {generalMetrics.auditableContracts}
+                    </p>
+                    <p className="text-xs font-medium text-green-600/70 mt-0.5">
+                      {formatCurrency(generalMetrics.auditablePaymentValue)}
                     </p>
                   </div>
                 </div>
@@ -382,7 +480,7 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <div className="text-2xl font-bold text-vivo-purple">
-                    {allSamplesData.sampleCount}
+                    {allSamplesData.paymentCount}
                   </div>
                 </CardContent>
               </Card>
@@ -406,12 +504,24 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={allSamplesData.flowTypeCountsData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={9} />
-                      <YAxis fontSize={9} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#8B5CF6" />
+                    <BarChart data={allSamplesData.flowTypeCountsData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Quantidade"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -423,12 +533,25 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={allSamplesData.flowTypeValuesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={9} />
-                      <YAxis fontSize={9} />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                      <Bar dataKey="value" fill="#3B82F6" />
+                    <BarChart data={allSamplesData.flowTypeValuesData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip 
+                        formatter={(value) => formatCurrency(Number(value))}
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Valor Total"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -445,7 +568,7 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <div className="text-2xl font-bold text-green-600">
-                    {basicCheckData.sampleCount}
+                    {basicCheckData.paymentCount}
                   </div>
                 </CardContent>
               </Card>
@@ -469,12 +592,24 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={basicCheckData.flowTypeCountsData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={9} />
-                      <YAxis fontSize={9} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#10B981" />
+                    <BarChart data={basicCheckData.flowTypeCountsData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Quantidade"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -486,12 +621,25 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={basicCheckData.flowTypeValuesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={9} />
-                      <YAxis fontSize={9} />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                      <Bar dataKey="value" fill="#3B82F6" />
+                    <BarChart data={basicCheckData.flowTypeValuesData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip 
+                        formatter={(value) => formatCurrency(Number(value))}
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Valor Total"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -508,7 +656,7 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <div className="text-2xl font-bold text-emerald-600">
-                    {humanAnalysisData.sampleCount}
+                    {humanAnalysisData.paymentCount}
                   </div>
                 </CardContent>
               </Card>
@@ -532,12 +680,24 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={humanAnalysisData.flowTypeCountsData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={9} />
-                      <YAxis fontSize={9} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#059669" />
+                    <BarChart data={humanAnalysisData.flowTypeCountsData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Quantidade"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -549,12 +709,25 @@ const QualityDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={humanAnalysisData.flowTypeValuesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} fontSize={9} />
-                      <YAxis fontSize={9} />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                      <Bar dataKey="value" fill="#3B82F6" />
+                    <BarChart data={humanAnalysisData.flowTypeValuesData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip 
+                        formatter={(value) => formatCurrency(Number(value))}
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Valor Total"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -563,6 +736,171 @@ const QualityDashboardPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de Pagamentos com Alerta */}
+      <Dialog open={isAlertsModalOpen} onOpenChange={setIsAlertsModalOpen}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              Pagamentos com Alerta ({contractsWithAlerts.length})
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto">
+            <Table className="w-full relative" style={{ tableLayout: 'fixed' }}>
+              <TableHeader className="sticky top-0 z-30 bg-gray-50 shadow-sm">
+                <TableRow style={{ height: '32px' }}>
+                  <TableHead className="w-[50px] bg-gray-50 text-xs text-center" style={{ height: '32px' }}>
+                    <Checkbox
+                      checked={selectedForNextSample.size === contractsWithAlerts.length && contractsWithAlerts.length > 0}
+                      onCheckedChange={() => handleSelectAll(contractsWithAlerts)}
+                    />
+                  </TableHead>
+                  <TableHead 
+                    className="min-w-[140px] cursor-pointer hover:bg-gray-100 text-xs"
+                    onClick={() => handleSort('number')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Nº Pagamento
+                      {sortColumn === 'number' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="min-w-[200px] cursor-pointer hover:bg-gray-100 text-xs"
+                    onClick={() => handleSort('supplier')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Fornecedor
+                      {sortColumn === 'supplier' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="min-w-[180px] cursor-pointer hover:bg-gray-100 text-xs"
+                    onClick={() => handleSort('alertType')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Tipo de Alerta
+                      {sortColumn === 'alertType' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="min-w-[130px] cursor-pointer hover:bg-gray-100 text-xs"
+                    onClick={() => handleSort('value')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Valor
+                      {sortColumn === 'value' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="min-w-[120px] cursor-pointer hover:bg-gray-100 text-xs"
+                    onClick={() => handleSort('dueDate')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Vencimento
+                      {sortColumn === 'dueDate' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </div>
+                  </TableHead>
+                  <TableHead className="min-w-[100px] text-xs">Tipo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {contractsWithAlerts
+                  .sort((a, b) => {
+                    if (!sortColumn) return 0;
+                    
+                    let aVal: any = a[sortColumn as keyof LegacyContract];
+                    let bVal: any = b[sortColumn as keyof LegacyContract];
+
+                    if (sortColumn === 'value') {
+                      aVal = a.paymentValue ?? a.value ?? 0;
+                      bVal = b.paymentValue ?? b.value ?? 0;
+                    }
+
+                    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                  })
+                  .map((contract) => {
+                    const contractId = contract.id || contract.number;
+                    const isSelected = selectedForNextSample.has(contractId);
+                    
+                    return (
+                      <TableRow 
+                        key={contractId}
+                        className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-orange-50/30' : ''}`}
+                        style={{ height: '32px' }}
+                      >
+                        <TableCell className="text-center" style={{ height: '32px', padding: '4px' }}>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleToggleSelection(contractId)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-xs font-mono" style={{ height: '32px', padding: '4px 8px' }}>
+                          {contract.number}
+                        </TableCell>
+                        <TableCell className="text-xs truncate" title={contract.supplier} style={{ height: '32px', padding: '4px 8px' }}>
+                          {contract.supplier}
+                        </TableCell>
+                        <TableCell className="text-xs" style={{ height: '32px', padding: '4px 8px' }}>
+                          <Badge variant="destructive" className="text-[10px] px-2 py-0">
+                            {contract.alertType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs font-semibold text-purple-600" style={{ height: '32px', padding: '4px 8px' }}>
+                          {formatCurrency(contract.paymentValue ?? contract.value ?? 0)}
+                        </TableCell>
+                        <TableCell className="text-xs" style={{ height: '32px', padding: '4px 8px' }}>
+                          {formatDate(contract.dueDate)}
+                        </TableCell>
+                        <TableCell className="text-xs" style={{ height: '32px', padding: '4px 8px' }}>
+                          {contract.type || '-'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-slate-600">
+              {selectedForNextSample.size > 0 && (
+                <span className="font-medium text-orange-600">
+                  {selectedForNextSample.size} pagamento(s) selecionado(s)
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleCloseAlertsModal}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveToNextSample}
+                disabled={selectedForNextSample.size === 0}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Adicionar à Próxima Amostragem
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

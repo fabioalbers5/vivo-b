@@ -2,12 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { Chatbot } from './Chatbot';
 import SampleSelectionPage from '@/pages/SampleSelectionPage';
 import SampleAnalysisPage from '@/pages/SampleAnalysisPage';
 import QualityDashboardPage from '@/pages/QualityDashboardPage';
 import AlertsDashboardPage from '@/pages/AlertsDashboardPage';
 import DocumentUploadPage from '@/pages/DocumentUploadPage';
 import CriteriaSelection from '@/pages/CriteriaSelection';
+import LogsPage from '@/pages/LogsPage';
 import { SampleProvider } from '@/contexts/SampleContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1210,6 +1212,8 @@ const MainLayout: React.FC = () => {
         return <DocumentUploadPage />;
       case 'criteria-selection':
         return <CriteriaSelection />;
+      case 'logs':
+        return <LogsPage />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -1246,6 +1250,9 @@ const MainLayout: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Chatbot - aparece em todas as telas dentro do MainLayout */}
+        <Chatbot />
       </div>
     </SampleProvider>
   );

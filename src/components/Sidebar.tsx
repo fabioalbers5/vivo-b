@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home, PieChart, Bell, Upload } from 'lucide-react';
+import { Database, BarChart3, Settings, HelpCircle, Menu, ChevronLeft, Home, PieChart, Bell, Upload, FileText } from 'lucide-react';
 
 interface SidebarProps {
   activePage: string;
@@ -158,6 +158,34 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
               ) : (
                 <Settings className={`h-5 w-5 ${
                   activePage === 'criteria-selection' ? "text-white" : "text-muted-foreground"
+                }`} />
+              )}
+            </Button>
+
+            <Button
+              variant={activePage === 'logs' ? "default" : "ghost"}
+              className={`w-full ${isExpanded ? 'justify-start h-10 px-3' : 'justify-center h-10 p-2'} ${
+                activePage === 'logs'
+                  ? "bg-vivo-purple hover:bg-vivo-purple/90 text-white" 
+                  : "hover:bg-muted/50"
+              } transition-all duration-300`}
+              onClick={() => onPageChange('logs')}
+              title={!isExpanded ? "Logs" : undefined}
+            >
+              {isExpanded ? (
+                <div className="flex items-center gap-3 w-full">
+                  <FileText className={`h-4 w-4 flex-shrink-0 ${
+                    activePage === 'logs' ? "text-white" : "text-muted-foreground"
+                  }`} />
+                  <div className={`text-sm font-medium ${
+                    activePage === 'logs' ? "text-white" : "text-foreground"
+                  }`}>
+                    Logs
+                  </div>
+                </div>
+              ) : (
+                <FileText className={`h-5 w-5 ${
+                  activePage === 'logs' ? "text-white" : "text-muted-foreground"
                 }`} />
               )}
             </Button>

@@ -25,6 +25,7 @@ const QualityDashboardPage: React.FC = () => {
   const [selectedContract, setSelectedContract] = useState<string>('all');
   const [openSupplierCombo, setOpenSupplierCombo] = useState(false);
   const [openContractCombo, setOpenContractCombo] = useState(false);
+  const [viewMode, setViewMode] = useState<'quantity' | 'value'>('quantity');
   
   // Estados para modal de alertas
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
@@ -355,33 +356,34 @@ const QualityDashboardPage: React.FC = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Filtros */}
-      <div className="pl-8 pb-3 pt-3 border-b border-gray-100">
-        <div className="flex items-center gap-4 flex-wrap">
-          {/* Filtro Data */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              Período:
-            </label>
-            <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
-              <SelectTrigger className="w-40 h-8">
-                <SelectValue placeholder="Selecionar período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Períodos</SelectItem>
-                <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                <SelectItem value="90d">Últimos 90 dias</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="pl-8 pr-8 pb-3 pt-3 border-b border-gray-100">
+        <div className="flex items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            {/* Filtro Data */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
+                Período:
+              </label>
+              <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
+                <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectValue placeholder="Selecionar período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Períodos</SelectItem>
+                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Filtro Status */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            {/* Filtro Status */}
+            <div className="flex items-center gap-1.5">
+            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
               Status:
             </label>
             <Select value={selectedAnalysisStatus} onValueChange={setSelectedAnalysisStatus}>
-              <SelectTrigger className="w-40 h-8">
+              <SelectTrigger className="w-32 h-8 text-xs">
                 <SelectValue placeholder="Selecionar status" />
               </SelectTrigger>
               <SelectContent>
@@ -395,8 +397,8 @@ const QualityDashboardPage: React.FC = () => {
           </div>
 
           {/* Filtro Fornecedor */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
               Fornecedor:
             </label>
             <Popover open={openSupplierCombo} onOpenChange={setOpenSupplierCombo}>
@@ -405,7 +407,7 @@ const QualityDashboardPage: React.FC = () => {
                   variant="outline"
                   role="combobox"
                   aria-expanded={openSupplierCombo}
-                  className="w-60 h-8 justify-between text-sm"
+                  className="w-48 h-8 justify-between text-xs"
                 >
                   {selectedSupplier === 'all'
                     ? "Todos os fornecedores"
@@ -460,8 +462,8 @@ const QualityDashboardPage: React.FC = () => {
           </div>
 
           {/* Filtro Contrato */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
               Contrato:
             </label>
             <Popover open={openContractCombo} onOpenChange={setOpenContractCombo}>
@@ -470,7 +472,7 @@ const QualityDashboardPage: React.FC = () => {
                   variant="outline"
                   role="combobox"
                   aria-expanded={openContractCombo}
-                  className="w-48 h-8 justify-between text-sm"
+                  className="w-40 h-8 justify-between text-xs"
                 >
                   {selectedContract === 'all'
                     ? "Todos os contratos"
@@ -523,6 +525,40 @@ const QualityDashboardPage: React.FC = () => {
               </PopoverContent>
             </Popover>
           </div>
+          </div>
+
+          {/* Toggle Quantidade/Valor */}
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
+              Visualizar:
+            </label>
+            <div className="flex rounded-md border border-gray-200 overflow-hidden h-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('quantity')}
+                className={`h-full rounded-none px-3 text-xs ${
+                  viewMode === 'quantity'
+                    ? 'bg-vivo-purple text-white hover:bg-vivo-purple/90'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Quantidade
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('value')}
+                className={`h-full rounded-none px-3 text-xs border-l ${
+                  viewMode === 'value'
+                    ? 'bg-vivo-purple text-white hover:bg-vivo-purple/90'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Valor
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -553,39 +589,37 @@ const QualityDashboardPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <Card>
                 <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Quantidade de Pagamentos</CardTitle>
+                  <CardTitle className="text-xs">
+                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos' : 'Valor Total de Pagamentos'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
-                  <div className="text-2xl font-bold text-vivo-purple">
-                    {allSamplesData.paymentCount}
+                  <div className={`text-2xl font-bold ${viewMode === 'quantity' ? 'text-vivo-purple' : 'text-blue-600'}`}>
+                    {viewMode === 'quantity' 
+                      ? allSamplesData.paymentCount 
+                      : formatCurrency(allSamplesData.totalPaymentValue)
+                    }
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Valor Total de Pagamentos</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className="text-xl font-bold text-blue-600">
-                    {formatCurrency(allSamplesData.totalPaymentValue)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Quantidade de Pagamentos por Fluxo</CardTitle>
+                  <CardTitle className="text-xs">
+                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos por Fluxo' : 'Valor de Pagamentos por Fluxo'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={allSamplesData.flowTypeCountsData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                    <BarChart 
+                      data={viewMode === 'quantity' ? allSamplesData.flowTypeCountsData : allSamplesData.flowTypeValuesData} 
+                      margin={{ top: 5, right: 5, left: 0, bottom: 60 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip 
+                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
                           backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                           border: '1px solid #e5e7eb',
@@ -597,37 +631,7 @@ const QualityDashboardPage: React.FC = () => {
                         dataKey="value" 
                         fill="#8B5CF6" 
                         radius={[6, 6, 0, 0]}
-                        name="Quantidade"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Valor de Pagamentos por Fluxo</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={allSamplesData.flowTypeValuesData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip 
-                        formatter={(value) => formatCurrency(Number(value))}
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Bar 
-                        dataKey="value" 
-                        fill="#8B5CF6" 
-                        radius={[6, 6, 0, 0]}
-                        name="Valor Total"
+                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -641,39 +645,37 @@ const QualityDashboardPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <Card>
                 <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Quantidade de Pagamentos</CardTitle>
+                  <CardTitle className="text-xs">
+                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos' : 'Valor Total de Pagamentos'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
-                  <div className="text-2xl font-bold text-green-600">
-                    {basicCheckData.paymentCount}
+                  <div className={`text-2xl font-bold ${viewMode === 'quantity' ? 'text-green-600' : 'text-blue-600'}`}>
+                    {viewMode === 'quantity' 
+                      ? basicCheckData.paymentCount 
+                      : formatCurrency(basicCheckData.totalPaymentValue)
+                    }
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Valor Total de Pagamentos</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className="text-xl font-bold text-blue-600">
-                    {formatCurrency(basicCheckData.totalPaymentValue)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Quantidade de Pagamentos por Fluxo</CardTitle>
+                  <CardTitle className="text-xs">
+                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos por Fluxo' : 'Valor de Pagamentos por Fluxo'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={basicCheckData.flowTypeCountsData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                    <BarChart 
+                      data={viewMode === 'quantity' ? basicCheckData.flowTypeCountsData : basicCheckData.flowTypeValuesData} 
+                      margin={{ top: 5, right: 5, left: 0, bottom: 60 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip 
+                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
                           backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                           border: '1px solid #e5e7eb',
@@ -685,37 +687,7 @@ const QualityDashboardPage: React.FC = () => {
                         dataKey="value" 
                         fill="#8B5CF6" 
                         radius={[6, 6, 0, 0]}
-                        name="Quantidade"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Valor de Pagamentos por Fluxo</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={basicCheckData.flowTypeValuesData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip 
-                        formatter={(value) => formatCurrency(Number(value))}
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Bar 
-                        dataKey="value" 
-                        fill="#8B5CF6" 
-                        radius={[6, 6, 0, 0]}
-                        name="Valor Total"
+                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -729,39 +701,37 @@ const QualityDashboardPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <Card>
                 <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Quantidade de Pagamentos</CardTitle>
+                  <CardTitle className="text-xs">
+                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos' : 'Valor Total de Pagamentos'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
-                  <div className="text-2xl font-bold text-emerald-600">
-                    {humanAnalysisData.paymentCount}
+                  <div className={`text-2xl font-bold ${viewMode === 'quantity' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                    {viewMode === 'quantity' 
+                      ? humanAnalysisData.paymentCount 
+                      : formatCurrency(humanAnalysisData.totalPaymentValue)
+                    }
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Valor Total de Pagamentos</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className="text-xl font-bold text-blue-600">
-                    {formatCurrency(humanAnalysisData.totalPaymentValue)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Quantidade de Pagamentos por Fluxo</CardTitle>
+                  <CardTitle className="text-xs">
+                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos por Fluxo' : 'Valor de Pagamentos por Fluxo'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={humanAnalysisData.flowTypeCountsData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
+                    <BarChart 
+                      data={viewMode === 'quantity' ? humanAnalysisData.flowTypeCountsData : humanAnalysisData.flowTypeValuesData} 
+                      margin={{ top: 5, right: 5, left: 0, bottom: 60 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip 
+                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
                           backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                           border: '1px solid #e5e7eb',
@@ -773,37 +743,7 @@ const QualityDashboardPage: React.FC = () => {
                         dataKey="value" 
                         fill="#8B5CF6" 
                         radius={[6, 6, 0, 0]}
-                        name="Quantidade"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">Valor de Pagamentos por Fluxo</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={humanAnalysisData.flowTypeValuesData} margin={{ top: 5, right: 5, left: 0, bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip 
-                        formatter={(value) => formatCurrency(Number(value))}
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Bar 
-                        dataKey="value" 
-                        fill="#8B5CF6" 
-                        radius={[6, 6, 0, 0]}
-                        name="Valor Total"
+                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
                       />
                     </BarChart>
                   </ResponsiveContainer>

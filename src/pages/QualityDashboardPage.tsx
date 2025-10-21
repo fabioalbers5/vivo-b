@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { useFilteredContractsOnly } from '@/hooks/useFilteredContractsOnly';
 import { useSampleHistory } from '@/hooks/useSampleHistory';
 import { useToast } from '@/hooks/use-toast';
@@ -456,7 +456,7 @@ const QualityDashboardPage: React.FC = () => {
 
         {/* Tabs de Análise */}
         <Tabs defaultValue="all" className="space-y-2">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               Todos os Pagamentos
@@ -468,6 +468,10 @@ const QualityDashboardPage: React.FC = () => {
             <TabsTrigger value="human" className="flex items-center gap-2">
               <UserCheck className="h-4 w-4" />
               Aprovados em Análise Humana
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Alertas
             </TabsTrigger>
           </TabsList>
 
@@ -732,6 +736,133 @@ const QualityDashboardPage: React.FC = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
+            </div>
+          </TabsContent>
+
+          {/* Aba de Alertas */}
+          <TabsContent value="alerts" className="space-y-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {/* Gráfico de Alertas por Tipo */}
+              <Card className="lg:col-span-2">
+                <CardHeader className="p-3">
+                  <CardTitle className="text-sm">Distribuição de Alertas por Tipo</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart 
+                      data={(() => {
+                        const alertCounts: Record<string, number> = {};
+                        filteredContracts
+                          .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+                          .forEach(c => {
+                            const alertType = c.alertType || 'Sem alerta';
+                            alertCounts[alertType] = (alertCounts[alertType] || 0) + 1;
+                          });
+                        return Object.entries(alertCounts)
+                          .map(([name, count]) => ({ name, count }))
+                          .sort((a, b) => b.count - a.count)
+                          .slice(0, 10);
+                      })()} 
+                      margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        height={100}
+                        tick={{ fontSize: 11 }}
+                      />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Quantidade"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Cards de Métricas */}
+              <div className="space-y-3">
+                {/* Total de Alertas */}
+                <Card className="border-l-4 border-l-purple-500">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-slate-600">Total de Alertas</p>
+                        <p className="text-2xl font-bold text-purple-600 mt-1">
+                          {filteredContracts.filter(c => c.alertType && c.alertType !== 'Contrato aprovado').length}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {formatCurrency(
+                            filteredContracts
+                              .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+                              .reduce((sum, c) => sum + (c.paymentValue ?? c.value ?? 0), 0)
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-lg p-2 bg-purple-50">
+                        <AlertTriangle className="h-5 w-5 text-purple-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Alertas Críticos */}
+                <Card className="border-l-4 border-l-red-500">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-slate-600">Alertas Críticos</p>
+                        <p className="text-2xl font-bold text-red-600 mt-1">
+                          {filteredContracts.filter(c => c.isUrgent || (c.alertType && c.alertType !== 'Contrato aprovado')).length}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Requerem atenção imediata
+                        </p>
+                      </div>
+                      <div className="rounded-lg p-2 bg-red-50">
+                        <RefreshCw className="h-5 w-5 text-red-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Tipos de Alertas */}
+                <Card className="border-l-4 border-l-blue-500">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-slate-600">Tipos Diferentes</p>
+                        <p className="text-2xl font-bold text-blue-600 mt-1">
+                          {new Set(
+                            filteredContracts
+                              .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+                              .map(c => c.alertType)
+                          ).size}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Categorias únicas
+                        </p>
+                      </div>
+                      <div className="rounded-lg p-2 bg-blue-50">
+                        <FileText className="h-5 w-5 text-blue-500" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

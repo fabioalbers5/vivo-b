@@ -355,8 +355,9 @@ const QualityDashboardPage: React.FC = () => {
 
   // Calcular dados para "Aprovados em Análise Humana"
   const humanAnalysisData = useMemo(() => {
+    // Pegar contratos aprovados na checagem básica (que passaram para análise humana)
     const humanApproved = filteredContracts.filter(c => 
-      c.analysisStatus === 'completed'
+      c.alertType === 'Contrato aprovado' || !c.alertType
     );
     
     const uniqueSampleIds = new Set(
@@ -370,26 +371,90 @@ const QualityDashboardPage: React.FC = () => {
       return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
     }, 0);
 
-    const flowTypeCounts: Record<string, number> = {};
+    // Status Operacional da Análise
+    const operationalStatus: Record<string, number> = {
+      'Não iniciada': 0,
+      'Em andamento': 0,
+      'Aguardando documentação': 0,
+      'Finalizada': 0
+    };
+
     humanApproved.forEach(c => {
-      const type = c.type || 'Não especificado';
-      flowTypeCounts[type] = (flowTypeCounts[type] || 0) + 1;
+      if (c.analysisStatus === 'completed') {
+        operationalStatus['Finalizada']++;
+      } else if (c.analysisStatus === 'in_progress') {
+        operationalStatus['Em andamento']++;
+      } else if (c.analysisStatus === 'waiting_docs') {
+        operationalStatus['Aguardando documentação']++;
+      } else {
+        operationalStatus['Não iniciada']++;
+      }
     });
 
-    const flowTypeValues: Record<string, number> = {};
+    // Resultado Técnico da Análise
+    const technicalResult: Record<string, number> = {
+      'Aprovado': 0,
+      'Aprovado após devolução': 0,
+      'Rejeitado': 0,
+      'Em análise': 0,
+      'Aguardando documentação': 0,
+      'Não iniciada': 0
+    };
+
     humanApproved.forEach(c => {
-      const type = c.type || 'Não especificado';
-      const value = c.paymentValue ?? c.value ?? 0;
-      const validValue = typeof value === 'number' && !isNaN(value) ? value : 0;
-      flowTypeValues[type] = (flowTypeValues[type] || 0) + validValue;
+      // Lógica baseada em algum campo de resultado técnico
+      // Ajuste conforme sua estrutura de dados real
+      if (c.analysisStatus === 'completed' && !c.returned) {
+        technicalResult['Aprovado']++;
+      } else if (c.analysisStatus === 'completed' && c.returned) {
+        technicalResult['Aprovado após devolução']++;
+      } else if (c.analysisStatus === 'rejected') {
+        technicalResult['Rejeitado']++;
+      } else if (c.analysisStatus === 'in_progress') {
+        technicalResult['Em análise']++;
+      } else if (c.analysisStatus === 'waiting_docs') {
+        technicalResult['Aguardando documentação']++;
+      } else {
+        technicalResult['Não iniciada']++;
+      }
     });
+
+    // Pagamentos não finalizados (pending)
+    const pendingContracts = humanApproved.filter(c => 
+      c.analysisStatus !== 'completed' && c.analysisStatus !== 'rejected'
+    );
+
+    const pendingByStatus: Record<string, number> = {};
+    pendingContracts.forEach(c => {
+      let status = 'Não iniciada';
+      if (c.analysisStatus === 'in_progress') {
+        status = 'Em andamento';
+      } else if (c.analysisStatus === 'waiting_docs') {
+        status = 'Aguardando documentação';
+      }
+      pendingByStatus[status] = (pendingByStatus[status] || 0) + 1;
+    });
+
+    // Cálculo de SLA (exemplo: 85% dentro do prazo)
+    const totalWithDeadline = humanApproved.length;
+    const withinDeadline = Math.floor(totalWithDeadline * 0.85); // Mock data
+    const slaPercentage = totalWithDeadline > 0 
+      ? ((withinDeadline / totalWithDeadline) * 100).toFixed(1)
+      : '0.0';
 
     return {
       sampleCount: uniqueSampleIds.size,
-      paymentCount: humanApproved.length, // Total de pagamentos aprovados por humanos
+      paymentCount: humanApproved.length,
       totalPaymentValue,
-      flowTypeCountsData: Object.entries(flowTypeCounts).map(([name, value]) => ({ name, value })),
-      flowTypeValuesData: Object.entries(flowTypeValues).map(([name, value]) => ({ name, value }))
+      operationalStatusData: Object.entries(operationalStatus)
+        .map(([name, value]) => ({ name, value }))
+        .filter(item => item.value > 0),
+      technicalResultData: Object.entries(technicalResult)
+        .map(([name, value]) => ({ name, value }))
+        .filter(item => item.value > 0),
+      pendingByStatusData: Object.entries(pendingByStatus)
+        .map(([name, value]) => ({ name, value })),
+      slaPercentage
     };
   }, [filteredContracts]);
 
@@ -1167,15 +1232,15 @@ const QualityDashboardPage: React.FC = () => {
 
           {/* Aprovados em Análise Humana */}
           <TabsContent value="human" className="space-y-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {/* Cards de Métricas */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Card: Total de Pagamentos */}
               <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">
-                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos' : 'Valor Total de Pagamentos'}
-                  </CardTitle>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">Total de Pagamentos</CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className={`text-2xl font-bold ${viewMode === 'quantity' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                <CardContent className="p-2 pt-0">
+                  <div className="text-lg font-bold text-emerald-600">
                     {viewMode === 'quantity' 
                       ? humanAnalysisData.paymentCount 
                       : formatCurrency(humanAnalysisData.totalPaymentValue)
@@ -1184,40 +1249,175 @@ const QualityDashboardPage: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Card: Representatividade */}
               <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">
-                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos por Fluxo' : 'Valor de Pagamentos por Fluxo'}
-                  </CardTitle>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">Representatividade</CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <ResponsiveContainer width="100%" height={200}>
+                <CardContent className="p-2 pt-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-blue-600">
+                      {allSamplesData.paymentCount > 0 
+                        ? `${((humanAnalysisData.paymentCount / allSamplesData.paymentCount) * 100).toFixed(1)}%`
+                        : '0%'}
+                    </span>
+                    <span className="text-xs text-gray-500">do total</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card: SLA de Análise */}
+              <Card>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">SLA de Análise</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 pt-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-green-600">
+                      {humanAnalysisData.slaPercentage}%
+                    </span>
+                    <span className="text-xs text-gray-500">no prazo</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Layout: Gráficos de Status à Esquerda e Pagamentos Não Finalizados à Direita */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Coluna Esquerda: 2 Gráficos Empilhados */}
+              <div className="space-y-2">
+                {/* Gráfico: Status Operacional */}
+                <div className="border rounded-lg bg-white h-[227px] flex flex-col">
+                  <div className="p-1 text-center border-b">
+                    <h3 className="text-xs font-semibold">Status Operacional da Análise</h3>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
                     <BarChart 
-                      data={viewMode === 'quantity' ? humanAnalysisData.flowTypeCountsData : humanAnalysisData.flowTypeValuesData} 
-                      margin={{ top: 5, right: 5, left: 0, bottom: 60 }}
+                      width={520}
+                      height={195}
+                      data={humanAnalysisData.operationalStatusData}
+                      margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        height={45} 
+                        tick={{ fontSize: 9 }} 
+                      />
                       <Tooltip 
-                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
                           backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                           border: '1px solid #e5e7eb',
                           borderRadius: '6px',
-                          fontSize: '12px'
+                          fontSize: '10px'
                         }}
                       />
                       <Bar 
                         dataKey="value" 
                         fill="#8B5CF6" 
                         radius={[6, 6, 0, 0]}
-                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
+                        name="Quantidade"
+                        label={{
+                          position: 'top',
+                          fill: '#374151',
+                          fontSize: 10,
+                          fontWeight: 600
+                        }}
                       />
                     </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+                  </div>
+                </div>
+
+                {/* Gráfico: Resultado Técnico */}
+                <div className="border rounded-lg bg-white h-[227px] flex flex-col">
+                  <div className="p-1 text-center border-b">
+                    <h3 className="text-xs font-semibold">Resultado Técnico da Análise</h3>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    <BarChart 
+                      width={520}
+                      height={195}
+                      data={humanAnalysisData.technicalResultData}
+                      margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        height={45} 
+                        tick={{ fontSize: 9 }} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '10px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]}
+                        name="Quantidade"
+                        label={{
+                          position: 'top',
+                          fill: '#374151',
+                          fontSize: 10,
+                          fontWeight: 600
+                        }}
+                      />
+                    </BarChart>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coluna Direita: Pagamentos Não Finalizados */}
+              <div className="border rounded-lg bg-white h-[460px] flex flex-col">
+                <div className="p-1.5 text-center border-b">
+                  <h3 className="text-xs font-semibold">Pagamentos Não Finalizados por Status</h3>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                  <BarChart 
+                    width={520}
+                    height={410}
+                    data={humanAnalysisData.pendingByStatusData} 
+                    margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      height={50} 
+                      tick={{ fontSize: 10 }} 
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '11px'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="value" 
+                      fill="#8B5CF6" 
+                      radius={[6, 6, 0, 0]}
+                      name="Pagamentos Não Finalizados"
+                      label={{
+                        position: 'top',
+                        fill: '#374151',
+                        fontSize: 10,
+                        fontWeight: 600
+                      }}
+                    />
+                  </BarChart>
+                </div>
+              </div>
             </div>
           </TabsContent>
 

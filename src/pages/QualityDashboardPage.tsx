@@ -14,7 +14,7 @@ import { useFilteredContractsOnly } from '@/hooks/useFilteredContractsOnly';
 import { useSampleHistory } from '@/hooks/useSampleHistory';
 import { useToast } from '@/hooks/use-toast';
 import { LegacyContract } from '@/hooks/useContractFilters';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
 
 const QualityDashboardPage: React.FC = () => {
@@ -47,6 +47,18 @@ const QualityDashboardPage: React.FC = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  // Função para formatar valores abreviados
+  const formatAbbreviatedValue = (value: number): string => {
+    if (value >= 1000000000) {
+      return `R$ ${(value / 1000000000).toFixed(2)}B`;
+    } else if (value >= 1000000) {
+      return `R$ ${(value / 1000000).toFixed(2)}M`;
+    } else if (value >= 1000) {
+      return `R$ ${(value / 1000).toFixed(2)}k`;
+    }
+    return `R$ ${value.toFixed(2)}`;
   };
 
   // Função para formatar data
@@ -351,12 +363,129 @@ const QualityDashboardPage: React.FC = () => {
     };
   }, [filteredContracts]);
 
+  // Calcular dados para gráficos empilhados de análise básica e humana
+  const analysisStackedData = useMemo(() => {
+    // Análise Básica - Aprovados vs Rejeitados por fluxo
+    const basicApprovedByFlow: Record<string, number> = {};
+    const basicApprovedValueByFlow: Record<string, number> = {};
+    const basicRejectedByFlow: Record<string, number> = {};
+    const basicRejectedValueByFlow: Record<string, number> = {};
+
+    filteredContracts.forEach(c => {
+      const type = c.type || 'Não especificado';
+      const value = c.paymentValue ?? c.value ?? 0;
+      const validValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+      
+      if (c.alertType === 'Contrato aprovado' || !c.alertType) {
+        basicApprovedByFlow[type] = (basicApprovedByFlow[type] || 0) + 1;
+        basicApprovedValueByFlow[type] = (basicApprovedValueByFlow[type] || 0) + validValue;
+      } else {
+        basicRejectedByFlow[type] = (basicRejectedByFlow[type] || 0) + 1;
+        basicRejectedValueByFlow[type] = (basicRejectedValueByFlow[type] || 0) + validValue;
+      }
+    });
+
+    // Análise Humana - Aprovados, Rejeitados e Devolvidos por fluxo
+    const humanApprovedByFlow: Record<string, number> = {};
+    const humanApprovedValueByFlow: Record<string, number> = {};
+    const humanRejectedByFlow: Record<string, number> = {};
+    const humanRejectedValueByFlow: Record<string, number> = {};
+    const humanReturnedByFlow: Record<string, number> = {};
+    const humanReturnedValueByFlow: Record<string, number> = {};
+
+    filteredContracts.forEach(c => {
+      const type = c.type || 'Não especificado';
+      const value = c.paymentValue ?? c.value ?? 0;
+      const validValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+      
+      if (c.analysisStatus === 'completed') {
+        humanApprovedByFlow[type] = (humanApprovedByFlow[type] || 0) + 1;
+        humanApprovedValueByFlow[type] = (humanApprovedValueByFlow[type] || 0) + validValue;
+      } else if (c.analysisStatus === 'rejected') {
+        humanRejectedByFlow[type] = (humanRejectedByFlow[type] || 0) + 1;
+        humanRejectedValueByFlow[type] = (humanRejectedValueByFlow[type] || 0) + validValue;
+      } else if (c.analysisStatus === 'pending' || c.analysisStatus === 'in_progress') {
+        humanReturnedByFlow[type] = (humanReturnedByFlow[type] || 0) + 1;
+        humanReturnedValueByFlow[type] = (humanReturnedValueByFlow[type] || 0) + validValue;
+      }
+    });
+
+    // Combinar todos os tipos de fluxo
+    const allFlowTypes = new Set([
+      ...Object.keys(basicApprovedByFlow),
+      ...Object.keys(basicRejectedByFlow),
+      ...Object.keys(humanApprovedByFlow),
+      ...Object.keys(humanRejectedByFlow),
+      ...Object.keys(humanReturnedByFlow)
+    ]);
+
+    const basicAnalysisCountData = Array.from(allFlowTypes).map(name => ({
+      name,
+      aprovados: basicApprovedByFlow[name] || 0,
+      rejeitados: basicRejectedByFlow[name] || 0
+    }));
+
+    const basicAnalysisValueData = Array.from(allFlowTypes).map(name => ({
+      name,
+      aprovados: basicApprovedValueByFlow[name] || 0,
+      rejeitados: basicRejectedValueByFlow[name] || 0
+    }));
+
+    const humanAnalysisCountData = Array.from(allFlowTypes).map(name => ({
+      name,
+      aprovados: humanApprovedByFlow[name] || 0,
+      rejeitados: humanRejectedByFlow[name] || 0,
+      devolvidos: humanReturnedByFlow[name] || 0
+    }));
+
+    const humanAnalysisValueData = Array.from(allFlowTypes).map(name => ({
+      name,
+      aprovados: humanApprovedValueByFlow[name] || 0,
+      rejeitados: humanRejectedValueByFlow[name] || 0,
+      devolvidos: humanReturnedValueByFlow[name] || 0
+    }));
+
+    // Calcular totais para legendas
+    const basicApprovedTotal = Object.values(basicApprovedByFlow).reduce((a, b) => a + b, 0);
+    const basicApprovedValueTotal = Object.values(basicApprovedValueByFlow).reduce((a, b) => a + b, 0);
+    const basicRejectedTotal = Object.values(basicRejectedByFlow).reduce((a, b) => a + b, 0);
+    const basicRejectedValueTotal = Object.values(basicRejectedValueByFlow).reduce((a, b) => a + b, 0);
+
+    const humanApprovedTotal = Object.values(humanApprovedByFlow).reduce((a, b) => a + b, 0);
+    const humanApprovedValueTotal = Object.values(humanApprovedValueByFlow).reduce((a, b) => a + b, 0);
+    const humanRejectedTotal = Object.values(humanRejectedByFlow).reduce((a, b) => a + b, 0);
+    const humanRejectedValueTotal = Object.values(humanRejectedValueByFlow).reduce((a, b) => a + b, 0);
+    const humanReturnedTotal = Object.values(humanReturnedByFlow).reduce((a, b) => a + b, 0);
+    const humanReturnedValueTotal = Object.values(humanReturnedValueByFlow).reduce((a, b) => a + b, 0);
+
+    return {
+      basicAnalysisCountData,
+      basicAnalysisValueData,
+      humanAnalysisCountData,
+      humanAnalysisValueData,
+      basicTotals: {
+        aprovados: basicApprovedTotal,
+        aprovadosValue: basicApprovedValueTotal,
+        rejeitados: basicRejectedTotal,
+        rejeitadosValue: basicRejectedValueTotal
+      },
+      humanTotals: {
+        aprovados: humanApprovedTotal,
+        aprovadosValue: humanApprovedValueTotal,
+        rejeitados: humanRejectedTotal,
+        rejeitadosValue: humanRejectedValueTotal,
+        devolvidos: humanReturnedTotal,
+        devolvidosValue: humanReturnedValueTotal
+      }
+    };
+  }, [filteredContracts]);
+
   const isLoading = contractsLoading || historyLoading;
 
   return (
     <div className="h-full flex flex-col">
       {/* Filtros */}
-      <div className="pl-8 pr-8 pb-3 pt-3 border-b border-gray-100">
+      <div className="pl-8 pr-8 pb-2 pt-2 border-b border-gray-100">
         <div className="flex items-center gap-3 justify-between">
           <div className="flex items-center gap-3">
             {/* Filtro Data */}
@@ -563,38 +692,38 @@ const QualityDashboardPage: React.FC = () => {
       </div>
 
       {/* Tabs de Análise */}
-      <div className="p-4">
-        <Tabs defaultValue="all" className="space-y-2">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
+      <div className="p-3 flex-1 overflow-hidden">
+        <Tabs defaultValue="all" className="h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-4 mb-2 h-9">
+            <TabsTrigger value="all" className="flex items-center gap-1.5 text-xs py-1">
+              <Database className="h-3.5 w-3.5" />
               Todos os Pagamentos
             </TabsTrigger>
-            <TabsTrigger value="basic" className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
+            <TabsTrigger value="basic" className="flex items-center gap-1.5 text-xs py-1">
+              <CheckCircle className="h-3.5 w-3.5" />
               Aprovados em Checagem Básica
             </TabsTrigger>
-            <TabsTrigger value="human" className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
+            <TabsTrigger value="human" className="flex items-center gap-1.5 text-xs py-1">
+              <UserCheck className="h-3.5 w-3.5" />
               Aprovados em Análise Humana
             </TabsTrigger>
-            <TabsTrigger value="alerts" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
+            <TabsTrigger value="alerts" className="flex items-center gap-1.5 text-xs py-1">
+              <AlertTriangle className="h-3.5 w-3.5" />
               Alertas
             </TabsTrigger>
           </TabsList>
 
           {/* Todas as Amostras */}
           <TabsContent value="all" className="space-y-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {/* Cards de Métricas */}
+            <div className="grid grid-cols-4 gap-2">
+              {/* Card: Todos os Pagamentos */}
               <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">
-                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos' : 'Valor Total de Pagamentos'}
-                  </CardTitle>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">Todos os Pagamentos</CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className={`text-2xl font-bold ${viewMode === 'quantity' ? 'text-vivo-purple' : 'text-blue-600'}`}>
+                <CardContent className="p-2 pt-0">
+                  <div className="text-lg font-bold text-vivo-purple">
                     {viewMode === 'quantity' 
                       ? allSamplesData.paymentCount 
                       : formatCurrency(allSamplesData.totalPaymentValue)
@@ -603,40 +732,285 @@ const QualityDashboardPage: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Card: Aprovados em Verificação Básica */}
               <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">
-                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos por Fluxo' : 'Valor de Pagamentos por Fluxo'}
-                  </CardTitle>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">Aprovados em Verificação Básica</CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <ResponsiveContainer width="100%" height={200}>
+                <CardContent className="p-2 pt-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-green-600">
+                      {viewMode === 'quantity' 
+                        ? basicCheckData.paymentCount 
+                        : formatCurrency(basicCheckData.totalPaymentValue)
+                      }
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      ({allSamplesData.paymentCount > 0 
+                        ? `${((basicCheckData.paymentCount / allSamplesData.paymentCount) * 100).toFixed(1)}%`
+                        : '0%'})
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card: Pagamentos na Amostra */}
+              <Card>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">Pagamentos na Amostra</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 pt-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-blue-600">
+                      {allSamplesData.sampleCount}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      ({allSamplesData.paymentCount > 0 
+                        ? `${((allSamplesData.sampleCount / allSamplesData.paymentCount) * 100).toFixed(1)}%`
+                        : '0%'})
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card: Pagamentos com Alerta */}
+              <Card>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">Pagamentos com Alerta</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 pt-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-red-600">
+                      {viewMode === 'quantity' 
+                        ? generalMetrics.contractsWithAlert 
+                        : formatCurrency(generalMetrics.alertPaymentValue)
+                      }
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      ({allSamplesData.paymentCount > 0 
+                        ? `${((generalMetrics.contractsWithAlert / allSamplesData.paymentCount) * 100).toFixed(1)}%`
+                        : '0%'})
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Layout: Gráfico Principal à Esquerda e Gráficos Empilhados à Direita */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Gráfico: Pagamentos por Fluxo - Esquerda */}
+              <div className="border rounded-lg bg-white h-[380px] flex flex-col">
+                <div className="p-1.5 text-center border-b">
+                  <h3 className="text-xs font-semibold">
+                    {viewMode === 'quantity' 
+                      ? 'Quantidade de Pagamentos por Fluxo' 
+                      : 'Valor de Pagamentos por Fluxo'
+                    }
+                  </h3>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                  <BarChart 
+                    width={520}
+                    height={320}
+                    data={viewMode === 'quantity' ? allSamplesData.flowTypeCountsData : allSamplesData.flowTypeValuesData} 
+                    margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      height={50} 
+                      tick={{ fontSize: 10 }} 
+                    />
+                    <Tooltip 
+                      formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '11px'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="value" 
+                      fill="#8B5CF6" 
+                      radius={[6, 6, 0, 0]}
+                      name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
+                      label={{
+                        position: 'top',
+                        fill: '#374151',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        formatter: (value: number) => viewMode === 'value' ? formatAbbreviatedValue(value) : value
+                      }}
+                    />
+                  </BarChart>
+                </div>
+              </div>
+
+              {/* Gráficos Empilhados: Análise Básica e Humana - Direita */}
+              <div className="space-y-2">
+                {/* Gráfico: Análise Básica */}
+                <div className="border rounded-lg bg-white h-[187px] flex flex-col">
+                  <div className="p-1 text-center border-b">
+                    <h3 className="text-xs font-semibold">
+                      {viewMode === 'quantity' 
+                        ? 'Análise Básica - Quantidade por Fluxo' 
+                        : 'Análise Básica - Valor por Fluxo'
+                      }
+                    </h3>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
                     <BarChart 
-                      data={viewMode === 'quantity' ? allSamplesData.flowTypeCountsData : allSamplesData.flowTypeValuesData} 
-                      margin={{ top: 5, right: 5, left: 0, bottom: 60 }}
+                      width={520}
+                      height={155}
+                      data={viewMode === 'quantity' ? analysisStackedData.basicAnalysisCountData : analysisStackedData.basicAnalysisValueData}
+                      margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        height={45} 
+                        tick={{ fontSize: 9 }} 
+                      />
                       <Tooltip 
                         formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
                           backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                           border: '1px solid #e5e7eb',
                           borderRadius: '6px',
-                          fontSize: '12px'
+                          fontSize: '10px'
+                        }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ fontSize: '11px', paddingLeft: '20px', paddingTop: '10px' }}
+                        iconType="rect"
+                        iconSize={10}
+                        layout="vertical"
+                        align="right"
+                        verticalAlign="middle"
+                        formatter={(value, entry) => {
+                          const totals = analysisStackedData.basicTotals;
+                          if (value === 'Aprovados') {
+                            return viewMode === 'quantity' 
+                              ? `Aprovados (${totals.aprovados})`
+                              : `Aprovados (${formatAbbreviatedValue(totals.aprovadosValue)})`;
+                          }
+                          if (value === 'Rejeitados') {
+                            return viewMode === 'quantity'
+                              ? `Rejeitados (${totals.rejeitados})`
+                              : `Rejeitados (${formatAbbreviatedValue(totals.rejeitadosValue)})`;
+                          }
+                          return value;
                         }}
                       />
                       <Bar 
-                        dataKey="value" 
-                        fill="#8B5CF6" 
+                        dataKey="aprovados" 
+                        stackId="a" 
+                        fill="#10b981" 
+                        name="Aprovados"
+                        radius={[0, 0, 0, 0]}
+                      />
+                      <Bar 
+                        dataKey="rejeitados" 
+                        stackId="a" 
+                        fill="#ef4444" 
+                        name="Rejeitados"
                         radius={[6, 6, 0, 0]}
-                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
                       />
                     </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+                  </div>
+                </div>
+
+                {/* Gráfico: Análise Humana */}
+                <div className="border rounded-lg bg-white h-[187px] flex flex-col">
+                  <div className="p-1 text-center border-b">
+                    <h3 className="text-xs font-semibold">
+                      {viewMode === 'quantity' 
+                        ? 'Análise Humana - Quantidade por Fluxo' 
+                        : 'Análise Humana - Valor por Fluxo'
+                      }
+                    </h3>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    <BarChart 
+                      width={520}
+                      height={155}
+                      data={viewMode === 'quantity' ? analysisStackedData.humanAnalysisCountData : analysisStackedData.humanAnalysisValueData}
+                      margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        height={45} 
+                        tick={{ fontSize: 9 }} 
+                      />
+                      <Tooltip 
+                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '10px'
+                        }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ fontSize: '11px', paddingLeft: '20px', paddingTop: '10px' }}
+                        iconType="rect"
+                        iconSize={10}
+                        layout="vertical"
+                        align="right"
+                        verticalAlign="middle"
+                        formatter={(value, entry) => {
+                          const totals = analysisStackedData.humanTotals;
+                          if (value === 'Aprovados') {
+                            return viewMode === 'quantity' 
+                              ? `Aprovados (${totals.aprovados})`
+                              : `Aprovados (${formatAbbreviatedValue(totals.aprovadosValue)})`;
+                          }
+                          if (value === 'Rejeitados') {
+                            return viewMode === 'quantity'
+                              ? `Rejeitados (${totals.rejeitados})`
+                              : `Rejeitados (${formatAbbreviatedValue(totals.rejeitadosValue)})`;
+                          }
+                          if (value === 'Devolvidos') {
+                            return viewMode === 'quantity'
+                              ? `Devolvidos (${totals.devolvidos})`
+                              : `Devolvidos (${formatAbbreviatedValue(totals.devolvidosValue)})`;
+                          }
+                          return value;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="aprovados" 
+                        stackId="a" 
+                        fill="#10b981" 
+                        name="Aprovados"
+                        radius={[0, 0, 0, 0]}
+                      />
+                      <Bar 
+                        dataKey="rejeitados" 
+                        stackId="a" 
+                        fill="#ef4444" 
+                        name="Rejeitados"
+                        radius={[0, 0, 0, 0]}
+                      />
+                      <Bar 
+                        dataKey="devolvidos" 
+                        stackId="a" 
+                        fill="#f59e0b" 
+                        name="Devolvidos"
+                        radius={[6, 6, 0, 0]}
+                      />
+                    </BarChart>
+                  </div>
+                </div>
+              </div>
             </div>
           </TabsContent>
 

@@ -9,16 +9,16 @@ import { useToast } from "@/hooks/use-toast";
 
 interface DocumentItem {
   id: string;
+  sapNumber: string;
+  documentType: string;
   file: File | null;
   fileName: string;
-  customFileName: string;
-  documentType: string;
 }
 
 const DocumentUploadPage = () => {
   const { toast } = useToast();
   const [documents, setDocuments] = useState<DocumentItem[]>([
-    { id: '1', file: null, fileName: '', customFileName: '', documentType: '' }
+    { id: '1', sapNumber: '', documentType: '', file: null, fileName: '' }
   ]);
 
   const documentTypes = [
@@ -29,18 +29,9 @@ const DocumentUploadPage = () => {
     "Demais documentos"
   ];
 
-  const handleFileSelect = (id: string, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setDocuments(documents.map(doc => 
-        doc.id === id ? { ...doc, file, fileName: file.name, customFileName: doc.customFileName || file.name.split('.')[0] } : doc
-      ));
-    }
-  };
-
-  const handleCustomFileNameChange = (id: string, value: string) => {
+  const handleSapNumberChange = (id: string, value: string) => {
     setDocuments(documents.map(doc => 
-      doc.id === id ? { ...doc, customFileName: value } : doc
+      doc.id === id ? { ...doc, sapNumber: value } : doc
     ));
   };
 
@@ -50,9 +41,18 @@ const DocumentUploadPage = () => {
     ));
   };
 
+  const handleFileSelect = (id: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setDocuments(documents.map(doc => 
+        doc.id === id ? { ...doc, file, fileName: file.name } : doc
+      ));
+    }
+  };
+
   const handleAddDocument = () => {
     const newId = String(documents.length + 1);
-    setDocuments([...documents, { id: newId, file: null, fileName: '', customFileName: '', documentType: '' }]);
+    setDocuments([...documents, { id: newId, sapNumber: '', documentType: '', file: null, fileName: '' }]);
   };
 
   const handleRemoveDocument = (id: string) => {
@@ -68,13 +68,13 @@ const DocumentUploadPage = () => {
   };
 
   const handleSubmit = () => {
-    // Validar se todos os documentos têm arquivo, nome e tipo selecionado
-    const hasEmptyFields = documents.some(doc => !doc.file || !doc.customFileName.trim() || !doc.documentType);
+    // Validar se todos os documentos têm número SAP, tipo e arquivo selecionado
+    const hasEmptyFields = documents.some(doc => !doc.sapNumber.trim() || !doc.documentType || !doc.file);
     
     if (hasEmptyFields) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, selecione o arquivo, digite o nome e escolha o tipo de documento para todos os itens.",
+        description: "Por favor, preencha o número do documento SAP, selecione o tipo de documento e escolha o arquivo para todos os itens.",
         variant: "destructive",
       });
       return;
@@ -89,7 +89,7 @@ const DocumentUploadPage = () => {
     });
 
     // Reset do formulário
-    setDocuments([{ id: '1', file: null, fileName: '', customFileName: '', documentType: '' }]);
+    setDocuments([{ id: '1', sapNumber: '', documentType: '', file: null, fileName: '' }]);
   };
 
   return (
@@ -124,7 +124,7 @@ const DocumentUploadPage = () => {
                 Documentos para Upload
               </CardTitle>
               <CardDescription>
-                Selecione os arquivos, defina um nome e identifique o tipo de cada documento
+                Informe o número do documento SAP, selecione o tipo e escolha o arquivo para cada documento
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
@@ -157,39 +157,17 @@ const DocumentUploadPage = () => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Seletor de Arquivo */}
+                        {/* Número do Documento SAP */}
                         <div className="space-y-2">
-                          <Label htmlFor={`file-${doc.id}`} className="text-sm font-medium">
-                            Arquivo *
-                          </Label>
-                          <div className="relative">
-                            <Input
-                              id={`file-${doc.id}`}
-                              type="file"
-                              onChange={(e) => handleFileSelect(doc.id, e)}
-                              className="cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-vivo-purple/10 file:text-vivo-purple hover:file:bg-vivo-purple/20"
-                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            />
-                          </div>
-                          {doc.fileName && (
-                            <p className="text-xs text-green-600 flex items-center gap-1">
-                              <Upload className="h-3 w-3" />
-                              Arquivo original: {doc.fileName}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Nome do Documento */}
-                        <div className="space-y-2">
-                          <Label htmlFor={`name-${doc.id}`} className="text-sm font-medium">
-                            Nome do Documento *
+                          <Label htmlFor={`sap-${doc.id}`} className="text-sm font-medium">
+                            Número do Documento SAP *
                           </Label>
                           <Input
-                            id={`name-${doc.id}`}
+                            id={`sap-${doc.id}`}
                             type="text"
-                            value={doc.customFileName}
-                            onChange={(e) => handleCustomFileNameChange(doc.id, e.target.value)}
-                            placeholder="Digite o nome do documento"
+                            value={doc.sapNumber}
+                            onChange={(e) => handleSapNumberChange(doc.id, e.target.value)}
+                            placeholder="Ex: 1234567890"
                             className="w-full"
                           />
                         </div>
@@ -214,6 +192,28 @@ const DocumentUploadPage = () => {
                               ))}
                             </SelectContent>
                           </Select>
+                        </div>
+
+                        {/* Seletor de Arquivo */}
+                        <div className="space-y-2">
+                          <Label htmlFor={`file-${doc.id}`} className="text-sm font-medium">
+                            Arquivo *
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id={`file-${doc.id}`}
+                              type="file"
+                              onChange={(e) => handleFileSelect(doc.id, e)}
+                              className="cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-vivo-purple/10 file:text-vivo-purple hover:file:bg-vivo-purple/20"
+                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            />
+                          </div>
+                          {doc.fileName && (
+                            <p className="text-xs text-green-600 flex items-center gap-1">
+                              <Upload className="h-3 w-3" />
+                              {doc.fileName}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>

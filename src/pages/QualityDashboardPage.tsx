@@ -1482,23 +1482,44 @@ const QualityDashboardPage: React.FC = () => {
               {/* Gráfico de Alertas por Tipo */}
               <Card className="lg:col-span-2">
                 <CardHeader className="p-3">
-                  <CardTitle className="text-sm">Distribuição de Alertas por Tipo</CardTitle>
+                  <CardTitle className="text-sm">
+                    {viewMode === 'quantity' 
+                      ? 'Distribuição de Alertas por Tipo (Quantidade)' 
+                      : 'Distribuição de Alertas por Tipo (Valor)'
+                    }
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3">
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart 
                       data={(() => {
-                        const alertCounts: Record<string, number> = {};
-                        filteredContracts
-                          .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
-                          .forEach(c => {
-                            const alertType = c.alertType || 'Sem alerta';
-                            alertCounts[alertType] = (alertCounts[alertType] || 0) + 1;
-                          });
-                        return Object.entries(alertCounts)
-                          .map(([name, count]) => ({ name, count }))
-                          .sort((a, b) => b.count - a.count)
-                          .slice(0, 10);
+                        if (viewMode === 'quantity') {
+                          const alertCounts: Record<string, number> = {};
+                          filteredContracts
+                            .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+                            .forEach(c => {
+                              const alertType = c.alertType || 'Sem alerta';
+                              alertCounts[alertType] = (alertCounts[alertType] || 0) + 1;
+                            });
+                          return Object.entries(alertCounts)
+                            .map(([name, value]) => ({ name, value }))
+                            .sort((a, b) => b.value - a.value)
+                            .slice(0, 10);
+                        } else {
+                          const alertValues: Record<string, number> = {};
+                          filteredContracts
+                            .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+                            .forEach(c => {
+                              const alertType = c.alertType || 'Sem alerta';
+                              const value = c.paymentValue ?? c.value ?? 0;
+                              const validValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+                              alertValues[alertType] = (alertValues[alertType] || 0) + validValue;
+                            });
+                          return Object.entries(alertValues)
+                            .map(([name, value]) => ({ name, value }))
+                            .sort((a, b) => b.value - a.value)
+                            .slice(0, 10);
+                        }
                       })()} 
                       margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
                     >
@@ -1512,6 +1533,7 @@ const QualityDashboardPage: React.FC = () => {
                       />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip 
+                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
                           backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                           border: '1px solid #e5e7eb',
@@ -1520,10 +1542,10 @@ const QualityDashboardPage: React.FC = () => {
                         }}
                       />
                       <Bar 
-                        dataKey="count" 
+                        dataKey="value" 
                         fill="#8B5CF6" 
                         radius={[6, 6, 0, 0]}
-                        name="Quantidade"
+                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -1539,14 +1561,24 @@ const QualityDashboardPage: React.FC = () => {
                       <div>
                         <p className="text-xs font-medium text-slate-600">Total de Alertas</p>
                         <p className="text-2xl font-bold text-purple-600 mt-1">
-                          {filteredContracts.filter(c => c.alertType && c.alertType !== 'Contrato aprovado').length}
+                          {viewMode === 'quantity'
+                            ? filteredContracts.filter(c => c.alertType && c.alertType !== 'Contrato aprovado').length
+                            : formatCurrency(
+                                filteredContracts
+                                  .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+                                  .reduce((sum, c) => sum + (c.paymentValue ?? c.value ?? 0), 0)
+                              )
+                          }
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                          {formatCurrency(
-                            filteredContracts
-                              .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
-                              .reduce((sum, c) => sum + (c.paymentValue ?? c.value ?? 0), 0)
-                          )}
+                          {viewMode === 'quantity'
+                            ? formatCurrency(
+                                filteredContracts
+                                  .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+                                  .reduce((sum, c) => sum + (c.paymentValue ?? c.value ?? 0), 0)
+                              )
+                            : `${filteredContracts.filter(c => c.alertType && c.alertType !== 'Contrato aprovado').length} alertas`
+                          }
                         </p>
                       </div>
                       <div className="rounded-lg p-2 bg-purple-50">
@@ -1563,7 +1595,14 @@ const QualityDashboardPage: React.FC = () => {
                       <div>
                         <p className="text-xs font-medium text-slate-600">Alertas Críticos</p>
                         <p className="text-2xl font-bold text-red-600 mt-1">
-                          {filteredContracts.filter(c => c.isUrgent || (c.alertType && c.alertType !== 'Contrato aprovado')).length}
+                          {viewMode === 'quantity'
+                            ? filteredContracts.filter(c => c.isUrgent || (c.alertType && c.alertType !== 'Contrato aprovado')).length
+                            : formatCurrency(
+                                filteredContracts
+                                  .filter(c => c.isUrgent || (c.alertType && c.alertType !== 'Contrato aprovado'))
+                                  .reduce((sum, c) => sum + (c.paymentValue ?? c.value ?? 0), 0)
+                              )
+                          }
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
                           Requerem atenção imediata

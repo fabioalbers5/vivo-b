@@ -1259,9 +1259,9 @@ const QualityDashboardPage: React.FC = () => {
                 <div className="flex-1 flex items-center justify-center">
                   <BarChart 
                     width={520}
-                    height={320}
+                    height={360}
                     data={viewMode === 'quantity' ? allSamplesData.flowTypeCountsData : allSamplesData.flowTypeValuesData} 
-                    margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
+                    margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
@@ -1313,9 +1313,9 @@ const QualityDashboardPage: React.FC = () => {
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={180}
+                      height={172}
                       data={viewMode === 'quantity' ? analysisStackedData.basicAnalysisCountData : analysisStackedData.basicAnalysisValueData}
-                      margin={{ top: 5, right: 10, left: 10, bottom: 50 }}
+                      margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
@@ -1388,9 +1388,9 @@ const QualityDashboardPage: React.FC = () => {
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={180}
+                      height={172}
                       data={viewMode === 'quantity' ? analysisStackedData.humanAnalysisCountData : analysisStackedData.humanAnalysisValueData}
-                      margin={{ top: 5, right: 10, left: 10, bottom: 50 }}
+                      margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
@@ -1547,9 +1547,9 @@ const QualityDashboardPage: React.FC = () => {
               <div className="flex-1 flex items-center justify-center">
                 <BarChart 
                   width={1100}
-                  height={320}
+                  height={360}
                   data={viewMode === 'quantity' ? basicCheckData.alertTypeCountsData : basicCheckData.alertTypeValuesData} 
-                  margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
+                  margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
@@ -1651,9 +1651,9 @@ const QualityDashboardPage: React.FC = () => {
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={230}
+                      height={175}
                       data={viewMode === 'quantity' ? humanAnalysisData.operationalStatusData : humanAnalysisData.operationalStatusValuesData}
-                      margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
+                      margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
@@ -1698,9 +1698,9 @@ const QualityDashboardPage: React.FC = () => {
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={230}
+                      height={175}
                       data={viewMode === 'quantity' ? humanAnalysisData.technicalResultData : humanAnalysisData.technicalResultValuesData}
-                      margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
+                      margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
@@ -1746,9 +1746,9 @@ const QualityDashboardPage: React.FC = () => {
                 <div className="flex-1 flex items-center justify-center">
                   <BarChart 
                     width={520}
-                    height={420}
+                    height={370}
                     data={viewMode === 'quantity' ? humanAnalysisData.pendingByStatusData : humanAnalysisData.pendingByStatusValuesData} 
-                    margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
+                    margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
@@ -1832,7 +1832,7 @@ const QualityDashboardPage: React.FC = () => {
                             .slice(0, 10);
                         }
                       })()} 
-                      margin={{ top: 10, right: 10, left: 10, bottom: 80 }}
+                      margin={{ top: 20, right: 10, left: 10, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 

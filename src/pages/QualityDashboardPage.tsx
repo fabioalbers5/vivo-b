@@ -1359,17 +1359,37 @@ const QualityDashboardPage: React.FC = () => {
                         angle={0} 
                         textAnchor="middle" 
                         height={60} 
-                        tick={{ fontSize: 9 }} 
-                        interval={0}
-                        tickFormatter={(value) => {
-                          // Quebrar texto em palavras
-                          const words = value.split(' ');
-                          if (words.length <= 2) return value;
-                          // Criar quebra de linha após 2 palavras
-                          const line1 = words.slice(0, 2).join(' ');
-                          const line2 = words.slice(2).join(' ');
-                          return `${line1}\n${line2}`;
+                        tick={({ x, y, payload }) => {
+                          const value = payload.value;
+                          let lines: string[] = [];
+                          
+                          if (value === 'Aguardando documentação') {
+                            lines = ['Aguardando', 'documentação'];
+                          } else if (value === 'Aprovado após devolução') {
+                            lines = ['Aprovado após', 'devolução'];
+                          } else {
+                            lines = [value];
+                          }
+                          
+                          return (
+                            <g transform={`translate(${x},${y})`}>
+                              {lines.map((line, index) => (
+                                <text
+                                  key={index}
+                                  x={0}
+                                  y={0}
+                                  dy={index * 12 + 10}
+                                  textAnchor="middle"
+                                  fill="#666"
+                                  fontSize={9}
+                                >
+                                  {line}
+                                </text>
+                              ))}
+                            </g>
+                          );
                         }}
+                        interval={0}
                       />
                       <Tooltip 
                         formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}

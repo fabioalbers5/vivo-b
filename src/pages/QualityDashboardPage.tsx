@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, ChevronsUpDown, Check } from 'lucide-react';
+import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, ChevronsUpDown, Check, Filter, X } from 'lucide-react';
 import { useFilteredContractsOnly } from '@/hooks/useFilteredContractsOnly';
 import { useSampleHistory } from '@/hooks/useSampleHistory';
 import { useToast } from '@/hooks/use-toast';
@@ -18,7 +18,18 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { cn } from '@/lib/utils';
 
 const QualityDashboardPage: React.FC = () => {
-  // Estados para filtros
+  // Estado da sidebar de filtros
+  const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+  
+  // Estados para filtros (temporários na sidebar)
+  const [tempDateRange, setTempDateRange] = useState<string>('all');
+  const [tempAnalysisStatus, setTempAnalysisStatus] = useState<string>('all');
+  const [tempSupplier, setTempSupplier] = useState<string>('all');
+  const [tempContract, setTempContract] = useState<string>('all');
+  const [tempFlowType, setTempFlowType] = useState<string>('all');
+  const [tempAnalyst, setTempAnalyst] = useState<string>('all');
+  
+  // Estados para filtros aplicados (ativos)
   const [selectedDateRange, setSelectedDateRange] = useState<string>('all');
   const [selectedAnalysisStatus, setSelectedAnalysisStatus] = useState<string>('all');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
@@ -44,6 +55,51 @@ const QualityDashboardPage: React.FC = () => {
     sampleId: 'all' 
   });
   const { sampleHistory, isLoading: historyLoading } = useSampleHistory();
+
+  // Funções para gerenciar filtros
+  const handleApplyFilters = () => {
+    setSelectedDateRange(tempDateRange);
+    setSelectedAnalysisStatus(tempAnalysisStatus);
+    setSelectedSupplier(tempSupplier);
+    setSelectedContract(tempContract);
+    setSelectedFlowType(tempFlowType);
+    setSelectedAnalyst(tempAnalyst);
+    setIsFilterSidebarOpen(false);
+    toast({
+      title: "Filtros aplicados",
+      description: "Os filtros foram aplicados com sucesso.",
+    });
+  };
+
+  const handleClearFilters = () => {
+    setTempDateRange('all');
+    setTempAnalysisStatus('all');
+    setTempSupplier('all');
+    setTempContract('all');
+    setTempFlowType('all');
+    setTempAnalyst('all');
+    setSelectedDateRange('all');
+    setSelectedAnalysisStatus('all');
+    setSelectedSupplier('all');
+    setSelectedContract('all');
+    setSelectedFlowType('all');
+    setSelectedAnalyst('all');
+    toast({
+      title: "Filtros limpos",
+      description: "Todos os filtros foram removidos.",
+    });
+  };
+
+  const handleOpenFilterSidebar = () => {
+    // Sincroniza valores temporários com os aplicados ao abrir
+    setTempDateRange(selectedDateRange);
+    setTempAnalysisStatus(selectedAnalysisStatus);
+    setTempSupplier(selectedSupplier);
+    setTempContract(selectedContract);
+    setTempFlowType(selectedFlowType);
+    setTempAnalyst(selectedAnalyst);
+    setIsFilterSidebarOpen(true);
+  };
 
   // Função para formatar moeda
   const formatCurrency = (value: number): string => {
@@ -611,11 +667,44 @@ const QualityDashboardPage: React.FC = () => {
   const isLoading = contractsLoading || historyLoading;
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Filtros */}
+    <div className="h-full flex flex-col relative">
+      {/* Barra de Controles */}
       <div className="pl-8 pr-8 pb-2 pt-2 border-b border-gray-100">
-        {/* Toggle Quantidade/Valor - Linha superior */}
-        <div className="flex justify-end mb-2">
+        <div className="flex justify-between items-center">
+          {/* Botões de Filtros */}
+          <div className="flex items-center gap-2">
+            {/* Botão Selecionar Filtros */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenFilterSidebar}
+              className="h-9 gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Selecionar Filtros
+              {(selectedDateRange !== 'all' || selectedAnalysisStatus !== 'all' || selectedSupplier !== 'all' || 
+                selectedContract !== 'all' || selectedFlowType !== 'all' || selectedAnalyst !== 'all') && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {[selectedDateRange, selectedAnalysisStatus, selectedSupplier, selectedContract, selectedFlowType, selectedAnalyst].filter(f => f !== 'all').length}
+                </Badge>
+              )}
+            </Button>
+
+            {/* Botão Limpar Filtros */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-9 gap-2"
+              disabled={selectedDateRange === 'all' && selectedAnalysisStatus === 'all' && selectedSupplier === 'all' && 
+                selectedContract === 'all' && selectedFlowType === 'all' && selectedAnalyst === 'all'}
+            >
+              <X className="h-4 w-4" />
+              Limpar Filtros
+            </Button>
+          </div>
+
+          {/* Toggle Quantidade/Valor */}
           <div className="flex items-center gap-1.5">
             <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
               Visualizar:
@@ -648,307 +737,354 @@ const QualityDashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Filtros - Linha inferior */}
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Filtro Data */}
-          <div className="flex items-center gap-1.5">
-              <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
-                Período:
-              </label>
-              <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
-                <SelectTrigger className="w-32 h-8 text-xs">
-                  <SelectValue placeholder="Selecionar período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Períodos</SelectItem>
-                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                  <SelectItem value="90d">Últimos 90 dias</SelectItem>
-                </SelectContent>
-              </Select>
+      {/* Sidebar de Filtros */}
+      {isFilterSidebarOpen && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/20 z-40"
+            onClick={() => setIsFilterSidebarOpen(false)}
+          />
+          
+          {/* Sidebar */}
+          <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-50 flex flex-col">
+            {/* Header da Sidebar */}
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filtros
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFilterSidebarOpen(false)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* Filtro Status */}
-            <div className="flex items-center gap-1.5">
-            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
-              Status:
-            </label>
-            <Select value={selectedAnalysisStatus} onValueChange={setSelectedAnalysisStatus}>
-              <SelectTrigger className="w-32 h-8 text-xs">
-                <SelectValue placeholder="Selecionar status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="in_progress">Em Progresso</SelectItem>
-                <SelectItem value="completed">Concluído</SelectItem>
-                <SelectItem value="rejected">Rejeitado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Conteúdo da Sidebar */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Filtro Data */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Período
+                </label>
+                <Select value={tempDateRange} onValueChange={setTempDateRange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecionar período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Períodos</SelectItem>
+                    <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                    <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                    <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* Filtro Fornecedor */}
-          <div className="flex items-center gap-1.5">
-            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
-              Fornecedor:
-            </label>
-            <Popover open={openSupplierCombo} onOpenChange={setOpenSupplierCombo}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openSupplierCombo}
-                  className="w-48 h-8 justify-between text-xs"
-                >
-                  {selectedSupplier === 'all'
-                    ? "Todos os fornecedores"
-                    : uniqueSuppliers.find((supplier) => supplier === selectedSupplier) || "Selecionar..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-60 p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar fornecedor..." className="h-8" />
-                  <CommandList>
-                    <CommandEmpty>Nenhum fornecedor encontrado.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="all"
-                        onSelect={() => {
-                          setSelectedSupplier('all');
-                          setOpenSupplierCombo(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedSupplier === 'all' ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        Todos os Fornecedores
-                      </CommandItem>
-                      {uniqueSuppliers.map((supplier) => (
-                        <CommandItem
-                          key={supplier}
-                          value={supplier}
-                          onSelect={(currentValue) => {
-                            setSelectedSupplier(currentValue);
-                            setOpenSupplierCombo(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedSupplier === supplier ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {supplier}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+              {/* Filtro Status */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Status
+                </label>
+                <Select value={tempAnalysisStatus} onValueChange={setTempAnalysisStatus}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecionar status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Status</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="in_progress">Em Progresso</SelectItem>
+                    <SelectItem value="completed">Concluído</SelectItem>
+                    <SelectItem value="rejected">Rejeitado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* Filtro Contrato */}
-          <div className="flex items-center gap-1.5">
-            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
-              Contrato:
-            </label>
-            <Popover open={openContractCombo} onOpenChange={setOpenContractCombo}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openContractCombo}
-                  className="w-40 h-8 justify-between text-xs"
-                >
-                  {selectedContract === 'all'
-                    ? "Todos os contratos"
-                    : uniqueContracts.find((contract) => contract === selectedContract) || "Selecionar..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar contrato..." className="h-8" />
-                  <CommandList>
-                    <CommandEmpty>Nenhum contrato encontrado.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="all"
-                        onSelect={() => {
-                          setSelectedContract('all');
-                          setOpenContractCombo(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedContract === 'all' ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        Todos os Contratos
-                      </CommandItem>
-                      {uniqueContracts.map((contract) => (
-                        <CommandItem
-                          key={contract}
-                          value={contract}
-                          onSelect={(currentValue) => {
-                            setSelectedContract(currentValue);
-                            setOpenContractCombo(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedContract === contract ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {contract}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+              {/* Filtro Fornecedor */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Fornecedor
+                </label>
+                <Popover open={openSupplierCombo} onOpenChange={setOpenSupplierCombo}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openSupplierCombo}
+                      className="w-full justify-between"
+                    >
+                      {tempSupplier === 'all'
+                        ? "Todos os fornecedores"
+                        : uniqueSuppliers.find((supplier) => supplier === tempSupplier) || "Selecionar..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar fornecedor..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum fornecedor encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="all"
+                            onSelect={() => {
+                              setTempSupplier('all');
+                              setOpenSupplierCombo(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                tempSupplier === 'all' ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            Todos os Fornecedores
+                          </CommandItem>
+                          {uniqueSuppliers.map((supplier) => (
+                            <CommandItem
+                              key={supplier}
+                              value={supplier}
+                              onSelect={(currentValue) => {
+                                setTempSupplier(currentValue);
+                                setOpenSupplierCombo(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  tempSupplier === supplier ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {supplier}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-          {/* Filtro Fluxo */}
-          <div className="flex items-center gap-1.5">
-            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
-              Fluxo:
-            </label>
-            <Popover open={openFlowTypeCombo} onOpenChange={setOpenFlowTypeCombo}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openFlowTypeCombo}
-                  className="w-40 h-8 justify-between text-xs"
-                >
-                  {selectedFlowType === 'all'
-                    ? "Todos os fluxos"
-                    : uniqueFlowTypes.find((flow) => flow === selectedFlowType) || "Selecionar..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar fluxo..." className="h-8" />
-                  <CommandList>
-                    <CommandEmpty>Nenhum fluxo encontrado.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="all"
-                        onSelect={() => {
-                          setSelectedFlowType('all');
-                          setOpenFlowTypeCombo(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedFlowType === 'all' ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        Todos os Fluxos
-                      </CommandItem>
-                      {uniqueFlowTypes.map((flowType) => (
-                        <CommandItem
-                          key={flowType}
-                          value={flowType}
-                          onSelect={(currentValue) => {
-                            setSelectedFlowType(currentValue);
-                            setOpenFlowTypeCombo(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedFlowType === flowType ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {flowType}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+              {/* Filtro Contrato */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Contrato
+                </label>
+                <Popover open={openContractCombo} onOpenChange={setOpenContractCombo}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openContractCombo}
+                      className="w-full justify-between"
+                    >
+                      {tempContract === 'all'
+                        ? "Todos os contratos"
+                        : uniqueContracts.find((contract) => contract === tempContract) || "Selecionar..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar contrato..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum contrato encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="all"
+                            onSelect={() => {
+                              setTempContract('all');
+                              setOpenContractCombo(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                tempContract === 'all' ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            Todos os Contratos
+                          </CommandItem>
+                          {uniqueContracts.map((contract) => (
+                            <CommandItem
+                              key={contract}
+                              value={contract}
+                              onSelect={(currentValue) => {
+                                setTempContract(currentValue);
+                                setOpenContractCombo(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  tempContract === contract ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {contract}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-          {/* Filtro Analista */}
-          <div className="flex items-center gap-1.5">
-            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
-              Analista:
-            </label>
-            <Popover open={openAnalystCombo} onOpenChange={setOpenAnalystCombo}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openAnalystCombo}
-                  className="w-40 h-8 justify-between text-xs"
-                >
-                  {selectedAnalyst === 'all'
-                    ? "Todos os analistas"
-                    : uniqueAnalysts.find((analyst) => analyst === selectedAnalyst) || "Selecionar..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar analista..." className="h-8" />
-                  <CommandList>
-                    <CommandEmpty>Nenhum analista encontrado.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="all"
-                        onSelect={() => {
-                          setSelectedAnalyst('all');
-                          setOpenAnalystCombo(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedAnalyst === 'all' ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        Todos os Analistas
-                      </CommandItem>
-                      {uniqueAnalysts.map((analyst) => (
-                        <CommandItem
-                          key={analyst}
-                          value={analyst}
-                          onSelect={(currentValue) => {
-                            setSelectedAnalyst(currentValue);
-                            setOpenAnalystCombo(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedAnalyst === analyst ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {analyst}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+              {/* Filtro Fluxo */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Tipo de Fluxo
+                </label>
+                <Popover open={openFlowTypeCombo} onOpenChange={setOpenFlowTypeCombo}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openFlowTypeCombo}
+                      className="w-full justify-between"
+                    >
+                      {tempFlowType === 'all'
+                        ? "Todos os fluxos"
+                        : uniqueFlowTypes.find((flow) => flow === tempFlowType) || "Selecionar..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar fluxo..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum fluxo encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="all"
+                            onSelect={() => {
+                              setTempFlowType('all');
+                              setOpenFlowTypeCombo(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                tempFlowType === 'all' ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            Todos os Fluxos
+                          </CommandItem>
+                          {uniqueFlowTypes.map((flowType) => (
+                            <CommandItem
+                              key={flowType}
+                              value={flowType}
+                              onSelect={(currentValue) => {
+                                setTempFlowType(currentValue);
+                                setOpenFlowTypeCombo(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  tempFlowType === flowType ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {flowType}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Filtro Analista */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Analista
+                </label>
+                <Popover open={openAnalystCombo} onOpenChange={setOpenAnalystCombo}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openAnalystCombo}
+                      className="w-full justify-between"
+                    >
+                      {tempAnalyst === 'all'
+                        ? "Todos os analistas"
+                        : uniqueAnalysts.find((analyst) => analyst === tempAnalyst) || "Selecionar..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar analista..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum analista encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="all"
+                            onSelect={() => {
+                              setTempAnalyst('all');
+                              setOpenAnalystCombo(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                tempAnalyst === 'all' ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            Todos os Analistas
+                          </CommandItem>
+                          {uniqueAnalysts.map((analyst) => (
+                            <CommandItem
+                              key={analyst}
+                              value={analyst}
+                              onSelect={(currentValue) => {
+                                setTempAnalyst(currentValue);
+                                setOpenAnalystCombo(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  tempAnalyst === analyst ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {analyst}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Footer da Sidebar com Botões */}
+            <div className="p-4 border-t bg-gray-50 space-y-2">
+              <Button
+                onClick={handleApplyFilters}
+                className="w-full bg-vivo-purple hover:bg-vivo-purple/90"
+              >
+                Aplicar Filtros
+              </Button>
+              <Button
+                onClick={handleClearFilters}
+                variant="outline"
+                className="w-full"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Tabs de Análise */}
       <div className="p-3 flex-1 overflow-hidden">

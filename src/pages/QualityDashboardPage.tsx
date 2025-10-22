@@ -23,8 +23,12 @@ const QualityDashboardPage: React.FC = () => {
   const [selectedAnalysisStatus, setSelectedAnalysisStatus] = useState<string>('all');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const [selectedContract, setSelectedContract] = useState<string>('all');
+  const [selectedFlowType, setSelectedFlowType] = useState<string>('all');
+  const [selectedAnalyst, setSelectedAnalyst] = useState<string>('all');
   const [openSupplierCombo, setOpenSupplierCombo] = useState(false);
   const [openContractCombo, setOpenContractCombo] = useState(false);
+  const [openFlowTypeCombo, setOpenFlowTypeCombo] = useState(false);
+  const [openAnalystCombo, setOpenAnalystCombo] = useState(false);
   const [viewMode, setViewMode] = useState<'quantity' | 'value'>('quantity');
   
   // Estados para modal de alertas
@@ -150,6 +154,26 @@ const QualityDashboardPage: React.FC = () => {
     return Array.from(contracts).sort();
   }, [allContracts]);
 
+  // Obter lista única de tipos de fluxo
+  const uniqueFlowTypes = useMemo(() => {
+    const flowTypes = new Set(
+      allContracts
+        .map(c => c.type)
+        .filter(t => t && t.trim() !== '')
+    );
+    return Array.from(flowTypes).sort();
+  }, [allContracts]);
+
+  // Obter lista única de analistas
+  const uniqueAnalysts = useMemo(() => {
+    const analysts = new Set(
+      allContracts
+        .map(c => c.analyst || c.assignedTo)
+        .filter(a => a && a.trim() !== '')
+    );
+    return Array.from(analysts).sort();
+  }, [allContracts]);
+
   // Filtrar contratos baseado nos filtros selecionados
   const filteredContracts = useMemo(() => {
     let filtered = [...allContracts];
@@ -196,8 +220,18 @@ const QualityDashboardPage: React.FC = () => {
       filtered = filtered.filter(c => c.number === selectedContract);
     }
 
+    // Filtro por tipo de fluxo
+    if (selectedFlowType !== 'all') {
+      filtered = filtered.filter(c => c.type === selectedFlowType);
+    }
+
+    // Filtro por analista
+    if (selectedAnalyst !== 'all') {
+      filtered = filtered.filter(c => c.analyst === selectedAnalyst || c.assignedTo === selectedAnalyst);
+    }
+
     return filtered;
-  }, [allContracts, selectedDateRange, selectedAnalysisStatus, selectedSupplier, selectedContract]);
+  }, [allContracts, selectedDateRange, selectedAnalysisStatus, selectedSupplier, selectedContract, selectedFlowType, selectedAnalyst]);
 
   // Calcular métricas gerais
   const generalMetrics = useMemo(() => {
@@ -580,10 +614,45 @@ const QualityDashboardPage: React.FC = () => {
     <div className="h-full flex flex-col">
       {/* Filtros */}
       <div className="pl-8 pr-8 pb-2 pt-2 border-b border-gray-100">
-        <div className="flex items-center gap-3 justify-between">
-          <div className="flex items-center gap-3">
-            {/* Filtro Data */}
-            <div className="flex items-center gap-1.5">
+        {/* Toggle Quantidade/Valor - Linha superior */}
+        <div className="flex justify-end mb-2">
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
+              Visualizar:
+            </label>
+            <div className="flex rounded-md border border-gray-200 overflow-hidden h-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('quantity')}
+                className={`h-full rounded-none px-3 text-xs ${
+                  viewMode === 'quantity'
+                    ? 'bg-vivo-purple text-white hover:bg-vivo-purple/90'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Quantidade
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('value')}
+                className={`h-full rounded-none px-3 text-xs border-l ${
+                  viewMode === 'value'
+                    ? 'bg-vivo-purple text-white hover:bg-vivo-purple/90'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Valor
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros - Linha inferior */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Filtro Data */}
+          <div className="flex items-center gap-1.5">
               <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
                 Período:
               </label>
@@ -748,39 +817,135 @@ const QualityDashboardPage: React.FC = () => {
               </PopoverContent>
             </Popover>
           </div>
-          </div>
 
-          {/* Toggle Quantidade/Valor */}
+          {/* Filtro Fluxo */}
           <div className="flex items-center gap-1.5">
             <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
-              Visualizar:
+              Fluxo:
             </label>
-            <div className="flex rounded-md border border-gray-200 overflow-hidden h-8">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode('quantity')}
-                className={`h-full rounded-none px-3 text-xs ${
-                  viewMode === 'quantity'
-                    ? 'bg-vivo-purple text-white hover:bg-vivo-purple/90'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Quantidade
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode('value')}
-                className={`h-full rounded-none px-3 text-xs border-l ${
-                  viewMode === 'value'
-                    ? 'bg-vivo-purple text-white hover:bg-vivo-purple/90'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Valor
-              </Button>
-            </div>
+            <Popover open={openFlowTypeCombo} onOpenChange={setOpenFlowTypeCombo}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openFlowTypeCombo}
+                  className="w-40 h-8 justify-between text-xs"
+                >
+                  {selectedFlowType === 'all'
+                    ? "Todos os fluxos"
+                    : uniqueFlowTypes.find((flow) => flow === selectedFlowType) || "Selecionar..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar fluxo..." className="h-8" />
+                  <CommandList>
+                    <CommandEmpty>Nenhum fluxo encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setSelectedFlowType('all');
+                          setOpenFlowTypeCombo(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedFlowType === 'all' ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Todos os Fluxos
+                      </CommandItem>
+                      {uniqueFlowTypes.map((flowType) => (
+                        <CommandItem
+                          key={flowType}
+                          value={flowType}
+                          onSelect={(currentValue) => {
+                            setSelectedFlowType(currentValue);
+                            setOpenFlowTypeCombo(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedFlowType === flowType ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {flowType}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Filtro Analista */}
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">
+              Analista:
+            </label>
+            <Popover open={openAnalystCombo} onOpenChange={setOpenAnalystCombo}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openAnalystCombo}
+                  className="w-40 h-8 justify-between text-xs"
+                >
+                  {selectedAnalyst === 'all'
+                    ? "Todos os analistas"
+                    : uniqueAnalysts.find((analyst) => analyst === selectedAnalyst) || "Selecionar..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar analista..." className="h-8" />
+                  <CommandList>
+                    <CommandEmpty>Nenhum analista encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setSelectedAnalyst('all');
+                          setOpenAnalystCombo(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedAnalyst === 'all' ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Todos os Analistas
+                      </CommandItem>
+                      {uniqueAnalysts.map((analyst) => (
+                        <CommandItem
+                          key={analyst}
+                          value={analyst}
+                          onSelect={(currentValue) => {
+                            setSelectedAnalyst(currentValue);
+                            setOpenAnalystCombo(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedAnalyst === analyst ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {analyst}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>

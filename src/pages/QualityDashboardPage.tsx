@@ -314,12 +314,42 @@ const QualityDashboardPage: React.FC = () => {
       flowTypeValues[type] = (flowTypeValues[type] || 0) + validValue;
     });
 
+    // Calcular alertas na checagem básica
+    const contractsWithAlerts = filteredContracts.filter(c => 
+      c.alertType && c.alertType !== 'Contrato aprovado'
+    );
+    
+    const alertsCount = contractsWithAlerts.length;
+    const alertsValue = contractsWithAlerts.reduce((sum, c) => {
+      const value = c.paymentValue ?? c.value ?? 0;
+      return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
+    }, 0);
+
+    // Agrupar alertas por tipo
+    const alertTypeCounts: Record<string, number> = {};
+    contractsWithAlerts.forEach(c => {
+      const alertType = c.alertType || 'Sem tipo';
+      alertTypeCounts[alertType] = (alertTypeCounts[alertType] || 0) + 1;
+    });
+
+    const alertTypeValues: Record<string, number> = {};
+    contractsWithAlerts.forEach(c => {
+      const alertType = c.alertType || 'Sem tipo';
+      const value = c.paymentValue ?? c.value ?? 0;
+      const validValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+      alertTypeValues[alertType] = (alertTypeValues[alertType] || 0) + validValue;
+    });
+
     return {
       sampleCount: uniqueSampleIds.size,
       paymentCount: basicApproved.length, // Total de pagamentos aprovados
       totalPaymentValue,
       flowTypeCountsData: Object.entries(flowTypeCounts).map(([name, value]) => ({ name, value })),
-      flowTypeValuesData: Object.entries(flowTypeValues).map(([name, value]) => ({ name, value }))
+      flowTypeValuesData: Object.entries(flowTypeValues).map(([name, value]) => ({ name, value })),
+      alertsCount,
+      alertsValue,
+      alertTypeCountsData: Object.entries(alertTypeCounts).map(([name, value]) => ({ name, value })),
+      alertTypeValuesData: Object.entries(alertTypeValues).map(([name, value]) => ({ name, value }))
     };
   }, [filteredContracts]);
 
@@ -1016,15 +1046,15 @@ const QualityDashboardPage: React.FC = () => {
 
           {/* Aprovados em Checagem Básica */}
           <TabsContent value="basic" className="space-y-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {/* Cards de Métricas */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Card: Total de Pagamentos */}
               <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">
-                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos' : 'Valor Total de Pagamentos'}
-                  </CardTitle>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">Total de Pagamentos</CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <div className={`text-2xl font-bold ${viewMode === 'quantity' ? 'text-green-600' : 'text-blue-600'}`}>
+                <CardContent className="p-2 pt-0">
+                  <div className="text-lg font-bold text-green-600">
                     {viewMode === 'quantity' 
                       ? basicCheckData.paymentCount 
                       : formatCurrency(basicCheckData.totalPaymentValue)
@@ -1033,40 +1063,105 @@ const QualityDashboardPage: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Card: Representatividade */}
               <Card>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xs">
-                    {viewMode === 'quantity' ? 'Quantidade de Pagamentos por Fluxo' : 'Valor de Pagamentos por Fluxo'}
-                  </CardTitle>
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs text-gray-600">Representatividade</CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart 
-                      data={viewMode === 'quantity' ? basicCheckData.flowTypeCountsData : basicCheckData.flowTypeValuesData} 
-                      margin={{ top: 5, right: 5, left: 0, bottom: 60 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip 
-                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(255, 255, 255, 0.96)', 
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Bar 
-                        dataKey="value" 
-                        fill="#8B5CF6" 
-                        radius={[6, 6, 0, 0]}
-                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <CardContent className="p-2 pt-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-blue-600">
+                      {allSamplesData.paymentCount > 0 
+                        ? `${((basicCheckData.paymentCount / allSamplesData.paymentCount) * 100).toFixed(1)}%`
+                        : '0%'}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      do total
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
+
+              {/* Card: Pagamentos com Alerta */}
+              <Card>
+                <CardHeader className="p-2 pb-1 flex flex-row items-center justify-between">
+                  <CardTitle className="text-xs text-gray-600">Pagamentos com Alerta</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => setIsAlertsModalOpen(true)}
+                  >
+                    <Eye className="h-4 w-4 text-vivo-purple" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-2 pt-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-red-600">
+                      {viewMode === 'quantity' 
+                        ? basicCheckData.alertsCount 
+                        : formatCurrency(basicCheckData.alertsValue)
+                      }
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      ({allSamplesData.paymentCount > 0 
+                        ? `${((basicCheckData.alertsCount / allSamplesData.paymentCount) * 100).toFixed(1)}%`
+                        : '0%'})
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Gráfico de Alertas por Tipo */}
+            <div className="border rounded-lg bg-white h-[380px] flex flex-col">
+              <div className="p-1.5 text-center border-b">
+                <h3 className="text-xs font-semibold">
+                  {viewMode === 'quantity' 
+                    ? 'Quantidade de Alertas por Tipo' 
+                    : 'Valor de Alertas por Tipo'
+                  }
+                </h3>
+              </div>
+              <div className="flex-1 flex items-center justify-center">
+                <BarChart 
+                  width={1100}
+                  height={320}
+                  data={viewMode === 'quantity' ? basicCheckData.alertTypeCountsData : basicCheckData.alertTypeValuesData} 
+                  margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={50} 
+                    tick={{ fontSize: 10 }} 
+                  />
+                  <Tooltip 
+                    formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '11px'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill="#8B5CF6" 
+                    radius={[6, 6, 0, 0]}
+                    name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
+                    label={{
+                      position: 'top',
+                      fill: '#374151',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      formatter: (value: number) => viewMode === 'value' ? formatAbbreviatedValue(value) : value
+                    }}
+                  />
+                </BarChart>
+              </div>
             </div>
           </TabsContent>
 

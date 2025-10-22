@@ -132,6 +132,59 @@ const QualityDashboardPage: React.FC = () => {
     }
   };
 
+  // Função para renderizar custom tick com quebra de linha automática
+  const renderCustomTick = ({ x, y, payload }: any) => {
+    const value = payload.value;
+    const maxCharsPerLine = 15;
+    let lines: string[] = [];
+
+    // Palavras que devem forçar quebra de linha
+    const breakWords = ['Aguardando', 'documentação', 'aprovado', 'após', 'devolução', 'Análise', 'Humana'];
+    
+    // Verifica se contém palavras específicas que precisam de quebra
+    if (value.includes('Aguardando documentação')) {
+      lines = ['Aguardando', 'documentação'];
+    } else if (value.includes('Aprovado após devolução')) {
+      lines = ['Aprovado após', 'devolução'];
+    } else if (value.includes('Análise Humana')) {
+      lines = ['Análise', 'Humana'];
+    } else if (value.length > maxCharsPerLine) {
+      // Quebra automática por tamanho
+      const words = value.split(' ');
+      let currentLine = '';
+      
+      words.forEach((word: string) => {
+        if ((currentLine + ' ' + word).trim().length <= maxCharsPerLine) {
+          currentLine = (currentLine + ' ' + word).trim();
+        } else {
+          if (currentLine) lines.push(currentLine);
+          currentLine = word;
+        }
+      });
+      if (currentLine) lines.push(currentLine);
+    } else {
+      lines = [value];
+    }
+
+    return (
+      <g transform={`translate(${x},${y})`}>
+        {lines.map((line, index) => (
+          <text
+            key={index}
+            x={0}
+            y={0}
+            dy={index * 12 + 10}
+            textAnchor="middle"
+            fill="#666"
+            fontSize={9}
+          >
+            {line}
+          </text>
+        ))}
+      </g>
+    );
+  };
+
   // Handlers do modal
   const handleOpenAlertsModal = () => {
     setIsAlertsModalOpen(true);
@@ -1208,15 +1261,16 @@ const QualityDashboardPage: React.FC = () => {
                     width={520}
                     height={320}
                     data={viewMode === 'quantity' ? allSamplesData.flowTypeCountsData : allSamplesData.flowTypeValuesData} 
-                    margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                    margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
                       dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={50} 
-                      tick={{ fontSize: 10 }} 
+                      angle={0}
+                      textAnchor="middle" 
+                      height={70}
+                      interval={0}
+                      tick={renderCustomTick}
                     />
                     <Tooltip 
                       formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
@@ -1259,17 +1313,18 @@ const QualityDashboardPage: React.FC = () => {
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={155}
+                      height={180}
                       data={viewMode === 'quantity' ? analysisStackedData.basicAnalysisCountData : analysisStackedData.basicAnalysisValueData}
-                      margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                      margin={{ top: 5, right: 10, left: 10, bottom: 50 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={45} 
-                        tick={{ fontSize: 9 }} 
+                        angle={0}
+                        textAnchor="middle" 
+                        height={60}
+                        interval={0}
+                        tick={renderCustomTick}
                       />
                       <Tooltip 
                         formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
@@ -1333,17 +1388,18 @@ const QualityDashboardPage: React.FC = () => {
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={155}
+                      height={180}
                       data={viewMode === 'quantity' ? analysisStackedData.humanAnalysisCountData : analysisStackedData.humanAnalysisValueData}
-                      margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                      margin={{ top: 5, right: 10, left: 10, bottom: 50 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={45} 
-                        tick={{ fontSize: 9 }} 
+                        angle={0}
+                        textAnchor="middle" 
+                        height={60}
+                        interval={0}
+                        tick={renderCustomTick}
                       />
                       <Tooltip 
                         formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
@@ -1493,15 +1549,16 @@ const QualityDashboardPage: React.FC = () => {
                   width={1100}
                   height={320}
                   data={viewMode === 'quantity' ? basicCheckData.alertTypeCountsData : basicCheckData.alertTypeValuesData} 
-                  margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                  margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
                     dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={50} 
-                    tick={{ fontSize: 10 }} 
+                    angle={0}
+                    textAnchor="middle" 
+                    height={70}
+                    interval={0}
+                    tick={renderCustomTick}
                   />
                   <Tooltip 
                     formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
@@ -1601,20 +1658,11 @@ const QualityDashboardPage: React.FC = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="name" 
-                        angle={0} 
+                        angle={0}
                         textAnchor="middle" 
-                        height={60} 
-                        tick={{ fontSize: 9 }} 
+                        height={60}
                         interval={0}
-                        tickFormatter={(value) => {
-                          // Quebrar texto em palavras
-                          const words = value.split(' ');
-                          if (words.length <= 2) return value;
-                          // Criar quebra de linha após 2 palavras
-                          const line1 = words.slice(0, 2).join(' ');
-                          const line2 = words.slice(2).join(' ');
-                          return `${line1}\n${line2}`;
-                        }}
+                        tick={renderCustomTick}
                       />
                       <Tooltip 
                         formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
@@ -1657,40 +1705,11 @@ const QualityDashboardPage: React.FC = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="name" 
-                        angle={0} 
+                        angle={0}
                         textAnchor="middle" 
-                        height={60} 
-                        tick={({ x, y, payload }) => {
-                          const value = payload.value;
-                          let lines: string[] = [];
-                          
-                          if (value === 'Aguardando documentação') {
-                            lines = ['Aguardando', 'documentação'];
-                          } else if (value === 'Aprovado após devolução') {
-                            lines = ['Aprovado após', 'devolução'];
-                          } else {
-                            lines = [value];
-                          }
-                          
-                          return (
-                            <g transform={`translate(${x},${y})`}>
-                              {lines.map((line, index) => (
-                                <text
-                                  key={index}
-                                  x={0}
-                                  y={0}
-                                  dy={index * 12 + 10}
-                                  textAnchor="middle"
-                                  fill="#666"
-                                  fontSize={9}
-                                >
-                                  {line}
-                                </text>
-                              ))}
-                            </g>
-                          );
-                        }}
+                        height={60}
                         interval={0}
+                        tick={renderCustomTick}
                       />
                       <Tooltip 
                         formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
@@ -1734,20 +1753,11 @@ const QualityDashboardPage: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
                       dataKey="name" 
-                      angle={0} 
+                      angle={0}
                       textAnchor="middle" 
-                      height={60} 
-                      tick={{ fontSize: 9 }} 
+                      height={60}
                       interval={0}
-                      tickFormatter={(value) => {
-                        // Quebrar texto em palavras
-                        const words = value.split(' ');
-                        if (words.length <= 2) return value;
-                        // Criar quebra de linha após 2 palavras
-                        const line1 = words.slice(0, 2).join(' ');
-                        const line2 = words.slice(2).join(' ');
-                        return `${line1}\n${line2}`;
-                      }}
+                      tick={renderCustomTick}
                     />
                     <Tooltip 
                       formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
@@ -1822,15 +1832,16 @@ const QualityDashboardPage: React.FC = () => {
                             .slice(0, 10);
                         }
                       })()} 
-                      margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
+                      margin={{ top: 10, right: 10, left: 10, bottom: 80 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end" 
+                        angle={0}
+                        textAnchor="middle" 
                         height={100}
-                        tick={{ fontSize: 11 }}
+                        interval={0}
+                        tick={renderCustomTick}
                       />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip 

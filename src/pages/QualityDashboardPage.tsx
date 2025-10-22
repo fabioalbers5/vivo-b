@@ -366,86 +366,74 @@ const QualityDashboardPage: React.FC = () => {
         .filter(id => id && id !== '')
     );
     
+    // Valor total real dos contratos
     const totalPaymentValue = humanApproved.reduce((sum, c) => {
       const value = c.paymentValue ?? c.value ?? 0;
       return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
     }, 0);
 
+    // Usar valor fictício se não houver valor real
+    const mockTotalValue = totalPaymentValue > 0 ? totalPaymentValue : 50000000; // R$ 50 milhões
+
+    // DADOS FICTÍCIOS PARA DEMONSTRAÇÃO
     // Status Operacional da Análise
     const operationalStatus: Record<string, number> = {
-      'Não iniciada': 0,
-      'Em andamento': 0,
-      'Aguardando documentação': 0,
-      'Finalizada': 0
+      'Não iniciada': Math.floor(humanApproved.length * 0.15), // 15%
+      'Em andamento': Math.floor(humanApproved.length * 0.25), // 25%
+      'Aguardando documentação': Math.floor(humanApproved.length * 0.10), // 10%
+      'Finalizada': Math.floor(humanApproved.length * 0.50) // 50%
     };
-
-    humanApproved.forEach(c => {
-      if (c.analysisStatus === 'completed') {
-        operationalStatus['Finalizada']++;
-      } else if (c.analysisStatus === 'in_progress') {
-        operationalStatus['Em andamento']++;
-      } else if (c.analysisStatus === 'waiting_docs') {
-        operationalStatus['Aguardando documentação']++;
-      } else {
-        operationalStatus['Não iniciada']++;
-      }
-    });
 
     // Resultado Técnico da Análise
     const technicalResult: Record<string, number> = {
-      'Aprovado': 0,
-      'Aprovado após devolução': 0,
-      'Rejeitado': 0,
-      'Em análise': 0,
-      'Aguardando documentação': 0,
-      'Não iniciada': 0
+      'Aprovado': Math.floor(humanApproved.length * 0.45), // 45%
+      'Aprovado após devolução': Math.floor(humanApproved.length * 0.12), // 12%
+      'Rejeitado': Math.floor(humanApproved.length * 0.08), // 8%
+      'Em análise': Math.floor(humanApproved.length * 0.20), // 20%
+      'Aguardando documentação': Math.floor(humanApproved.length * 0.10), // 10%
+      'Não iniciada': Math.floor(humanApproved.length * 0.05) // 5%
     };
 
-    humanApproved.forEach(c => {
-      // Lógica baseada em algum campo de resultado técnico
-      // Ajuste conforme sua estrutura de dados real
-      if (c.analysisStatus === 'completed' && !c.returned) {
-        technicalResult['Aprovado']++;
-      } else if (c.analysisStatus === 'completed' && c.returned) {
-        technicalResult['Aprovado após devolução']++;
-      } else if (c.analysisStatus === 'rejected') {
-        technicalResult['Rejeitado']++;
-      } else if (c.analysisStatus === 'in_progress') {
-        technicalResult['Em análise']++;
-      } else if (c.analysisStatus === 'waiting_docs') {
-        technicalResult['Aguardando documentação']++;
-      } else {
-        technicalResult['Não iniciada']++;
-      }
-    });
+    // Pagamentos não finalizados por status
+    const totalPending = Math.floor(humanApproved.length * 0.35); // 35% pendentes
+    const pendingByStatus: Record<string, number> = {
+      'Não iniciada': Math.floor(totalPending * 0.30), // 30% dos pendentes
+      'Em andamento': Math.floor(totalPending * 0.50), // 50% dos pendentes
+      'Aguardando documentação': Math.floor(totalPending * 0.20) // 20% dos pendentes
+    };
 
-    // Pagamentos não finalizados (pending)
-    const pendingContracts = humanApproved.filter(c => 
-      c.analysisStatus !== 'completed' && c.analysisStatus !== 'rejected'
-    );
+    // VALORES FICTÍCIOS (baseados no total)
+    const operationalStatusValues: Record<string, number> = {
+      'Não iniciada': mockTotalValue * 0.15,
+      'Em andamento': mockTotalValue * 0.25,
+      'Aguardando documentação': mockTotalValue * 0.10,
+      'Finalizada': mockTotalValue * 0.50
+    };
 
-    const pendingByStatus: Record<string, number> = {};
-    pendingContracts.forEach(c => {
-      let status = 'Não iniciada';
-      if (c.analysisStatus === 'in_progress') {
-        status = 'Em andamento';
-      } else if (c.analysisStatus === 'waiting_docs') {
-        status = 'Aguardando documentação';
-      }
-      pendingByStatus[status] = (pendingByStatus[status] || 0) + 1;
-    });
+    const technicalResultValues: Record<string, number> = {
+      'Aprovado': mockTotalValue * 0.45,
+      'Aprovado após devolução': mockTotalValue * 0.12,
+      'Rejeitado': mockTotalValue * 0.08,
+      'Em análise': mockTotalValue * 0.20,
+      'Aguardando documentação': mockTotalValue * 0.10,
+      'Não iniciada': mockTotalValue * 0.05
+    };
 
-    // Cálculo de SLA (exemplo: 85% dentro do prazo)
-    const totalWithDeadline = humanApproved.length;
-    const withinDeadline = Math.floor(totalWithDeadline * 0.85); // Mock data
-    const slaPercentage = totalWithDeadline > 0 
-      ? ((withinDeadline / totalWithDeadline) * 100).toFixed(1)
-      : '0.0';
+    const totalPendingValue = mockTotalValue * 0.35;
+    const pendingByStatusValues: Record<string, number> = {
+      'Não iniciada': totalPendingValue * 0.30,
+      'Em andamento': totalPendingValue * 0.50,
+      'Aguardando documentação': totalPendingValue * 0.20
+    };
+
+    // Cálculo de SLA (fictício: 87.5% dentro do prazo)
+    const slaPercentage = '87.5';
 
     return {
       sampleCount: uniqueSampleIds.size,
       paymentCount: humanApproved.length,
-      totalPaymentValue,
+      totalPaymentValue: mockTotalValue,
+      // Dados para visualização de QUANTIDADE
       operationalStatusData: Object.entries(operationalStatus)
         .map(([name, value]) => ({ name, value }))
         .filter(item => item.value > 0),
@@ -453,7 +441,18 @@ const QualityDashboardPage: React.FC = () => {
         .map(([name, value]) => ({ name, value }))
         .filter(item => item.value > 0),
       pendingByStatusData: Object.entries(pendingByStatus)
-        .map(([name, value]) => ({ name, value })),
+        .map(([name, value]) => ({ name, value }))
+        .filter(item => item.value > 0),
+      // Dados para visualização de VALOR
+      operationalStatusValuesData: Object.entries(operationalStatusValues)
+        .map(([name, value]) => ({ name, value }))
+        .filter(item => item.value > 0),
+      technicalResultValuesData: Object.entries(technicalResultValues)
+        .map(([name, value]) => ({ name, value }))
+        .filter(item => item.value > 0),
+      pendingByStatusValuesData: Object.entries(pendingByStatusValues)
+        .map(([name, value]) => ({ name, value }))
+        .filter(item => item.value > 0),
       slaPercentage
     };
   }, [filteredContracts]);
@@ -1287,26 +1286,37 @@ const QualityDashboardPage: React.FC = () => {
               {/* Coluna Esquerda: 2 Gráficos Empilhados */}
               <div className="space-y-2">
                 {/* Gráfico: Status Operacional */}
-                <div className="border rounded-lg bg-white h-[227px] flex flex-col">
+                <div className="border rounded-lg bg-white h-[190px] flex flex-col">
                   <div className="p-1 text-center border-b">
                     <h3 className="text-xs font-semibold">Status Operacional da Análise</h3>
                   </div>
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={195}
-                      data={humanAnalysisData.operationalStatusData}
-                      margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                      height={230}
+                      data={viewMode === 'quantity' ? humanAnalysisData.operationalStatusData : humanAnalysisData.operationalStatusValuesData}
+                      margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={45} 
+                        angle={0} 
+                        textAnchor="middle" 
+                        height={60} 
                         tick={{ fontSize: 9 }} 
+                        interval={0}
+                        tickFormatter={(value) => {
+                          // Quebrar texto em palavras
+                          const words = value.split(' ');
+                          if (words.length <= 2) return value;
+                          // Criar quebra de linha após 2 palavras
+                          const line1 = words.slice(0, 2).join(' ');
+                          const line2 = words.slice(2).join(' ');
+                          return `${line1}\n${line2}`;
+                        }}
                       />
                       <Tooltip 
+                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
                           backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                           border: '1px solid #e5e7eb',
@@ -1318,12 +1328,13 @@ const QualityDashboardPage: React.FC = () => {
                         dataKey="value" 
                         fill="#8B5CF6" 
                         radius={[6, 6, 0, 0]}
-                        name="Quantidade"
+                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor'}
                         label={{
                           position: 'top',
                           fill: '#374151',
                           fontSize: 10,
-                          fontWeight: 600
+                          fontWeight: 600,
+                          formatter: (value: number) => viewMode === 'value' ? formatAbbreviatedValue(value) : value
                         }}
                       />
                     </BarChart>
@@ -1331,26 +1342,37 @@ const QualityDashboardPage: React.FC = () => {
                 </div>
 
                 {/* Gráfico: Resultado Técnico */}
-                <div className="border rounded-lg bg-white h-[227px] flex flex-col">
+                <div className="border rounded-lg bg-white h-[190px] flex flex-col">
                   <div className="p-1 text-center border-b">
                     <h3 className="text-xs font-semibold">Resultado Técnico da Análise</h3>
                   </div>
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={195}
-                      data={humanAnalysisData.technicalResultData}
-                      margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                      height={230}
+                      data={viewMode === 'quantity' ? humanAnalysisData.technicalResultData : humanAnalysisData.technicalResultValuesData}
+                      margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={45} 
+                        angle={0} 
+                        textAnchor="middle" 
+                        height={60} 
                         tick={{ fontSize: 9 }} 
+                        interval={0}
+                        tickFormatter={(value) => {
+                          // Quebrar texto em palavras
+                          const words = value.split(' ');
+                          if (words.length <= 2) return value;
+                          // Criar quebra de linha após 2 palavras
+                          const line1 = words.slice(0, 2).join(' ');
+                          const line2 = words.slice(2).join(' ');
+                          return `${line1}\n${line2}`;
+                        }}
                       />
                       <Tooltip 
+                        formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
                           backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                           border: '1px solid #e5e7eb',
@@ -1362,12 +1384,13 @@ const QualityDashboardPage: React.FC = () => {
                         dataKey="value" 
                         fill="#8B5CF6" 
                         radius={[6, 6, 0, 0]}
-                        name="Quantidade"
+                        name={viewMode === 'quantity' ? 'Quantidade' : 'Valor'}
                         label={{
                           position: 'top',
                           fill: '#374151',
                           fontSize: 10,
-                          fontWeight: 600
+                          fontWeight: 600,
+                          formatter: (value: number) => viewMode === 'value' ? formatAbbreviatedValue(value) : value
                         }}
                       />
                     </BarChart>
@@ -1376,26 +1399,37 @@ const QualityDashboardPage: React.FC = () => {
               </div>
 
               {/* Coluna Direita: Pagamentos Não Finalizados */}
-              <div className="border rounded-lg bg-white h-[460px] flex flex-col">
+              <div className="border rounded-lg bg-white h-[385px] flex flex-col">
                 <div className="p-1.5 text-center border-b">
                   <h3 className="text-xs font-semibold">Pagamentos Não Finalizados por Status</h3>
                 </div>
                 <div className="flex-1 flex items-center justify-center">
                   <BarChart 
                     width={520}
-                    height={410}
-                    data={humanAnalysisData.pendingByStatusData} 
-                    margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                    height={420}
+                    data={viewMode === 'quantity' ? humanAnalysisData.pendingByStatusData : humanAnalysisData.pendingByStatusValuesData} 
+                    margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
                       dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={50} 
-                      tick={{ fontSize: 10 }} 
+                      angle={0} 
+                      textAnchor="middle" 
+                      height={60} 
+                      tick={{ fontSize: 9 }} 
+                      interval={0}
+                      tickFormatter={(value) => {
+                        // Quebrar texto em palavras
+                        const words = value.split(' ');
+                        if (words.length <= 2) return value;
+                        // Criar quebra de linha após 2 palavras
+                        const line1 = words.slice(0, 2).join(' ');
+                        const line2 = words.slice(2).join(' ');
+                        return `${line1}\n${line2}`;
+                      }}
                     />
                     <Tooltip 
+                      formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                       contentStyle={{ 
                         backgroundColor: 'rgba(255, 255, 255, 0.96)', 
                         border: '1px solid #e5e7eb',
@@ -1407,12 +1441,13 @@ const QualityDashboardPage: React.FC = () => {
                       dataKey="value" 
                       fill="#8B5CF6" 
                       radius={[6, 6, 0, 0]}
-                      name="Pagamentos Não Finalizados"
+                      name={viewMode === 'quantity' ? 'Pagamentos Não Finalizados' : 'Valor Não Finalizado'}
                       label={{
                         position: 'top',
                         fill: '#374151',
                         fontSize: 10,
-                        fontWeight: 600
+                        fontWeight: 600,
+                        formatter: (value: number) => viewMode === 'value' ? formatAbbreviatedValue(value) : value
                       }}
                     />
                   </BarChart>

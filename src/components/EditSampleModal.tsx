@@ -33,7 +33,6 @@ import {
   Mail,
   Paperclip,
   History,
-  UserPlus,
   AlertCircle,
   Flame,
   FileText,
@@ -44,7 +43,6 @@ import {
   CheckCircle,
   Clock,
   Tag,
-  Send,
 } from "lucide-react";
 import { LegacyContract } from "@/hooks/useContractFilters";
 import { useAnalysts } from "@/hooks/useAnalysts";
@@ -57,12 +55,6 @@ interface EditSampleModalProps {
   onClose: () => void;
   payment: LegacyContract | null;
   onSave: (updatedPayment: LegacyContract) => void;
-}
-
-interface WatcherEmail {
-  id: string;
-  email: string;
-  name: string;
 }
 
 interface ActivityLog {
@@ -81,9 +73,6 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
   const [selectedAnalyst, setSelectedAnalyst] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
   const [notes, setNotes] = useState("");
-  const [watchers, setWatchers] = useState<WatcherEmail[]>([]);
-  const [newWatcherEmail, setNewWatcherEmail] = useState("");
-  const [newWatcherName, setNewWatcherName] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [analysisStatus, setAnalysisStatus] = useState<'pending' | 'in_progress' | 'completed' | 'rejected'>('pending');
   const [priority, setPriority] = useState("normal");
@@ -120,46 +109,6 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
     }
   }, [payment]);
 
-  const handleAddWatcher = () => {
-    if (!newWatcherEmail || !newWatcherName) {
-      toast({
-        title: "Erro",
-        description: "Preencha o nome e email do observador",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newWatcherEmail)) {
-      toast({
-        title: "Email inválido",
-        description: "Digite um email válido",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newWatcher: WatcherEmail = {
-      id: Date.now().toString(),
-      email: newWatcherEmail,
-      name: newWatcherName,
-    };
-
-    setWatchers([...watchers, newWatcher]);
-    setNewWatcherEmail("");
-    setNewWatcherName("");
-
-    toast({
-      title: "Observador adicionado",
-      description: `${newWatcherName} receberá notificações sobre esta amostra`,
-    });
-  };
-
-  const handleRemoveWatcher = (watcherId: string) => {
-    setWatchers(watchers.filter(w => w.id !== watcherId));
-  };
-
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
@@ -173,23 +122,6 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
 
   const handleRemoveAttachment = (index: number) => {
     setAttachments(attachments.filter((_, i) => i !== index));
-  };
-
-  const handleSendEmail = () => {
-    if (watchers.length === 0) {
-      toast({
-        title: "Nenhum destinatário",
-        description: "Adicione observadores antes de enviar o email",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Simulação de envio de email
-    toast({
-      title: "Email enviado",
-      description: `Notificação enviada para ${watchers.length} pessoa(s)`,
-    });
   };
 
   const handleSave = async () => {
@@ -223,7 +155,6 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
         priority,
         estimatedCompletionDate,
         reviewComments,
-        watchers: watchers.map(w => w.email),
         lastModified: new Date().toISOString(),
       };
 
@@ -292,14 +223,10 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
         </DialogHeader>
 
         <Tabs defaultValue="general" className="flex-1 flex flex-col overflow-hidden min-h-0 w-full">
-          <TabsList className="mx-4 mt-2 w-[calc(100%-2rem)] grid grid-cols-4 h-9 flex-shrink-0">
+          <TabsList className="mx-4 mt-2 w-[calc(100%-2rem)] grid grid-cols-3 h-9 flex-shrink-0">
             <TabsTrigger value="general" className="flex items-center justify-center gap-1 text-xs px-1">
               <User className="h-3 w-3 flex-shrink-0" />
               <span className="hidden sm:inline truncate">Geral</span>
-            </TabsTrigger>
-            <TabsTrigger value="watchers" className="flex items-center justify-center gap-1 text-xs px-1">
-              <UserPlus className="h-3 w-3 flex-shrink-0" />
-              <span className="hidden sm:inline truncate">Observadores</span>
             </TabsTrigger>
             <TabsTrigger value="attachments" className="flex items-center justify-center gap-1 text-xs px-1">
               <Paperclip className="h-3 w-3 flex-shrink-0" />
@@ -490,96 +417,6 @@ const EditSampleModal = ({ isOpen, onClose, payment, onSave }: EditSampleModalPr
                     className="text-sm resize-none"
                   />
                 </div>
-              </div>
-            </TabsContent>
-
-            {/* ABA OBSERVADORES */}
-            <TabsContent value="watchers" className="mt-3 space-y-3 w-full max-w-full overflow-hidden">
-              <div className="space-y-3 w-full max-w-full overflow-hidden">
-                <div className="flex items-center justify-between gap-2 w-full max-w-full overflow-hidden">
-                  <h3 className="text-sm font-semibold flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-                    <UserPlus className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span className="truncate">Observadores e Notificações</span>
-                  </h3>
-                  <Button onClick={handleSendEmail} size="sm" className="gap-1.5 h-8 flex-shrink-0">
-                    <Send className="h-3 w-3" />
-                    <span className="text-xs hidden sm:inline">Enviar</span>
-                  </Button>
-                </div>
-
-                <p className="text-xs text-muted-foreground w-full max-w-full break-words">
-                  Adicione pessoas que devem receber notificações sobre alterações nesta amostra.
-                </p>
-
-                {/* Formulário para adicionar observador */}
-                <div className="grid grid-cols-5 gap-2 p-3 border rounded-lg bg-muted/50 w-full max-w-full overflow-hidden">
-                  <div className="col-span-2 space-y-1.5 min-w-0">
-                    <Label htmlFor="watcher-name" className="text-xs">Nome</Label>
-                    <Input
-                      id="watcher-name"
-                      placeholder="Nome completo"
-                      value={newWatcherName}
-                      onChange={(e) => setNewWatcherName(e.target.value)}
-                      className="h-8 text-sm w-full"
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-1.5 min-w-0">
-                    <Label htmlFor="watcher-email" className="text-xs">Email</Label>
-                    <Input
-                      id="watcher-email"
-                      type="email"
-                      placeholder="email@exemplo.com"
-                      value={newWatcherEmail}
-                      onChange={(e) => setNewWatcherEmail(e.target.value)}
-                      className="h-8 text-sm w-full"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="invisible text-xs">Ação</Label>
-                    <Button onClick={handleAddWatcher} className="w-full gap-1.5 h-8">
-                      <UserPlus className="h-3 w-3" />
-                      <span className="text-xs">Add</span>
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Lista de observadores */}
-                {watchers.length > 0 ? (
-                  <div className="space-y-2 w-full max-w-full overflow-hidden">
-                    <Label className="text-xs">Pessoas Observando ({watchers.length})</Label>
-                    <div className="space-y-1.5 w-full max-w-full overflow-hidden">
-                      {watchers.map((watcher) => (
-                        <div
-                          key={watcher.id}
-                          className="flex items-center justify-between p-2 border rounded-lg hover:bg-muted/50 transition-colors gap-2 w-full max-w-full overflow-hidden"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <User className="h-4 w-4 text-primary" />
-                            </div>
-                            <div className="min-w-0 flex-1 overflow-hidden">
-                              <p className="font-medium text-sm truncate w-full">{watcher.name}</p>
-                              <p className="text-xs text-muted-foreground truncate w-full">{watcher.email}</p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveWatcher(watcher.id)}
-                            className="h-7 w-7 p-0 flex-shrink-0"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <UserPlus className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Nenhum observador adicionado</p>
-                  </div>
-                )}
               </div>
             </TabsContent>
 

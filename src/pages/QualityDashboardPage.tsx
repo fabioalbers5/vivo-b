@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, ChevronsUpDown, Check, Filter, X } from 'lucide-react';
+import { useAllContracts } from '@/hooks/useAllContracts';
 import { useFilteredContractsOnly } from '@/hooks/useFilteredContractsOnly';
 import { useSampleHistory } from '@/hooks/useSampleHistory';
 import { useToast } from '@/hooks/use-toast';
@@ -42,6 +43,9 @@ const QualityDashboardPage: React.FC = () => {
   const [openAnalystCombo, setOpenAnalystCombo] = useState(false);
   const [viewMode, setViewMode] = useState<'quantity' | 'value'>('quantity');
   
+  // Estado para rastrear a aba ativa
+  const [activeTab, setActiveTab] = useState<string>('all');
+  
   // Estados para modal de alertas
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
   const [selectedForNextSample, setSelectedForNextSample] = useState<Set<string>>(new Set());
@@ -51,10 +55,21 @@ const QualityDashboardPage: React.FC = () => {
   const { toast } = useToast();
 
   // Hooks para dados
-  const { contracts: allContracts, isLoading: contractsLoading } = useFilteredContractsOnly({ 
+  // useAllContracts: busca TODOS os contratos da tabela contratos_vivo (para aba "Todos os Pagamentos")
+  const { allContracts: allPaymentsFromVivo, isLoading: vivoLoading } = useAllContracts();
+  
+  // useFilteredContractsOnly: busca apenas contratos da tabela contratos_filtrados (para abas de amostra)
+  const { contracts: sampleContracts, isLoading: sampleLoading } = useFilteredContractsOnly({ 
     sampleId: 'all' 
   });
+  
   const { sampleHistory, isLoading: historyLoading } = useSampleHistory();
+
+  // Selecionar fonte de dados baseada na aba ativa
+  // Aba "all" (Todos os Pagamentos) → dados de contratos_vivo
+  // Outras abas → dados de contratos_filtrados
+  const allContracts = activeTab === 'all' ? allPaymentsFromVivo : sampleContracts;
+  const contractsLoading = activeTab === 'all' ? vivoLoading : sampleLoading;
 
   // Funções para gerenciar filtros
   const handleApplyFilters = () => {
@@ -277,7 +292,7 @@ const QualityDashboardPage: React.FC = () => {
   const uniqueAnalysts = useMemo(() => {
     const analysts = new Set(
       allContracts
-        .map(c => c.analyst || c.assignedTo)
+        .map(c => c.analyst)
         .filter(a => a && a.trim() !== '')
     );
     return Array.from(analysts).sort();
@@ -336,7 +351,7 @@ const QualityDashboardPage: React.FC = () => {
 
     // Filtro por analista
     if (selectedAnalyst !== 'all') {
-      filtered = filtered.filter(c => c.analyst === selectedAnalyst || c.assignedTo === selectedAnalyst);
+      filtered = filtered.filter(c => c.analyst === selectedAnalyst);
     }
 
     return filtered;
@@ -1141,7 +1156,7 @@ const QualityDashboardPage: React.FC = () => {
 
       {/* Tabs de Análise */}
       <div className="p-3 flex-1 overflow-hidden">
-        <Tabs defaultValue="all" className="h-full flex flex-col">
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <TabsList className="grid w-full grid-cols-4 mb-2 h-9">
             <TabsTrigger value="all" className="flex items-center gap-1.5 text-xs py-1">
               <Database className="h-3.5 w-3.5" />
@@ -1210,11 +1225,11 @@ const QualityDashboardPage: React.FC = () => {
                 <CardContent className="p-2 pt-0">
                   <div className="flex items-baseline gap-2">
                     <span className="text-lg font-bold text-blue-600">
-                      {allSamplesData.sampleCount}
+                      {sampleContracts.length}
                     </span>
                     <span className="text-xs text-gray-500">
                       ({allSamplesData.paymentCount > 0 
-                        ? `${((allSamplesData.sampleCount / allSamplesData.paymentCount) * 100).toFixed(1)}%`
+                        ? `${((sampleContracts.length / allSamplesData.paymentCount) * 100).toFixed(1)}%`
                         : '0%'})
                     </span>
                   </div>

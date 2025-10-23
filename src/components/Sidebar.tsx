@@ -38,6 +38,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
       description: 'Análise de qualidade e compliance'
     },
     {
+      id: 'logs',
+      label: 'Logs',
+      icon: FileText,
+      description: 'Visualizar logs do sistema'
+    },
+    {
       id: 'document-upload',
       label: 'Upload de arquivo',
       icon: Upload,
@@ -128,34 +134,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
               </h3>
             )}
             
-            <Button
-              variant={activePage === 'logs' ? "default" : "ghost"}
-              className={`w-full ${isExpanded ? 'justify-start h-10 px-3' : 'justify-center h-10 p-2'} ${
-                activePage === 'logs'
-                  ? "bg-vivo-purple hover:bg-vivo-purple/90 text-white" 
-                  : "hover:bg-muted/50"
-              } transition-all duration-300`}
-              onClick={() => onPageChange('logs')}
-              title={!isExpanded ? "Logs" : undefined}
-            >
-              {isExpanded ? (
-                <div className="flex items-center gap-3 w-full">
-                  <FileText className={`h-4 w-4 flex-shrink-0 ${
-                    activePage === 'logs' ? "text-white" : "text-muted-foreground"
-                  }`} />
-                  <div className={`text-sm font-medium ${
-                    activePage === 'logs' ? "text-white" : "text-foreground"
-                  }`}>
-                    Logs
-                  </div>
-                </div>
-              ) : (
-                <FileText className={`h-5 w-5 ${
-                  activePage === 'logs' ? "text-white" : "text-muted-foreground"
-                }`} />
-              )}
-            </Button>
-
             <Button
               variant="ghost"
               className={`w-full ${isExpanded ? 'justify-start h-10 px-3' : 'justify-center h-10 p-2'} hover:bg-muted/50 transition-all duration-300`}

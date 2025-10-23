@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, ChevronsUpDown, Check, Filter, X } from 'lucide-react';
+import { TrendingUp, AlertTriangle, DollarSign, FileText, Database, CheckCircle, UserCheck, BarChart3, Eye, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, ChevronsUpDown, Check, Filter, X, Brain } from 'lucide-react';
 import { useAllContracts } from '@/hooks/useAllContracts';
 import { useFilteredContractsOnly } from '@/hooks/useFilteredContractsOnly';
 import { useSampleHistory } from '@/hooks/useSampleHistory';
@@ -51,6 +51,11 @@ const QualityDashboardPage: React.FC = () => {
   const [selectedForNextSample, setSelectedForNextSample] = useState<Set<string>>(new Set());
   const [sortColumn, setSortColumn] = useState<string>('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Estados para modais de ações da tabela
+  const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+  const [isAIAnalysisModalOpen, setIsAIAnalysisModalOpen] = useState(false);
+  const [selectedContractForModal, setSelectedContractForModal] = useState<LegacyContract | null>(null);
 
   const { toast } = useToast();
 
@@ -207,6 +212,17 @@ const QualityDashboardPage: React.FC = () => {
 
   const handleCloseAlertsModal = () => {
     setIsAlertsModalOpen(false);
+  };
+  
+  // Handlers para visualizar documento e análise da IA
+  const handleViewDocument = (contract: LegacyContract) => {
+    setSelectedContractForModal(contract);
+    setIsDocumentModalOpen(true);
+  };
+  
+  const handleViewAIAnalysis = (contract: LegacyContract) => {
+    setSelectedContractForModal(contract);
+    setIsAIAnalysisModalOpen(true);
   };
 
   const handleToggleSelection = (contractId: string) => {
@@ -1668,7 +1684,7 @@ const QualityDashboardPage: React.FC = () => {
                       width={520}
                       height={175}
                       data={viewMode === 'quantity' ? humanAnalysisData.operationalStatusData : humanAnalysisData.operationalStatusValuesData}
-                      margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+                      margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
@@ -1803,11 +1819,11 @@ const QualityDashboardPage: React.FC = () => {
           </TabsContent>
 
           {/* Aba de Alertas */}
-          <TabsContent value="alerts" className="space-y-2">
+          <TabsContent value="alerts" className="space-y-2 flex-1 flex flex-col overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {/* Gráfico de Alertas por Tipo */}
               <Card className="lg:col-span-2">
-                <CardHeader className="p-3">
+                <CardHeader className="p-3 pb-0">
                   <CardTitle className="text-sm">
                     {viewMode === 'quantity' 
                       ? 'Distribuição de Alertas por Tipo (Quantidade)' 
@@ -1815,8 +1831,8 @@ const QualityDashboardPage: React.FC = () => {
                     }
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3">
-                  <ResponsiveContainer width="100%" height={300}>
+                <CardContent className="p-3 pt-1">
+                  <ResponsiveContainer width="100%" height={160}>
                     <BarChart 
                       data={(() => {
                         if (viewMode === 'quantity') {
@@ -1847,18 +1863,17 @@ const QualityDashboardPage: React.FC = () => {
                             .slice(0, 10);
                         }
                       })()} 
-                      margin={{ top: 20, right: 10, left: 10, bottom: 0 }}
+                      margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="name" 
                         angle={0}
                         textAnchor="middle" 
-                        height={100}
+                        height={50}
                         interval={0}
                         tick={renderCustomTick}
                       />
-                      <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip 
                         formatter={(value) => viewMode === 'value' ? formatCurrency(Number(value)) : value}
                         contentStyle={{ 
@@ -1873,6 +1888,13 @@ const QualityDashboardPage: React.FC = () => {
                         fill="#8B5CF6" 
                         radius={[6, 6, 0, 0]}
                         name={viewMode === 'quantity' ? 'Quantidade' : 'Valor Total'}
+                        label={{
+                          position: 'top',
+                          fill: '#374151',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          formatter: (value: number) => viewMode === 'value' ? formatAbbreviatedValue(value) : value
+                        }}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -1898,14 +1920,12 @@ const QualityDashboardPage: React.FC = () => {
                           }
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                          {viewMode === 'quantity'
-                            ? formatCurrency(
-                                filteredContracts
-                                  .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
-                                  .reduce((sum, c) => sum + (c.paymentValue ?? c.value ?? 0), 0)
-                              )
-                            : `${filteredContracts.filter(c => c.alertType && c.alertType !== 'Contrato aprovado').length} alertas`
-                          }
+                          {(() => {
+                            const alertCount = filteredContracts.filter(c => c.alertType && c.alertType !== 'Contrato aprovado').length;
+                            const totalPayments = filteredContracts.length;
+                            const percentage = totalPayments > 0 ? ((alertCount / totalPayments) * 100).toFixed(1) : '0.0';
+                            return `${percentage}% do total de pagamentos`;
+                          })()}
                         </p>
                       </div>
                       <div className="rounded-lg p-2 bg-purple-50">
@@ -1923,16 +1943,21 @@ const QualityDashboardPage: React.FC = () => {
                         <p className="text-xs font-medium text-slate-600">Alertas Críticos</p>
                         <p className="text-2xl font-bold text-red-600 mt-1">
                           {viewMode === 'quantity'
-                            ? filteredContracts.filter(c => c.isUrgent || (c.alertType && c.alertType !== 'Contrato aprovado')).length
+                            ? filteredContracts.filter(c => c.risk === 'Alto' && c.alertType && c.alertType !== 'Contrato aprovado').length
                             : formatCurrency(
                                 filteredContracts
-                                  .filter(c => c.isUrgent || (c.alertType && c.alertType !== 'Contrato aprovado'))
+                                  .filter(c => c.risk === 'Alto' && c.alertType && c.alertType !== 'Contrato aprovado')
                                   .reduce((sum, c) => sum + (c.paymentValue ?? c.value ?? 0), 0)
                               )
                           }
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                          Requerem atenção imediata
+                          {(() => {
+                            const criticalCount = filteredContracts.filter(c => c.risk === 'Alto' && c.alertType && c.alertType !== 'Contrato aprovado').length;
+                            const totalAlerts = filteredContracts.filter(c => c.alertType && c.alertType !== 'Contrato aprovado').length;
+                            const percentage = totalAlerts > 0 ? ((criticalCount / totalAlerts) * 100).toFixed(1) : '0.0';
+                            return `${percentage}% dos alertas`;
+                          })()}
                         </p>
                       </div>
                       <div className="rounded-lg p-2 bg-red-50">
@@ -1941,32 +1966,99 @@ const QualityDashboardPage: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Tipos de Alertas */}
-                <Card className="border-l-4 border-l-blue-500">
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-xs font-medium text-slate-600">Tipos Diferentes</p>
-                        <p className="text-2xl font-bold text-blue-600 mt-1">
-                          {new Set(
-                            filteredContracts
-                              .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
-                              .map(c => c.alertType)
-                          ).size}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Categorias únicas
-                        </p>
-                      </div>
-                      <div className="rounded-lg p-2 bg-blue-50">
-                        <FileText className="h-5 w-5 text-blue-500" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </div>
+
+            {/* Tabela de Alertas */}
+            <Card className="flex-1 flex flex-col overflow-hidden">
+              <CardHeader className="p-3 flex-shrink-0">
+                <CardTitle className="text-sm">Detalhamento de Pagamentos com Alerta</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 flex-1 overflow-hidden">
+                <div className="h-full overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-gray-50 z-10">
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="text-xs font-semibold bg-gray-50 w-24">Ações</TableHead>
+                        <TableHead className="text-xs font-semibold bg-gray-50">Id do Pagamento</TableHead>
+                        <TableHead className="text-xs font-semibold bg-gray-50">Fornecedor</TableHead>
+                        <TableHead className="text-xs font-semibold bg-gray-50">Valor</TableHead>
+                        <TableHead className="text-xs font-semibold bg-gray-50">Fluxo</TableHead>
+                        <TableHead className="text-xs font-semibold bg-gray-50">Alerta</TableHead>
+                        <TableHead className="text-xs font-semibold bg-gray-50">Data de Vencimento</TableHead>
+                        <TableHead className="text-xs font-semibold bg-gray-50">Risco</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredContracts
+                        .filter(c => c.alertType && c.alertType !== 'Contrato aprovado')
+                        .map((contract, index) => (
+                          <TableRow key={index} className="hover:bg-gray-50">
+                            <TableCell className="text-xs">
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 hover:bg-blue-50 hover:text-blue-600"
+                                  onClick={() => handleViewDocument(contract)}
+                                  title="Visualizar Documento"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 hover:bg-purple-50 hover:text-purple-600"
+                                  onClick={() => handleViewAIAnalysis(contract)}
+                                  title="Visualizar Análise da IA"
+                                >
+                                  <Brain className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs font-medium">{contract.number}</TableCell>
+                            <TableCell className="text-xs">{contract.supplier}</TableCell>
+                            <TableCell className="text-xs font-medium">
+                              {formatCurrency(contract.paymentValue ?? contract.value ?? 0)}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              <Badge variant="outline" className="text-xs">
+                                {contract.type || contract.flowType || 'N/A'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              <Badge variant="outline" className="text-xs">
+                                {contract.alertType || 'N/A'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {contract.paymentDueDate 
+                                ? new Date(contract.paymentDueDate).toLocaleDateString('pt-BR')
+                                : contract.dueDate 
+                                ? new Date(contract.dueDate).toLocaleDateString('pt-BR')
+                                : 'N/A'
+                              }
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              <Badge 
+                                variant={
+                                  contract.risk === 'Alto' ? 'destructive' : 
+                                  contract.risk === 'Médio' ? 'default' : 
+                                  'secondary'
+                                }
+                                className="text-xs"
+                              >
+                                {contract.risk || 'N/A'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      }
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -2131,6 +2223,150 @@ const QualityDashboardPage: React.FC = () => {
               >
                 Adicionar à Próxima Amostragem
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Visualizar Documento */}
+      <Dialog open={isDocumentModalOpen} onOpenChange={setIsDocumentModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-600" />
+              Documentos do Contrato {selectedContractForModal?.number}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Fornecedor</p>
+                <p className="text-sm">{selectedContractForModal?.supplier}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Valor</p>
+                <p className="text-sm font-semibold">{selectedContractForModal && formatCurrency(selectedContractForModal.paymentValue ?? selectedContractForModal.value ?? 0)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Tipo de Fluxo</p>
+                <p className="text-sm">{selectedContractForModal?.type || selectedContractForModal?.flowType || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Data de Vencimento</p>
+                <p className="text-sm">
+                  {selectedContractForModal?.paymentDueDate 
+                    ? new Date(selectedContractForModal.paymentDueDate).toLocaleDateString('pt-BR')
+                    : selectedContractForModal?.dueDate 
+                    ? new Date(selectedContractForModal.dueDate).toLocaleDateString('pt-BR')
+                    : 'N/A'
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-semibold mb-3">Documentos Anexados</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-gray-600" />
+                    <div>
+                      <p className="text-sm font-medium">Contrato.pdf</p>
+                      <p className="text-xs text-gray-500">2.4 MB</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-1" />
+                    Visualizar
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-gray-600" />
+                    <div>
+                      <p className="text-sm font-medium">Nota_Fiscal.pdf</p>
+                      <p className="text-xs text-gray-500">1.8 MB</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-1" />
+                    Visualizar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Análise da IA */}
+      <Dialog open={isAIAnalysisModalOpen} onOpenChange={setIsAIAnalysisModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-purple-600" />
+              Análise da IA - Contrato {selectedContractForModal?.number}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 overflow-y-auto max-h-[60vh]">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Alerta Identificado
+              </h3>
+              <p className="text-sm text-purple-800">
+                <strong>{selectedContractForModal?.alertType || 'N/A'}</strong>
+              </p>
+            </div>
+
+            <div className="border rounded-lg p-4">
+              <h3 className="text-sm font-semibold mb-3">Análise Detalhada</h3>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="font-medium text-gray-700">Nível de Risco:</p>
+                  <Badge 
+                    variant={
+                      selectedContractForModal?.risk === 'Alto' ? 'destructive' : 
+                      selectedContractForModal?.risk === 'Médio' ? 'default' : 
+                      'secondary'
+                    }
+                    className="mt-1"
+                  >
+                    {selectedContractForModal?.risk || 'N/A'}
+                  </Badge>
+                </div>
+                
+                <div>
+                  <p className="font-medium text-gray-700">Observações da IA:</p>
+                  <p className="text-gray-600 mt-1">
+                    Este contrato foi sinalizado devido a {selectedContractForModal?.alertType?.toLowerCase()}. 
+                    A análise automática identificou que este caso requer atenção manual devido à 
+                    complexidade das condições contratuais e ao valor envolvido de {selectedContractForModal && formatCurrency(selectedContractForModal.paymentValue ?? selectedContractForModal.value ?? 0)}.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-medium text-gray-700">Recomendações:</p>
+                  <ul className="list-disc list-inside text-gray-600 mt-1 space-y-1">
+                    <li>Verificar documentação complementar</li>
+                    <li>Validar condições de pagamento com o fornecedor</li>
+                    <li>Confirmar data de vencimento e prazos</li>
+                    <li>Revisar cláusulas contratuais específicas</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-medium text-gray-700">Confiança da Análise:</p>
+                  <div className="mt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div className="bg-purple-600 h-2 rounded-full" style={{ width: '85%' }}></div>
+                      </div>
+                      <span className="text-sm font-medium">85%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </DialogContent>

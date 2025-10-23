@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useFilteredContractsOnly } from "@/hooks/useFilteredContractsOnly";
 import { LegacyContract } from "@/hooks/useContractFilters";
+import ContractAnalysisModal from './ContractAnalysisModal';
 import EditSampleModal from "./EditSampleModal";
 
 interface SamplePayment extends LegacyContract {
@@ -46,6 +47,8 @@ const SampleManagementTab = () => {
   const [visibleCount, setVisibleCount] = useState(20);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<SamplePayment | null>(null);
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  const [selectedContractForAnalysis, setSelectedContractForAnalysis] = useState<LegacyContract | null>(null);
 
   // Carregar todos os contratos quando o componente montar
   useEffect(() => {
@@ -230,8 +233,15 @@ const SampleManagementTab = () => {
   };
 
   const handleAnalyze = (paymentId: string) => {
-    console.log('Analisar:', paymentId);
-    // Implementar análise
+    const payment = samplePayments.find(p => {
+      const pId = p.id || `${p.number}-${p.supplier}`;
+      return pId === paymentId;
+    });
+    
+    if (payment) {
+      setSelectedContractForAnalysis(payment);
+      setIsAnalysisModalOpen(true);
+    }
   };
 
   const handleEdit = (paymentId: string) => {
@@ -505,7 +515,7 @@ const SampleManagementTab = () => {
                             size="sm"
                             onClick={() => handleAnalyze(paymentId)}
                             className="h-4 w-4 p-0 hover:bg-purple-50 hover:text-purple-600"
-                            title="Analisar com IA"
+                            title="Ver análise da IA"
                           >
                             <Brain className="h-2 w-2" />
                           </Button>
@@ -654,6 +664,16 @@ const SampleManagementTab = () => {
         }}
         payment={selectedPayment}
         onSave={handleSaveEdit}
+      />
+
+      {/* Modal de Análise da IA */}
+      <ContractAnalysisModal
+        isOpen={isAnalysisModalOpen}
+        onClose={() => {
+          setIsAnalysisModalOpen(false);
+          setSelectedContractForAnalysis(null);
+        }}
+        contractId={selectedContractForAnalysis?.id || selectedContractForAnalysis?.number || ''}
       />
     </div>
   );

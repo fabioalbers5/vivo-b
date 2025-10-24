@@ -721,7 +721,7 @@ const PaymentVerificationApp = () => {
                   disabled={!hasActiveFilters}
                 >
                   <X className="h-3.5 w-3.5" />
-                  Remover Filtros
+                  Limpar Filtros
                 </Button>
               </div>
             </div>

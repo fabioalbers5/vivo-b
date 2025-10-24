@@ -1173,7 +1173,7 @@ const QualityDashboardPage: React.FC = () => {
       )}
 
       {/* Tabs de Análise */}
-      <div className="p-3 flex-1 overflow-hidden">
+      <div className="p-2 flex-1 overflow-hidden">
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <TabsList className="grid w-full grid-cols-4 mb-2 h-9">
             <TabsTrigger value="all" className="flex items-center gap-1.5 text-xs py-1">
@@ -1280,7 +1280,7 @@ const QualityDashboardPage: React.FC = () => {
             {/* Layout: Gráfico Principal à Esquerda e Gráficos Empilhados à Direita */}
             <div className="grid grid-cols-2 gap-2">
               {/* Gráfico: Pagamentos por Fluxo - Esquerda */}
-              <div className="border rounded-lg bg-white h-[380px] flex flex-col">
+              <div className="border rounded-lg bg-white h-[320px] flex flex-col">
                 <div className="p-1.5 text-center border-b">
                   <h3 className="text-xs font-semibold">
                     {viewMode === 'quantity' 
@@ -1292,7 +1292,7 @@ const QualityDashboardPage: React.FC = () => {
                 <div className="flex-1 flex items-center justify-center">
                   <BarChart 
                     width={520}
-                    height={360}
+                    height={300}
                     data={viewMode === 'quantity' ? allSamplesData.flowTypeCountsData : allSamplesData.flowTypeValuesData} 
                     margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
                   >
@@ -1334,7 +1334,7 @@ const QualityDashboardPage: React.FC = () => {
               {/* Gráficos Empilhados: Análise Básica e Humana - Direita */}
               <div className="space-y-2">
                 {/* Gráfico: Análise Básica */}
-                <div className="border rounded-lg bg-white h-[187px] flex flex-col">
+                <div className="border rounded-lg bg-white h-[157px] flex flex-col">
                   <div className="p-1 text-center border-b">
                     <h3 className="text-xs font-semibold">
                       {viewMode === 'quantity' 
@@ -1346,7 +1346,7 @@ const QualityDashboardPage: React.FC = () => {
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={172}
+                      height={142}
                       data={viewMode === 'quantity' ? analysisStackedData.basicAnalysisCountData : analysisStackedData.basicAnalysisValueData}
                       margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                     >
@@ -1409,7 +1409,7 @@ const QualityDashboardPage: React.FC = () => {
                 </div>
 
                 {/* Gráfico: Análise Humana */}
-                <div className="border rounded-lg bg-white h-[187px] flex flex-col">
+                <div className="border rounded-lg bg-white h-[157px] flex flex-col">
                   <div className="p-1 text-center border-b">
                     <h3 className="text-xs font-semibold">
                       {viewMode === 'quantity' 
@@ -1421,7 +1421,7 @@ const QualityDashboardPage: React.FC = () => {
                   <div className="flex-1 flex items-center justify-center">
                     <BarChart 
                       width={520}
-                      height={172}
+                      height={142}
                       data={viewMode === 'quantity' ? analysisStackedData.humanAnalysisCountData : analysisStackedData.humanAnalysisValueData}
                       margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                     >
@@ -1568,7 +1568,7 @@ const QualityDashboardPage: React.FC = () => {
             </div>
 
             {/* Gráfico de Alertas por Tipo */}
-            <div className="border rounded-lg bg-white h-[380px] flex flex-col">
+            <div className="border rounded-lg bg-white h-[320px] flex flex-col">
               <div className="p-1.5 text-center border-b">
                 <h3 className="text-xs font-semibold">
                   {viewMode === 'quantity' 
@@ -1580,7 +1580,7 @@ const QualityDashboardPage: React.FC = () => {
               <div className="flex-1 flex items-center justify-center">
                 <BarChart 
                   width={1100}
-                  height={360}
+                  height={300}
                   data={viewMode === 'quantity' ? basicCheckData.alertTypeCountsData : basicCheckData.alertTypeValuesData} 
                   margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
                 >
@@ -1822,10 +1822,10 @@ const QualityDashboardPage: React.FC = () => {
 
           {/* Aba de Alertas */}
           <TabsContent value="alerts" className="space-y-2 flex-1 flex flex-col overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
               {/* Gráfico de Alertas por Tipo */}
               <Card className="lg:col-span-2">
-                <CardHeader className="p-3 pb-0">
+                <CardHeader className="p-2 pb-0">
                   <CardTitle className="text-sm">
                     {viewMode === 'quantity' 
                       ? 'Distribuição de Alertas por Tipo (Quantidade)' 
@@ -1833,8 +1833,8 @@ const QualityDashboardPage: React.FC = () => {
                     }
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-1">
-                  <ResponsiveContainer width="100%" height={160}>
+                <CardContent className="p-2 pt-1">
+                  <ResponsiveContainer width="100%" height={130}>
                     <BarChart 
                       data={(() => {
                         if (viewMode === 'quantity') {
@@ -1907,11 +1907,11 @@ const QualityDashboardPage: React.FC = () => {
               <div className="space-y-3">
                 {/* Total de Alertas */}
                 <Card className="border-l-4 border-l-purple-500">
-                  <CardContent className="p-3">
+                  <CardContent className="p-2">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-xs font-medium text-slate-600">Total de Alertas</p>
-                        <p className="text-2xl font-bold text-purple-600 mt-1">
+                        <p className="text-xl font-bold text-purple-600 mt-1">
                           {viewMode === 'quantity'
                             ? filteredContracts.filter(c => c.alertType && c.alertType !== 'Contrato aprovado').length
                             : formatCurrency(
@@ -1939,11 +1939,11 @@ const QualityDashboardPage: React.FC = () => {
 
                 {/* Alertas Críticos */}
                 <Card className="border-l-4 border-l-red-500">
-                  <CardContent className="p-3">
+                  <CardContent className="p-2">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-xs font-medium text-slate-600">Alertas Críticos</p>
-                        <p className="text-2xl font-bold text-red-600 mt-1">
+                        <p className="text-xl font-bold text-red-600 mt-1">
                           {viewMode === 'quantity'
                             ? filteredContracts.filter(c => c.risk === 'Alto' && c.alertType && c.alertType !== 'Contrato aprovado').length
                             : formatCurrency(
@@ -1973,10 +1973,10 @@ const QualityDashboardPage: React.FC = () => {
 
             {/* Tabela de Alertas */}
             <Card className="flex-1 flex flex-col overflow-hidden">
-              <CardHeader className="p-3 flex-shrink-0">
+              <CardHeader className="p-2 flex-shrink-0">
                 <CardTitle className="text-sm">Detalhamento de Pagamentos com Alerta</CardTitle>
               </CardHeader>
-              <CardContent className="p-3 flex-1 overflow-hidden">
+              <CardContent className="p-2 flex-1 overflow-hidden">
                 <div className="h-full overflow-y-auto">
                   <Table>
                     <TableHeader className="sticky top-0 bg-gray-50 z-10">
@@ -2240,7 +2240,7 @@ const QualityDashboardPage: React.FC = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <p className="text-sm font-medium text-gray-600">Fornecedor</p>
                 <p className="text-sm">{selectedContractForModal?.supplier}</p>

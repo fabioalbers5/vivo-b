@@ -304,20 +304,20 @@ const SampleManagementTab = () => {
   const urgentCount = samplePayments.filter(p => p.isUrgent).length;
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full space-y-2">
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
         {/* Total de Pagamentos */}
         <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-blue-50">
-                  <ListChecks className="h-4 w-4 text-blue-600" />
+                <div className="rounded-lg p-1 bg-blue-50">
+                  <ListChecks className="h-3 w-3 text-blue-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-600">Total de Pagamentos</p>
-                  <p className="text-lg font-bold text-blue-600">{totalPayments}</p>
+                  <p className="text-base font-bold text-blue-600">{totalPayments}</p>
                 </div>
               </div>
             </div>
@@ -326,15 +326,15 @@ const SampleManagementTab = () => {
 
         {/* Valor Total */}
         <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-green-50">
-                  <DollarSign className="h-4 w-4 text-green-600" />
+                <div className="rounded-lg p-1 bg-green-50">
+                  <DollarSign className="h-3 w-3 text-green-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-600">Valor Total</p>
-                  <p className="text-lg font-bold text-green-600">
+                  <p className="text-base font-bold text-green-600">
                     {formatCurrency(totalValue)}
                   </p>
                 </div>
@@ -345,15 +345,15 @@ const SampleManagementTab = () => {
 
         {/* Pendentes */}
         <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-yellow-50">
-                  <Clock className="h-4 w-4 text-yellow-600" />
+                <div className="rounded-lg p-1 bg-yellow-50">
+                  <Clock className="h-3 w-3 text-yellow-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-600">Pendentes</p>
-                  <p className="text-lg font-bold text-yellow-600">{pendingCount}</p>
+                  <p className="text-base font-bold text-yellow-600">{pendingCount}</p>
                 </div>
               </div>
             </div>
@@ -362,15 +362,15 @@ const SampleManagementTab = () => {
 
         {/* Urgentes */}
         <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-red-50">
-                  <Flame className="h-4 w-4 text-red-600" />
+                <div className="rounded-lg p-1 bg-red-50">
+                  <Flame className="h-3 w-3 text-red-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-600">Urgentes</p>
-                  <p className="text-lg font-bold text-red-600">{urgentCount}</p>
+                  <p className="text-base font-bold text-red-600">{urgentCount}</p>
                 </div>
               </div>
             </div>
@@ -379,18 +379,18 @@ const SampleManagementTab = () => {
       </div>
 
       {/* Segundo grid de cards - Status de Análise */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {/* Em Análise */}
         <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-blue-50">
-                  <Brain className="h-4 w-4 text-blue-600" />
+                <div className="rounded-lg p-1 bg-blue-50">
+                  <Brain className="h-3 w-3 text-blue-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-600">Em Análise</p>
-                  <p className="text-lg font-bold text-blue-600">{inProgressCount}</p>
+                  <p className="text-base font-bold text-blue-600">{inProgressCount}</p>
                 </div>
               </div>
             </div>
@@ -399,15 +399,15 @@ const SampleManagementTab = () => {
 
         {/* Concluídos */}
         <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-green-50">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <div className="rounded-lg p-1 bg-green-50">
+                  <CheckCircle2 className="h-3 w-3 text-green-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-600">Concluídos</p>
-                  <p className="text-lg font-bold text-green-600">{completedCount}</p>
+                  <p className="text-base font-bold text-green-600">{completedCount}</p>
                 </div>
               </div>
             </div>
@@ -416,15 +416,15 @@ const SampleManagementTab = () => {
 
         {/* Rejeitados */}
         <Card className="hover:shadow-sm transition-shadow bg-white/80">
-          <CardContent className="p-4">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-red-50">
-                  <XCircle className="h-4 w-4 text-red-600" />
+                <div className="rounded-lg p-1 bg-red-50">
+                  <XCircle className="h-3 w-3 text-red-600" />
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-600">Rejeitados</p>
-                  <p className="text-lg font-bold text-red-600">{rejectedCount}</p>
+                  <p className="text-base font-bold text-red-600">{rejectedCount}</p>
                 </div>
               </div>
             </div>

@@ -729,11 +729,11 @@ const PaymentVerificationApp = () => {
 
           <TabsContent value="selection" className="mt-0 flex-1 overflow-auto">
             {/* Contracts Table */}
-            <div className="p-6">
+            <div className="p-3">
               {/* Cabeçalho com controles da amostra */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold">
+                  <h2 className="text-base font-semibold">
                     {showFilteredResults ? 
                       `Pagamentos Filtrados ${isLoading ? "" : `(${contracts.length})`}` : 
                       `Todos os Pagamentos`
@@ -814,18 +814,18 @@ const PaymentVerificationApp = () => {
               </div>
 
               {/* Cards de Estatísticas da Amostra */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                 {/* Número de Pagamentos Selecionados */}
                 <Card className="hover:shadow-sm transition-shadow bg-white border-vivo-purple/20">
-                  <CardContent className="p-3">
+                  <CardContent className="p-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="rounded-lg p-1.5 bg-vivo-purple/10">
-                          <FileText className="h-3.5 w-3.5 text-vivo-purple" />
+                        <div className="rounded-lg p-1 bg-vivo-purple/10">
+                          <FileText className="h-3 w-3 text-vivo-purple" />
                         </div>
                         <div>
                           <p className="text-xs font-medium text-slate-600">Pagamentos Selecionados</p>
-                          <p className="text-xl font-bold text-vivo-purple">
+                          <p className="text-lg font-bold text-vivo-purple">
                             {sampleStats.count}
                           </p>
                         </div>
@@ -839,15 +839,15 @@ const PaymentVerificationApp = () => {
 
                 {/* Soma dos Valores */}
                 <Card className="hover:shadow-sm transition-shadow bg-white border-blue-200/50">
-                  <CardContent className="p-3">
+                  <CardContent className="p-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="rounded-lg p-1.5 bg-blue-50">
-                          <DollarSign className="h-3.5 w-3.5 text-blue-600" />
+                        <div className="rounded-lg p-1 bg-blue-50">
+                          <DollarSign className="h-3 w-3 text-blue-600" />
                         </div>
                         <div>
                           <p className="text-xs font-medium text-slate-600">Valor Total</p>
-                          <p className="text-lg font-bold text-blue-600">
+                          <p className="text-base font-bold text-blue-600">
                             {formatCurrency(sampleStats.totalValue)}
                           </p>
                         </div>
@@ -861,15 +861,15 @@ const PaymentVerificationApp = () => {
 
                 {/* Percentual do Valor Total */}
                 <Card className="hover:shadow-sm transition-shadow bg-white border-green-200/50">
-                  <CardContent className="p-3">
+                  <CardContent className="p-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="rounded-lg p-1.5 bg-green-50">
-                          <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                        <div className="rounded-lg p-1 bg-green-50">
+                          <TrendingUp className="h-3 w-3 text-green-600" />
                         </div>
                         <div>
                           <p className="text-xs font-medium text-slate-600">% do Valor Total</p>
-                          <p className="text-xl font-bold text-green-600">
+                          <p className="text-lg font-bold text-green-600">
                             {sampleStats.percentage.toFixed(1)}%
                           </p>
                         </div>
@@ -891,7 +891,7 @@ const PaymentVerificationApp = () => {
               />
             </div>
           </TabsContent>          <TabsContent value="management" className="mt-0 flex-1 overflow-auto">
-            <div className="p-6">
+            <div className="p-3">
               <SampleManagementTab />
             </div>
           </TabsContent>

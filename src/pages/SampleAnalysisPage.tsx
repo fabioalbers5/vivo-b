@@ -390,7 +390,7 @@ const SampleAnalysisPage: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="pl-8 pb-3 pt-3 border-b border-gray-100 flex-shrink-0">
+      <div className="pl-8 pb-2 pt-2 border-b border-gray-100 flex-shrink-0">
         <div>
           <div className="flex items-center gap-6">
             {/* Dropdown de seleção de amostras */}
@@ -470,20 +470,20 @@ const SampleAnalysisPage: React.FC = () => {
         </div>
       </div>
       
-      <div className="p-6 space-y-4 flex-1 flex flex-col overflow-auto">
+      <div className="p-3 space-y-3 flex-1 flex flex-col overflow-auto">
         {/* Cards de Estatísticas da Amostra */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-shrink-0">
           {/* Número de Pagamentos na Amostra */}
           <Card className="hover:shadow-sm transition-shadow bg-white border-vivo-purple/20">
-            <CardContent className="p-3">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg p-1.5 bg-vivo-purple/10">
-                    <FileText className="h-3.5 w-3.5 text-vivo-purple" />
+                  <div className="rounded-lg p-1 bg-vivo-purple/10">
+                    <FileText className="h-3 w-3 text-vivo-purple" />
                   </div>
                   <div>
                     <p className="text-xs font-medium text-slate-600">Pagamentos na Amostra</p>
-                    <p className="text-xl font-bold text-vivo-purple">
+                    <p className="text-lg font-bold text-vivo-purple">
                       {sampleStats.count}
                     </p>
                   </div>
@@ -497,15 +497,15 @@ const SampleAnalysisPage: React.FC = () => {
 
           {/* Valor Total da Amostra */}
           <Card className="hover:shadow-sm transition-shadow bg-white border-blue-200/50">
-            <CardContent className="p-3">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg p-1.5 bg-blue-50">
-                    <DollarSign className="h-3.5 w-3.5 text-blue-600" />
+                  <div className="rounded-lg p-1 bg-blue-50">
+                    <DollarSign className="h-3 w-3 text-blue-600" />
                   </div>
                   <div>
                     <p className="text-xs font-medium text-slate-600">Valor Total</p>
-                    <p className="text-lg font-bold text-blue-600">
+                    <p className="text-base font-bold text-blue-600">
                       {formatCurrency(sampleStats.totalValue)}
                     </p>
                   </div>
@@ -519,15 +519,15 @@ const SampleAnalysisPage: React.FC = () => {
 
           {/* Percentual do Valor Total */}
           <Card className="hover:shadow-sm transition-shadow bg-white border-green-200/50">
-            <CardContent className="p-3">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg p-1.5 bg-green-50">
-                    <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                  <div className="rounded-lg p-1 bg-green-50">
+                    <TrendingUp className="h-3 w-3 text-green-600" />
                   </div>
                   <div>
                     <p className="text-xs font-medium text-slate-600">% do Valor Total</p>
-                    <p className="text-xl font-bold text-green-600">
+                    <p className="text-lg font-bold text-green-600">
                       {sampleStats.percentage.toFixed(1)}%
                     </p>
                   </div>
@@ -541,8 +541,8 @@ const SampleAnalysisPage: React.FC = () => {
         <div className="flex-1 overflow-hidden">
           <Card className="h-full flex flex-col">
             <Tabs defaultValue="contracts" className="h-full flex flex-col">
-              <CardHeader className="pb-2 pt-3">
-                <TabsList className="grid w-full grid-cols-2 h-8">
+              <CardHeader className="pb-1 pt-2">
+                <TabsList className="grid w-full grid-cols-2 h-7">
                   <TabsTrigger value="contracts" className="flex items-center gap-2 text-xs">
                     <Database className="h-3 w-3" />
                     Contratos Detalhados
@@ -554,7 +554,7 @@ const SampleAnalysisPage: React.FC = () => {
                 </TabsList>
               </CardHeader>
 
-              <CardContent className="flex-1 overflow-hidden p-3">
+              <CardContent className="flex-1 overflow-hidden p-2">
                 {/* Aba Contratos Detalhados */}
                 <TabsContent value="contracts" className="h-full overflow-auto m-0">
                   <PaginatedContractsTable

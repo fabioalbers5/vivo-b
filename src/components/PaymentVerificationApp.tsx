@@ -676,9 +676,9 @@ const PaymentVerificationApp = () => {
   ], [flowType, contractValue, paymentValue, dueDate, customStart, customEnd, treasuryCycle, supplierName, contractNumber]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="max-w-7xl mx-auto">
-        <Tabs defaultValue="selection" className="w-full">
+    <div className="h-full bg-background overflow-hidden">
+      <main className="max-w-7xl mx-auto h-full flex flex-col">
+        <Tabs defaultValue="selection" className="w-full flex flex-col h-full">
           <div className="bg-white border-b">
             <div className="flex items-center justify-between">
               <TabsList className="justify-start rounded-none border-b-0 bg-transparent p-0 h-auto">
@@ -727,7 +727,7 @@ const PaymentVerificationApp = () => {
             </div>
           </div>
 
-          <TabsContent value="selection" className="mt-0">
+          <TabsContent value="selection" className="mt-0 flex-1 overflow-auto">
             {/* Contracts Table */}
             <div className="p-6">
               {/* Cabeçalho com controles da amostra */}
@@ -890,7 +890,7 @@ const PaymentVerificationApp = () => {
                 onSelectionChange={setSelectedPayments}
               />
             </div>
-          </TabsContent>          <TabsContent value="management" className="mt-0">
+          </TabsContent>          <TabsContent value="management" className="mt-0 flex-1 overflow-auto">
             <div className="p-6">
               <SampleManagementTab />
             </div>

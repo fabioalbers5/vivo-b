@@ -389,8 +389,8 @@ const SampleAnalysisPage: React.FC = () => {
   };
 
   return (
-    <div className="h-full">
-      <div className="pl-8 pb-3 pt-3 border-b border-gray-100">
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="pl-8 pb-3 pt-3 border-b border-gray-100 flex-shrink-0">
         <div>
           <div className="flex items-center gap-6">
             {/* Dropdown de seleção de amostras */}
@@ -470,9 +470,9 @@ const SampleAnalysisPage: React.FC = () => {
         </div>
       </div>
       
-      <div className="p-6 space-y-4 h-full flex flex-col">
+      <div className="p-6 space-y-4 flex-1 flex flex-col overflow-auto">
         {/* Cards de Estatísticas da Amostra */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
           {/* Número de Pagamentos na Amostra */}
           <Card className="hover:shadow-sm transition-shadow bg-white border-vivo-purple/20">
             <CardContent className="p-3">
@@ -538,7 +538,7 @@ const SampleAnalysisPage: React.FC = () => {
         </div>
 
         {/* Container Principal com Abas */}
-        <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
+        <div className="flex-1 overflow-hidden">
           <Card className="h-full flex flex-col">
             <Tabs defaultValue="contracts" className="h-full flex flex-col">
               <CardHeader className="pb-2 pt-3">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp, AlertCircle, X, Filter, ChevronDown } from "lucide-react";
+import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp, AlertCircle, X, Filter, ChevronDown, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ import FilterWrapper from "./FilterWrapper";
 import PaginatedContractsTable from "./PaginatedContractsTable";
 import ContractAnalysisModal from "./ContractAnalysisModal";
 import SampleManagementTab from "./SampleManagementTab";
+import SampleHistoryModal from "./SampleHistoryModal";
 import { useContractFilters, LegacyContract } from "@/hooks/useContractFilters";
 import { useAllContracts } from "@/hooks/useAllContracts";
 import { useAnalysts } from "@/hooks/useAnalysts";
@@ -71,6 +72,7 @@ const PaymentVerificationApp = () => {
   const [selectedContractId, setSelectedContractId] = useState<string>('');
   const [analystModalOpen, setAnalystModalOpen] = useState(false);
   const [selectedAnalyst, setSelectedAnalyst] = useState<string>('');
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   
   // Estado para sidebar de filtros
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
@@ -440,6 +442,43 @@ const PaymentVerificationApp = () => {
 
       console.log('✅ Contratos inseridos com sucesso');
 
+      // Salvar metadados dos filtros usados nesta amostra
+      try {
+        const filterMetadata = {
+          amostra_id: amostraId,
+          flow_type: flowType,
+          contract_value_min: contractValue[0],
+          contract_value_max: contractValue[1],
+          payment_value_min: paymentValue[0],
+          payment_value_max: paymentValue[1],
+          due_date: dueDate,
+          custom_start: customStart || null,
+          custom_end: customEnd || null,
+          treasury_cycle: treasuryCycle,
+          payment_status: paymentStatus,
+          alert_type: alertType,
+          risk_level: riskLevel,
+          supplier_name: supplierName,
+          contract_number: contractNumber,
+          sample_size: sampleSize,
+          sampling_motor: samplingMotor,
+          contract_count: contractCount
+        };
+
+        const { error: metadataError } = await supabase
+          .from('amostras_filtros_metadata' as any)
+          .insert(filterMetadata);
+
+        if (metadataError) {
+          console.warn('⚠️ Erro ao salvar metadados dos filtros:', metadataError);
+          // Não bloquear o processo por erro nos metadados
+        } else {
+          console.log('✅ Metadados dos filtros salvos com sucesso');
+        }
+      } catch (metadataError) {
+        console.warn('⚠️ Erro ao salvar metadados dos filtros:', metadataError);
+      }
+
       toast({
         title: "Amostra definida com sucesso!",
         description: `${selectedPayments.size} contrato(s) atribuído(s) ao analista ${selectedAnalyst}.`
@@ -549,6 +588,80 @@ const PaymentVerificationApp = () => {
       style: 'currency',
       currency: 'BRL',
     }).format(value);
+  };
+
+  // Função para carregar e aplicar filtros de uma amostra reutilizada
+  const handleReuseFilters = async (amostraId: string) => {
+    try {
+      console.log('🔄 Carregando filtros da amostra:', amostraId);
+
+      // Buscar metadados dos filtros da amostra
+      const { data: metadata, error } = await supabase
+        .from('amostras_filtros_metadata' as any)
+        .select('*')
+        .eq('amostra_id', amostraId)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar metadados:', error);
+        toast({
+          title: "Aviso",
+          description: "Não foi possível carregar os filtros desta amostra. Os metadados podem não estar disponíveis.",
+          variant: "default"
+        });
+        return;
+      }
+
+      if (!metadata) {
+        toast({
+          title: "Aviso",
+          description: "Esta amostra não possui metadados de filtros salvos.",
+          variant: "default"
+        });
+        return;
+      }
+
+      console.log('✅ Metadados carregados:', metadata);
+
+      // Aplicar os filtros salvos
+      setFlowType((metadata as any).flow_type || []);
+      setContractValue([
+        (metadata as any).contract_value_min || 0,
+        (metadata as any).contract_value_max || 10000000
+      ]);
+      setPaymentValue([
+        (metadata as any).payment_value_min || 0,
+        (metadata as any).payment_value_max || 10000000
+      ]);
+      setDueDate((metadata as any).due_date || 'all');
+      setCustomStart((metadata as any).custom_start || '');
+      setCustomEnd((metadata as any).custom_end || '');
+      setTreasuryCycle((metadata as any).treasury_cycle || 'all');
+      setPaymentStatus((metadata as any).payment_status || []);
+      setAlertType((metadata as any).alert_type || []);
+      setRiskLevel((metadata as any).risk_level || []);
+      setSupplierName((metadata as any).supplier_name || []);
+      setContractNumber((metadata as any).contract_number || []);
+      setSampleSize((metadata as any).sample_size || 10);
+      setSamplingMotor((metadata as any).sampling_motor || 'highest-value');
+      setContractCount((metadata as any).contract_count || 10);
+
+      toast({
+        title: "Filtros aplicados!",
+        description: "Os filtros da amostra selecionada foram aplicados com sucesso.",
+      });
+
+      // Fechar o modal de histórico
+      setHistoryModalOpen(false);
+
+    } catch (error) {
+      console.error('Erro ao carregar filtros:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar os filtros da amostra.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Array de filtros para o FilterBar
@@ -694,6 +807,15 @@ const PaymentVerificationApp = () => {
                 >
                   Gestão de Amostra
                 </TabsTrigger>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setHistoryModalOpen(true)}
+                  className="rounded-none border-b-2 border-transparent hover:border-primary hover:bg-transparent px-6 py-3 h-auto flex items-center gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  Histórico
+                </Button>
               </TabsList>
               
               {/* Botões de Filtros */}
@@ -1023,6 +1145,17 @@ const PaymentVerificationApp = () => {
           onClick={handleCloseFilterSidebar}
         />
       )}
+
+      {/* Modal de Histórico */}
+      <SampleHistoryModal
+        open={historyModalOpen}
+        onOpenChange={setHistoryModalOpen}
+        onLoadSample={(amostraId) => {
+          // Callback quando uma amostra for carregada
+          console.log('Amostra carregada:', amostraId);
+        }}
+        onReuseFilters={handleReuseFilters}
+      />
     </div>
   );
 };

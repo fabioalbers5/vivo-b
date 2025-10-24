@@ -14,6 +14,7 @@ export interface AuditLogWithContract {
   fornecedor?: string;
   numero_contrato?: string;
   status_pagamento?: string;
+  status_contrato?: string;
   // Campos alternativos para compatibilidade
   timestamp?: string;
   created_at?: string;

@@ -1,5 +1,8 @@
-import { Check } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -29,6 +32,8 @@ const contractNumbers = [
 ];
 
 const ContractNumberFilter = ({ value, onChange }: ContractNumberFilterProps) => {
+  const [open, setOpen] = useState(false);
+  
   const handleToggle = (contractValue: string) => {
     if (value.includes(contractValue)) {
       onChange(value.filter(v => v !== contractValue));
@@ -37,30 +42,57 @@ const ContractNumberFilter = ({ value, onChange }: ContractNumberFilterProps) =>
     }
   };
 
+  const getDisplayText = () => {
+    if (value.length === 0) return "Todos os contratos";
+    if (value.length === 1) {
+      const selected = contractNumbers.find(c => c.value === value[0]);
+      return selected?.label || "Selecionado";
+    }
+    return `${value.length} contratos selecionados`;
+  };
+
   return (
-    <Command className="border rounded-md">
-      <CommandInput placeholder="Buscar contrato..." />
-      <CommandList>
-        <CommandEmpty>Nenhum contrato encontrado.</CommandEmpty>
-        <CommandGroup>
-          {contractNumbers.map((contract) => (
-            <CommandItem
-              key={contract.value}
-              value={contract.value}
-              onSelect={() => handleToggle(contract.value)}
-            >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  value.includes(contract.value) ? "opacity-100" : "opacity-0"
-                )}
-              />
-              {contract.label}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
-    </Command>
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-700">Número do Contrato</label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            {getDisplayText()}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[320px] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Buscar contrato..." />
+            <CommandList>
+              <CommandEmpty>Nenhum contrato encontrado.</CommandEmpty>
+              <CommandGroup>
+                {contractNumbers.map((contract) => (
+                  <CommandItem
+                    key={contract.value}
+                    value={contract.value}
+                    onSelect={() => handleToggle(contract.value)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value.includes(contract.value) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {contract.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 };
 

@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp, AlertCircle, X } from "lucide-react";
+import { Plus, Shuffle, Check, FileText, DollarSign, TrendingUp, AlertCircle, X, Filter, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +25,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import FilterBar, { FilterItem } from "./FilterBar";
 import FlowTypeFilter from "./filters/FlowTypeFilter";
 import ValueRangeFilter from "./filters/ValueRangeFilter";
 import DueDateFilter from "./filters/DueDateFilter";
@@ -42,7 +43,14 @@ import { executeSamplingMotor, SamplingMotorType } from "@/utils/samplingEngines
 import { PaymentStatus, AlertType, ContractRisk } from "@/core/entities/Contract";
 import { supabase } from "@/integrations/supabase/client";
 
-
+// Tipo para itens de filtro
+interface FilterItem {
+  id: string;
+  label: string;
+  activeCount: number;
+  isActive: boolean;
+  component: React.ReactNode;
+}
 
 const PaymentVerificationApp = () => {
   const { toast } = useToast();
@@ -63,6 +71,10 @@ const PaymentVerificationApp = () => {
   const [selectedContractId, setSelectedContractId] = useState<string>('');
   const [analystModalOpen, setAnalystModalOpen] = useState(false);
   const [selectedAnalyst, setSelectedAnalyst] = useState<string>('');
+  
+  // Estado para sidebar de filtros
+  const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+  const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set());
   
   // Estado para seleção da amostra
   const [sampleSize, setSampleSize] = useState<number>(10);
@@ -272,6 +284,31 @@ const PaymentVerificationApp = () => {
     toast({
       title: "Filtros limpos",
       description: "Todos os filtros foram resetados. Mostrando todos os contratos."
+    });
+  };
+
+  const handleOpenFilterSidebar = () => {
+    setIsFilterSidebarOpen(true);
+  };
+
+  const handleCloseFilterSidebar = () => {
+    setIsFilterSidebarOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    resetFilters();
+    setIsFilterSidebarOpen(false);
+  };
+
+  const toggleFilterExpanded = (filterId: string) => {
+    setExpandedFilters(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(filterId)) {
+        newSet.delete(filterId);
+      } else {
+        newSet.add(filterId);
+      }
+      return newSet;
     });
   };
 
@@ -643,20 +680,51 @@ const PaymentVerificationApp = () => {
       <main className="max-w-7xl mx-auto">
         <Tabs defaultValue="selection" className="w-full">
           <div className="bg-white border-b">
-            <TabsList className="w-full justify-start rounded-none border-b-0 bg-transparent p-0 h-auto">
-              <TabsTrigger 
-                value="selection" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
-              >
-                Seleção da Amostra
-              </TabsTrigger>
-              <TabsTrigger 
-                value="management" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
-              >
-                Gestão de Amostra
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between">
+              <TabsList className="justify-start rounded-none border-b-0 bg-transparent p-0 h-auto">
+                <TabsTrigger 
+                  value="selection" 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+                >
+                  Seleção da Amostra
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="management" 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+                >
+                  Gestão de Amostra
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Botões de Filtros */}
+              <div className="flex items-center gap-2 pr-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenFilterSidebar}
+                  className="h-7 gap-2"
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  Filtros
+                  {hasActiveFilters && (
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
+                      {filterItems.filter(f => f.isActive).length}
+                    </Badge>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="h-7 gap-2"
+                  disabled={!hasActiveFilters}
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Remover Filtros
+                </Button>
+              </div>
+            </div>
           </div>
 
           <TabsContent value="selection" className="mt-0">
@@ -811,14 +879,6 @@ const PaymentVerificationApp = () => {
                 </Card>
               </div>
 
-              {/* FilterBar - sempre expandido por padrão */}
-              <div className="mb-4">
-                <FilterBar 
-                  filters={filterItems} 
-                  onClearAll={resetFilters}
-                />
-              </div>
-              
               <PaginatedContractsTable
                 contracts={availableContracts}
                 filteredContracts={contracts}
@@ -903,6 +963,66 @@ const PaymentVerificationApp = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Sidebar de Filtros */}
+      <div
+        className={cn(
+          "fixed top-0 right-0 h-full w-80 bg-white border-l shadow-xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto",
+          isFilterSidebarOpen ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+              {hasActiveFilters && (
+                <Badge className="bg-blue-500 text-white h-5 min-w-5 rounded-full flex items-center justify-center px-1.5">
+                  {filterItems.filter(f => f.isActive).length}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              className="text-gray-500 hover:text-gray-700 text-sm h-auto p-0 font-normal"
+            >
+              Clear all
+            </Button>
+          </div>
+
+          {/* Filtros - Lista Simples */}
+          <div className="flex-1 overflow-y-auto">
+            {filterItems.map((filter) => {
+              return (
+                <div key={filter.id} className="border-b border-gray-100 last:border-0 px-4 py-3">
+                  {filter.component}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Footer com Botões */}
+          <div className="p-4 border-t bg-gray-50">
+            <Button
+              onClick={handleCloseFilterSidebar}
+              className="w-full bg-vivo-purple hover:bg-vivo-purple/90 text-white"
+            >
+              Aplicar Filtros
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Overlay quando sidebar está aberta */}
+      {isFilterSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={handleCloseFilterSidebar}
+        />
+      )}
     </div>
   );
 };
